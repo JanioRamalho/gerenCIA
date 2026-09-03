@@ -1,0 +1,356 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="gerenCIA — envie arquivos CSV ou XLSX com dados brutos e transforme seus gastos em uma visão financeira clara." />
+    <meta name="theme-color" content="#F3F0E8" />
+    <title>gerenCIA — Clareza para a sua gestão financeira</title>
+    <script>
+      ;(() => {
+        const savedTheme = localStorage.getItem('gerencia-theme')
+        const preferredTheme = window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light'
+        document.documentElement.dataset.theme = savedTheme || preferredTheme
+      })()
+    </script>
+    <link rel="stylesheet" href="/styles.css" />
+  </head>
+  <body>
+    <a class="skip-link" href="#conteudo">Ir para o conteúdo</a>
+
+    <div class="ambient-layer" aria-hidden="true">
+      <img class="ambient-layer__light" src="/assets/data-ambient-light.png" alt="" />
+      <img class="ambient-layer__dark" src="/assets/data-ambient-dark.png" alt="" />
+    </div>
+
+    <header class="site-header">
+      <div class="container header-row">
+        <a class="brand" href="#inicio" aria-label="gerenCIA — início">
+          <span class="brand__mark" aria-hidden="true"><i data-lucide="chart-no-axes-combined"></i></span>
+          <span class="brand__name">geren<span>CIA</span></span>
+        </a>
+
+        <nav class="primary-nav" aria-label="Navegação principal">
+          <a href="#como-funciona">Como funciona</a>
+          <a href="#exemplo">Exemplo</a>
+          <a href="#envio-simples">Envio simples</a>
+          <a href="#beneficios">Por que usar</a>
+          <a href="#duvidas">Dúvidas</a>
+        </nav>
+
+        <div class="header-actions">
+          <button class="button button--ghost auth-trigger" type="button" data-auth-view="register">
+            <i data-lucide="user-plus" aria-hidden="true"></i><span>Cadastrar</span>
+          </button>
+          <button class="button button--outline auth-trigger" type="button" data-auth-view="login" aria-expanded="false" aria-controls="auth-panel">
+            <i data-lucide="log-in" aria-hidden="true"></i><span>Entrar</span>
+          </button>
+          <button class="theme-toggle" id="theme-toggle" type="button" aria-label="Ativar tema escuro">
+            <i data-lucide="sun" aria-hidden="true"></i>
+            <span class="theme-toggle__track" aria-hidden="true"><span class="theme-toggle__thumb"></span></span>
+            <i data-lucide="moon" aria-hidden="true"></i>
+          </button>
+        </div>
+      </div>
+
+      <section class="auth-panel" id="auth-panel" aria-label="Área de acesso" hidden>
+        <div class="container auth-panel__inner">
+          <button class="icon-button auth-close" id="auth-close" type="button" aria-label="Fechar área de acesso">
+            <i data-lucide="x" aria-hidden="true"></i>
+          </button>
+          <div class="auth-panel__intro">
+            <span class="eyebrow">Área de acesso</span>
+            <h2>Acesse o gerenCIA</h2>
+            <p>Uma prévia visual do acesso. Nenhum dado informado aqui é enviado ou armazenado.</p>
+          </div>
+
+          <div class="auth-panel__content">
+            <div class="auth-tabs" role="tablist" aria-label="Escolha uma ação">
+              <button id="login-tab" type="button" role="tab" aria-selected="true" aria-controls="login-form">Entrar</button>
+              <button id="register-tab" type="button" role="tab" aria-selected="false" aria-controls="register-form">Criar conta</button>
+            </div>
+
+            <form class="auth-form" id="login-form" aria-labelledby="login-tab">
+              <div class="field">
+                <label for="login-email">E-mail</label>
+                <input id="login-email" name="email" type="email" autocomplete="email" placeholder="seu@email.com" required />
+              </div>
+              <div class="field">
+                <label for="login-password">Senha</label>
+                <div class="password-field">
+                  <input id="login-password" name="password" type="password" autocomplete="current-password" placeholder="Digite sua senha" required />
+                  <button class="password-toggle" type="button" aria-label="Mostrar senha" data-password-target="login-password"><i data-lucide="eye" aria-hidden="true"></i></button>
+                </div>
+              </div>
+              <button class="button button--primary auth-form__submit" type="submit"><i data-lucide="lock-keyhole" aria-hidden="true"></i>Acessar</button>
+            </form>
+
+            <form class="auth-form" id="register-form" aria-labelledby="register-tab" hidden>
+              <div class="field">
+                <label for="register-email">E-mail</label>
+                <input id="register-email" name="email" type="email" autocomplete="email" placeholder="seu@email.com" required />
+              </div>
+              <div class="field">
+                <label for="register-password">Senha</label>
+                <div class="password-field">
+                  <input id="register-password" name="password" type="password" autocomplete="new-password" placeholder="Crie uma senha" minlength="8" required />
+                  <button class="password-toggle" type="button" aria-label="Mostrar senha" data-password-target="register-password"><i data-lucide="eye" aria-hidden="true"></i></button>
+                </div>
+              </div>
+              <button class="button button--primary auth-form__submit" type="submit"><i data-lucide="user-plus" aria-hidden="true"></i>Criar conta</button>
+            </form>
+
+            <p class="auth-message" id="auth-message" aria-live="polite"></p>
+          </div>
+        </div>
+      </section>
+    </header>
+
+    <main id="conteudo">
+      <section class="hero section" id="inicio">
+        <div class="hero__particles" aria-hidden="true"></div>
+        <div class="container hero__grid">
+          <div class="hero__copy">
+            <p class="section-kicker"><span aria-hidden="true"></span> Finanças pessoais orientadas por dados</p>
+            <h1>Clareza nos gastos para uma <em>gestão financeira profissional</em></h1>
+            <p class="hero__description">Envie seu arquivo CSV ou XLSX do jeito que ele está. A gerenCIA cuida do tratamento, organiza os gastos e transforma dados brutos em informações claras para apoiar suas decisões.</p>
+
+            <div class="hero__facts" aria-label="Informações importantes">
+              <span><i data-lucide="file-spreadsheet" aria-hidden="true"></i> CSV e XLSX</span>
+              <span><i data-lucide="weight" aria-hidden="true"></i> Até 25 MB</span>
+              <span><i data-lucide="wand-sparkles" aria-hidden="true"></i> Tratamento automático</span>
+            </div>
+
+            <a class="text-link" href="#como-funciona">Entenda o processo <i data-lucide="arrow-down" aria-hidden="true"></i></a>
+          </div>
+
+          <div class="hero__upload">
+            <section class="upload-card" aria-labelledby="upload-heading">
+              <div class="upload-card__heading">
+                <div><span class="eyebrow">Importação simples</span><h2 id="upload-heading">Comece pelos seus dados</h2></div>
+                <span class="status-pill"><span aria-hidden="true"></span> Pronto para receber</span>
+              </div>
+
+              <input class="visually-hidden" id="file-upload" type="file" accept=".csv,.xlsx" />
+
+              <div class="dropzone" id="dropzone" role="button" tabindex="0" aria-label="Selecionar arquivo CSV ou XLSX" aria-describedby="upload-formats upload-feedback">
+                <div class="dropzone__empty" id="dropzone-empty">
+                  <span class="dropzone__icon" aria-hidden="true"><i data-lucide="upload-cloud"></i></span>
+                  <div><h3>Arraste e solte seu arquivo aqui</h3><p>ou escolha um arquivo no seu dispositivo</p></div>
+                  <button class="button button--primary" id="select-file" type="button">Selecionar arquivo</button>
+                  <span class="dropzone__formats" id="upload-formats">.CSV ou .XLSX <span aria-hidden="true">•</span> até 25 MB</span>
+                </div>
+
+                <div class="selected-file" id="selected-file" hidden>
+                  <span class="selected-file__icon" aria-hidden="true"><i data-lucide="file-spreadsheet"></i></span>
+                  <div class="selected-file__info">
+                    <span class="selected-file__success"><i data-lucide="check-circle-2" aria-hidden="true"></i> Arquivo pronto</span>
+                    <strong id="file-name"></strong><span id="file-meta"></span>
+                  </div>
+                  <div class="selected-file__actions">
+                    <button class="icon-button" id="replace-file" type="button" aria-label="Substituir arquivo" title="Substituir arquivo"><i data-lucide="refresh-cw" aria-hidden="true"></i></button>
+                    <button class="icon-button icon-button--danger" id="remove-file" type="button" aria-label="Remover arquivo" title="Remover arquivo"><i data-lucide="trash-2" aria-hidden="true"></i></button>
+                  </div>
+                </div>
+              </div>
+
+              <div class="upload-feedback" id="upload-feedback" aria-live="polite">
+                <p><i data-lucide="shield-check" aria-hidden="true"></i> Nesta demonstração, o arquivo permanece somente no seu navegador.</p>
+              </div>
+            </section>
+          </div>
+        </div>
+      </section>
+
+      <section class="section process" id="como-funciona">
+        <div class="container">
+          <div class="section-heading">
+            <div><p class="section-kicker"><span aria-hidden="true"></span> Como funciona</p><h2>Do arquivo à decisão, com um caminho claro</h2></div>
+            <p>Você envia os dados como recebeu. A gerenCIA assume a organização e devolve uma leitura financeira simples de explorar.</p>
+          </div>
+
+          <ol class="process-list">
+            <li>
+              <span class="process-list__number">01</span><span class="process-list__icon"><i data-lucide="upload-cloud" aria-hidden="true"></i></span>
+              <div><h3>Envie</h3><p>Selecione um arquivo CSV ou XLSX de até 25 MB, sem precisar reorganizar colunas, montar fórmulas ou criar novas tabelas.</p></div>
+              <span class="process-list__result">Seu arquivo como ele já está</span>
+            </li>
+            <li>
+              <span class="process-list__number">02</span><span class="process-list__icon"><i data-lucide="wand-sparkles" aria-hidden="true"></i></span>
+              <div><h3>Nós tratamos</h3><p>A gerenCIA identifica a estrutura, organiza os registros, agrupa os gastos e sinaliza informações que precisam de atenção.</p></div>
+              <span class="process-list__result">Organização sem trabalho manual</span>
+            </li>
+            <li>
+              <span class="process-list__number">03</span><span class="process-list__icon"><i data-lucide="chart-no-axes-combined" aria-hidden="true"></i></span>
+              <div><h3>Você visualiza</h3><p>Explore categorias, compare períodos e entenda as mudanças nos seus hábitos por meio de gráficos claros e interativos.</p></div>
+              <span class="process-list__result">Informação pronta para decidir</span>
+            </li>
+          </ol>
+        </div>
+      </section>
+
+      <section class="section dashboard-preview" id="exemplo" aria-labelledby="dashboard-preview-title">
+        <div class="container">
+          <div class="dashboard-preview__heading">
+            <div>
+              <p class="section-kicker"><span aria-hidden="true"></span> Análise em contexto</p>
+              <h2 id="dashboard-preview-title">Veja como os gastos do dia a dia podem ganhar clareza</h2>
+            </div>
+            <div class="demo-note">
+              <i data-lucide="shield-check" aria-hidden="true"></i>
+              <p><strong>Demonstração ilustrativa</strong><span>Todos os valores abaixo são fictícios.</span></p>
+            </div>
+          </div>
+
+          <div class="dashboard-shell">
+            <div class="dashboard-toolbar">
+              <div>
+                <span class="eyebrow">Finanças pessoais</span>
+                <h3>Gastos pessoais por categoria</h3>
+              </div>
+              <div class="dashboard-filters">
+                <div class="select-field">
+                  <label for="dashboard-period">Período</label>
+                  <select id="dashboard-period">
+                    <option value="quarter">Últimos 3 meses</option>
+                    <option value="june">Junho</option>
+                    <option value="may">Maio</option>
+                    <option value="april">Abril</option>
+                  </select>
+                </div>
+                <div class="select-field">
+                  <label for="dashboard-sort">Ordenar categorias</label>
+                  <select id="dashboard-sort">
+                    <option value="value-desc">Maior valor</option>
+                    <option value="category">Categoria</option>
+                    <option value="change-desc">Maior mudança</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div class="dashboard-metrics" aria-live="polite">
+              <article>
+                <span class="metric-icon"><i data-lucide="table-2" aria-hidden="true"></i></span>
+                <div><span>Total no período</span><strong id="metric-total">—</strong></div>
+              </article>
+              <article>
+                <span class="metric-icon"><i data-lucide="chart-no-axes-combined" aria-hidden="true"></i></span>
+                <div><span>Maior categoria</span><strong id="metric-category">—</strong></div>
+              </article>
+              <article>
+                <span class="metric-icon"><i data-lucide="wand-sparkles" aria-hidden="true"></i></span>
+                <div><span>Mudança em destaque</span><strong id="metric-insight">—</strong></div>
+              </article>
+            </div>
+
+            <div class="dashboard-content">
+              <section class="category-visual" aria-labelledby="category-visual-title">
+                <div class="dashboard-subheading">
+                  <div><span class="eyebrow">Comparação mensal</span><h4 id="category-visual-title">Como a participação muda</h4></div>
+                  <span id="dashboard-period-label">Últimos 3 meses</span>
+                </div>
+                <div class="monthly-chart" id="monthly-chart" aria-label="Comparação da participação dos gastos por mês"></div>
+                <p class="chart-instruction">Selecione um mês no gráfico para explorar seus detalhes.</p>
+                <div class="category-divider"><span>Distribuição do período selecionado</span></div>
+                <div class="category-bars" id="category-bars"></div>
+              </section>
+
+              <section class="pie-panel" aria-labelledby="pie-chart-title">
+                <div class="dashboard-subheading">
+                  <div><span class="eyebrow">Gráfico de pizza</span><h4 id="pie-chart-title">Detalhamento por categoria</h4></div>
+                  <span id="pie-category-count"></span>
+                </div>
+                <div class="pie-layout">
+                  <div class="pie-chart-wrap">
+                    <svg id="expense-pie-chart" viewBox="0 0 240 240" role="img" aria-labelledby="pie-chart-title pie-chart-description"></svg>
+                    <div class="pie-chart-center" aria-hidden="true">
+                      <strong id="pie-center-value">—</strong>
+                      <span id="pie-center-label">do total</span>
+                    </div>
+                  </div>
+                  <div class="pie-detail" id="pie-detail" aria-live="polite">
+                    <span class="pie-detail__category"><i id="pie-detail-marker"></i><span id="pie-detail-category">—</span></span>
+                    <strong id="pie-detail-value">—</strong>
+                    <span id="pie-detail-share">—</span>
+                    <p id="pie-detail-change">—</p>
+                  </div>
+                </div>
+                <p class="visually-hidden" id="pie-chart-description">Selecione uma fatia ou categoria para consultar valor, participação e mudança no período.</p>
+                <div class="pie-legend" id="pie-legend" aria-label="Categorias do gráfico"></div>
+                <p class="chart-instruction">Passe o cursor, use Tab ou toque em uma categoria para ver seus detalhes.</p>
+              </section>
+            </div>
+
+            <p class="dashboard-caption">
+              <i data-lucide="shield-check" aria-hidden="true"></i>
+              Todas as visualizações desta demonstração usam os mesmos dados fictícios, mantendo totais, percentuais e comparações consistentes entre si.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      <section class="section preparation" id="envio-simples">
+        <div class="container preparation__grid">
+          <div class="preparation__intro">
+            <p class="section-kicker"><span aria-hidden="true"></span> Menos trabalho antes do envio</p>
+            <h2>Seu arquivo não precisa chegar perfeito</h2>
+            <p>Você não precisa transformar os dados antes de começar. Basta selecionar o arquivo; a organização faz parte da experiência da gerenCIA.</p>
+          </div>
+
+          <div class="checklist" aria-label="O que acontece com o arquivo">
+            <article><i data-lucide="file-spreadsheet" aria-hidden="true"></i><div><h3>Use o arquivo que você já tem</h3><p>Exporte seus dados em CSV ou XLSX e envie o arquivo original, com até 25 MB.</p></div></article>
+            <article><i data-lucide="wand-sparkles" aria-hidden="true"></i><div><h3>Não reorganize as colunas</h3><p>Você não precisa renomear campos, alterar a ordem das informações ou padronizar tudo manualmente.</p></div></article>
+            <article><i data-lucide="check-circle-2" aria-hidden="true"></i><div><h3>Sem fórmulas ou tabelas extras</h3><p>Não é necessário criar resumos, totais ou estruturas específicas antes do envio.</p></div></article>
+            <article><i data-lucide="chart-no-axes-combined" aria-hidden="true"></i><div><h3>O tratamento fica com a gerenCIA</h3><p>Os dados são validados, organizados e preparados para aparecer em uma análise fácil de entender.</p></div></article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section security" id="beneficios">
+        <div class="container security__grid">
+          <div>
+            <p class="section-kicker section-kicker--light"><span aria-hidden="true"></span> Gestão financeira com propósito</p>
+            <h2>Entender seus gastos muda a forma como você decide.</h2>
+            <p class="security__lead">Quando os registros deixam de ser apenas linhas em um arquivo, fica mais fácil reconhecer hábitos, ajustar prioridades e planejar os próximos passos.</p>
+          </div>
+
+          <ul class="security-list">
+            <li><i data-lucide="eye" aria-hidden="true"></i><div><strong>Veja para onde o dinheiro vai</strong><span>Entenda quanto cada categoria representa no orçamento e identifique onde os gastos estão mais concentrados.</span></div></li>
+            <li><i data-lucide="chart-no-axes-combined" aria-hidden="true"></i><div><strong>Compare períodos com contexto</strong><span>Acompanhe como alimentação, moradia, transporte e outras categorias mudam ao longo dos meses.</span></div></li>
+            <li><i data-lucide="check-circle-2" aria-hidden="true"></i><div><strong>Decida com mais segurança</strong><span>Use uma visão organizada para ajustar prioridades, planejar despesas e acompanhar suas escolhas com mais confiança.</span></div></li>
+          </ul>
+        </div>
+      </section>
+
+      <section class="section faq" id="duvidas">
+        <div class="container faq__grid">
+          <div><p class="section-kicker"><span aria-hidden="true"></span> Dúvidas essenciais</p><h2>Antes do primeiro envio</h2><p>O que você precisa saber sobre esta etapa do produto.</p></div>
+          <div class="faq-list">
+            <details open><summary>Quais arquivos posso selecionar?<i data-lucide="plus" aria-hidden="true"></i></summary><p>Arquivos com extensão CSV ou XLSX e tamanho máximo de 25 MB.</p></details>
+            <details><summary>Meu arquivo já é enviado nesta página?<i data-lucide="plus" aria-hidden="true"></i></summary><p>Não. Nesta demonstração, a seleção e a validação acontecem somente no navegador; nenhuma chamada de upload é executada.</p></details>
+            <details><summary>Preciso organizar colunas ou criar tabelas?<i data-lucide="plus" aria-hidden="true"></i></summary><p>Não. A proposta da gerenCIA é receber os dados brutos e assumir o trabalho de identificar, validar e organizar as informações.</p></details>
+            <details><summary>O que poderei visualizar depois do tratamento?<i data-lucide="plus" aria-hidden="true"></i></summary><p>Uma leitura organizada dos gastos, com totais, participação por categoria, comparações entre períodos e destaques que facilitem a compreensão.</p></details>
+          </div>
+        </div>
+      </section>
+
+      <section class="closing-cta">
+        <div class="container closing-cta__inner">
+          <div><span class="eyebrow">Seu próximo passo</span><h2>Comece com o arquivo que você já tem.</h2></div>
+          <a class="button button--primary" href="#upload-heading">Selecionar arquivo</a>
+        </div>
+      </section>
+    </main>
+
+    <footer class="site-footer">
+      <div class="container site-footer__inner">
+        <a class="brand brand--footer" href="#inicio" aria-label="gerenCIA — início"><span class="brand__name">geren<span>CIA</span></span></a>
+        <p>Dados organizados, decisões mais claras.</p>
+        <p>Interface demonstrativa — nenhum arquivo é enviado nesta etapa.</p>
+      </div>
+    </footer>
+
+    <script type="module" src="/js/main.js"></script>
+  </body>
+</html>

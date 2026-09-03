@@ -1,0 +1,37 @@
+# Variaveis de ambiente e segredos
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+credentials*.json
+secrets*.json
+
+# Dependencias, builds e cobertura
+node_modules/
+dist/
+coverage/
+*.tsbuildinfo
+
+# Cache e logs
+.vite/
+.eslintcache
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# Editores e sistema operacional
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+
+# Dados e uploads locais
+*.db
+*.sqlite
+*.sqlite3
+uploads/
