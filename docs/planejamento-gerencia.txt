@@ -1,0 +1,739 @@
+PLANEJAMENTO DA APLICAÇÃO GERENCIA
+Sistema inteligente de gestão e análise financeira
+
+============================================================
+1. VISÃO GERAL
+============================================================
+
+O Gerencia será uma aplicação web completa para transformar faturas
+financeiras em informações organizadas e fáceis de compreender.
+
+O usuário poderá:
+
+- criar uma conta e realizar login;
+- enviar faturas nos formatos CSV e XLSX;
+- confirmar o significado das colunas quando necessário;
+- acompanhar o processamento do arquivo;
+- consultar a qualidade dos dados;
+- visualizar dashboards interativos;
+- pesquisar e filtrar transações;
+- corrigir categorias;
+- identificar cobranças recorrentes;
+- consultar um calendário de cobranças previstas;
+- conversar com uma IA sobre os próprios dados financeiros.
+
+O projeto terá uma arquitetura acessível para alguém que está começando
+em análise e engenharia de dados. Ele continuará sendo complexo e
+funcional, mas evitará ferramentas de infraestrutura que não sejam
+necessárias para a primeira versão.
+
+
+============================================================
+2. STACK DEFINIDA
+============================================================
+
+Backend:
+- Python;
+- FastAPI;
+- Pandas;
+- SQLAlchemy;
+- Alembic;
+- Pydantic;
+- OpenPyXL.
+
+Banco de dados:
+- PostgreSQL.
+
+Frontend:
+- React;
+- TypeScript;
+- Vite;
+- Recharts para todos os gráficos interativos.
+
+Inteligência artificial:
+- OpenAI Responses API;
+- function calling para acessar funções financeiras controladas.
+
+Testes:
+- Pytest para backend, pipeline e API;
+- Vitest e Testing Library para o frontend.
+
+Execução:
+- Docker Compose.
+
+Ferramentas que não entrarão na primeira versão:
+- DuckDB;
+- Redis;
+- Celery;
+- Airflow;
+- Kafka;
+- Spark;
+- dbt;
+- Kubernetes;
+- Nginx.
+
+Essas ferramentas poderão ser avaliadas futuramente apenas quando
+existir uma limitação concreta que justifique seu uso.
+
+
+============================================================
+3. ARQUITETURA GERAL
+============================================================
+
+Fluxo principal:
+
+Usuário
+  -> React + Recharts
+  -> API FastAPI
+  -> autenticação e autorização
+  -> upload
+  -> arquivo Raw
+  -> processamento em segundo plano
+  -> Bronze
+  -> Pandas
+  -> validação e qualidade
+  -> Silver
+  -> Gold
+  -> PostgreSQL
+  -> dashboard, recorrências e IA
+
+A aplicação terá dois componentes principais:
+
+1. Frontend React.
+2. Backend FastAPI.
+
+O PostgreSQL será o único banco de dados.
+
+O processamento inicial utilizará BackgroundTasks do FastAPI. Isso
+permite que a API responda ao upload e continue o tratamento em segundo
+plano sem adicionar Redis e Celery.
+
+A primeira implantação terá somente uma instância do backend. Caso o
+sistema evolua para várias instâncias ou muitos uploads simultâneos,
+BackgroundTasks poderá ser substituído por uma fila e um worker sem
+reescrever as regras do pipeline.
+
+
+============================================================
+4. AUTENTICAÇÃO E ISOLAMENTO
+============================================================
+
+A autenticação utilizará sessões armazenadas no PostgreSQL.
+
+Funcionalidades:
+- cadastro com nome, e-mail e senha;
+- login;
+- logout;
+- consulta do usuário autenticado;
+- senha armazenada somente como hash;
+- sessão enviada por cookie HttpOnly.
+
+Regras de isolamento:
+- todas as tabelas financeiras possuirão user_id;
+- o backend obterá o usuário pela sessão;
+- o frontend nunca poderá escolher um user_id;
+- consultas sempre combinarão o recurso com o usuário autenticado;
+- recursos de outro usuário responderão como inexistentes;
+- testes automatizados tentarão acessar dados entre dois usuários.
+
+O principal requisito de segurança será:
+
+Um usuário nunca poderá visualizar, alterar ou consultar dados
+financeiros pertencentes a outro usuário.
+
+
+============================================================
+5. UPLOAD E MAPEAMENTO
+============================================================
+
+Formatos aceitos:
+- CSV;
+- XLSX;
+- tamanho máximo de 25 MB.
+
+Fluxo:
+
+1. Receber o arquivo.
+2. Validar extensão e tamanho.
+3. Calcular SHA-256.
+4. Salvar o arquivo original.
+5. Registrar os metadados.
+6. Identificar encoding e delimitador do CSV.
+7. Identificar planilha e cabeçalho do XLSX.
+8. Detectar as colunas.
+9. Aplicar o adaptador Nubank ou o mapeador genérico.
+10. Solicitar confirmação se houver ambiguidade.
+11. Iniciar o pipeline.
+
+Campos obrigatórios:
+- data;
+- descrição;
+- valor.
+
+Campos opcionais:
+- categoria bancária;
+- identificador da transação;
+- parcela;
+- tipo da movimentação.
+
+Estados possíveis:
+- uploaded;
+- profiling;
+- awaiting_mapping;
+- processing;
+- completed;
+- failed.
+
+Arquivos idênticos do mesmo usuário serão identificados pelo hash. O
+sistema apontará o upload existente em vez de duplicar as transações.
+
+
+============================================================
+6. ARQUITETURA MEDALLION
+============================================================
+
+6.1. Raw/Bronze
+
+O arquivo original será preservado em:
+
+data/raw/{user_id}/{upload_id}/arquivo_original.csv
+
+Cada registro também será armazenado na tabela bronze_rows com:
+- user_id;
+- upload_id;
+- número da linha;
+- planilha de origem;
+- dados originais em JSON;
+- hash da linha;
+- data da ingestão.
+
+A Bronze deverá representar exatamente o conteúdo recebido.
+
+
+6.2. Silver
+
+A Silver será formada pela tabela transactions.
+
+Campos principais:
+- id;
+- user_id;
+- upload_id;
+- transaction_date;
+- description_raw;
+- description_normalized;
+- merchant;
+- amount;
+- transaction_type;
+- category_id;
+- category_source;
+- installment_current;
+- installment_total;
+- source_row;
+- is_duplicate.
+
+Regras:
+- valores monetários usarão Decimal;
+- compras e tarifas aumentarão o gasto;
+- estornos reduzirão o gasto;
+- pagamento da própria fatura não será considerado uma nova despesa;
+- linhas inválidas serão armazenadas com o motivo da rejeição;
+- nenhuma linha poderá desaparecer silenciosamente;
+- duplicatas sem identificador bancário serão sinalizadas e mantidas;
+- datas, textos e estabelecimentos serão padronizados.
+
+
+6.3. Gold
+
+Tabelas:
+- gold_summaries;
+- gold_categories;
+- gold_merchants;
+- gold_daily_spending;
+- gold_monthly_spending.
+
+Métricas:
+- gasto total;
+- quantidade de transações;
+- gasto médio;
+- maior despesa;
+- categoria principal;
+- total e percentual por categoria;
+- principais estabelecimentos;
+- evolução diária;
+- evolução mensal;
+- comparação entre períodos;
+- maiores despesas;
+- distribuição de valores;
+- total estimado de assinaturas.
+
+A Gold será recalculada quando:
+- um upload terminar;
+- uma categoria for corrigida;
+- uma regra pessoal for criada;
+- um arquivo for reprocessado.
+
+
+============================================================
+7. CATEGORIZAÇÃO
+============================================================
+
+Categorias iniciais:
+- Alimentação;
+- Transporte;
+- Lazer;
+- Saúde;
+- Educação;
+- Moradia;
+- Compras;
+- Assinaturas;
+- Serviços;
+- Viagens;
+- Outros.
+
+Ordem de decisão:
+
+1. Regra pessoal criada pelo usuário.
+2. Categoria válida fornecida pelo banco.
+3. Regra por estabelecimento.
+4. Palavra-chave.
+5. Categoria Outros.
+
+Exemplos:
+- Uber e 99 -> Transporte;
+- iFood e McDonald's -> Alimentação;
+- Netflix e Spotify -> Assinaturas;
+- Amazon -> Compras.
+
+O usuário poderá alterar a categoria de uma transação. Ele também poderá
+salvar a alteração como uma regra pessoal para futuras transações do
+mesmo estabelecimento.
+
+
+============================================================
+8. QUALIDADE DE DADOS
+============================================================
+
+Cada processamento gerará um relatório com:
+- total de linhas;
+- linhas válidas;
+- linhas rejeitadas;
+- duplicatas;
+- datas inválidas;
+- valores inválidos;
+- descrições vazias;
+- categorias desconhecidas;
+- percentual de qualidade;
+- totais monetários.
+
+Reconciliações obrigatórias:
+
+total de linhas = linhas válidas + linhas rejeitadas
+
+total Silver elegível = total apresentado na Gold
+
+soma das categorias = gasto total
+
+Tabelas:
+- quality_checks;
+- rejected_rows.
+
+Cada registro rejeitado conterá:
+- dados originais;
+- linha de origem;
+- código do erro;
+- mensagem compreensível.
+
+O usuário poderá visualizar e baixar os registros rejeitados.
+
+
+============================================================
+9. RECORRÊNCIAS E PREVISÕES
+============================================================
+
+Uma cobrança poderá ser considerada recorrente quando:
+- houver pelo menos três ocorrências;
+- o estabelecimento normalizado for o mesmo;
+- os intervalos forem próximos de um padrão mensal;
+- a variação de valor estiver dentro da tolerância definida.
+
+Informações geradas:
+- estabelecimento;
+- periodicidade;
+- valor médio;
+- última cobrança;
+- próxima data estimada;
+- nível de confiança;
+- status detectada, confirmada ou ignorada.
+
+As notificações serão calculadas quando o usuário acessar a aplicação.
+Isso evita adicionar cron ou outro serviço na primeira versão.
+
+Exemplo:
+
+Netflix pode ser cobrada em aproximadamente 3 dias.
+Valor estimado: R$ 39,90.
+
+
+============================================================
+10. INTELIGÊNCIA ARTIFICIAL
+============================================================
+
+A IA usará a OpenAI Responses API com function calling.
+
+O modelo não receberá o arquivo bruto e não executará SQL. Ele poderá
+solicitar funções controladas do backend.
+
+Ferramentas disponíveis:
+- get_spending_summary;
+- get_category_breakdown;
+- get_top_merchants;
+- get_largest_transactions;
+- compare_periods;
+- list_transactions;
+- get_recurring_payments;
+- get_upcoming_charges.
+
+Fluxo:
+
+1. O usuário envia uma pergunta.
+2. O backend envia a pergunta e os schemas das ferramentas ao modelo.
+3. O modelo escolhe uma função.
+4. O backend valida os argumentos.
+5. O backend consulta somente os dados do usuário autenticado.
+6. O resultado estruturado volta ao modelo.
+7. O modelo explica o resultado ao usuário.
+
+Regras:
+- cálculos continuam em Python e SQL;
+- a IA interpreta e explica;
+- ferramentas utilizam schemas estritos;
+- respostas possuem formato validado;
+- o histórico enviado ao modelo será limitado;
+- testes utilizarão um cliente falso;
+- testes não gastarão créditos da API.
+
+Documentação de referência:
+- https://developers.openai.com/api/docs/guides/function-calling
+- https://developers.openai.com/api/docs/guides/structured-outputs
+
+
+============================================================
+11. MODELO DE BANCO
+============================================================
+
+Tabelas principais:
+- users;
+- sessions;
+- uploads;
+- column_mappings;
+- bronze_rows;
+- transactions;
+- categories;
+- category_rules;
+- quality_checks;
+- rejected_rows;
+- gold_summaries;
+- gold_categories;
+- gold_merchants;
+- gold_daily_spending;
+- gold_monthly_spending;
+- recurring_payments;
+- chat_sessions;
+- chat_messages.
+
+Relacionamento resumido:
+
+user
+  -> uploads
+       -> bronze_rows
+       -> transactions
+       -> quality_checks
+       -> rejected_rows
+  -> category_rules
+  -> gold_*
+  -> recurring_payments
+  -> chat_sessions
+       -> chat_messages
+
+Índices principais:
+- uploads por user_id e created_at;
+- transactions por user_id e transaction_date;
+- transactions por user_id e category_id;
+- transactions por user_id e merchant;
+- Gold por user_id e período;
+- recorrências por user_id e próxima data.
+
+
+============================================================
+12. API
+============================================================
+
+Autenticação:
+- POST /api/auth/register
+- POST /api/auth/login
+- POST /api/auth/logout
+- GET  /api/auth/me
+
+Uploads:
+- POST /api/uploads
+- GET  /api/uploads
+- GET  /api/uploads/{id}
+- GET  /api/uploads/{id}/profile
+- POST /api/uploads/{id}/mapping
+- POST /api/uploads/{id}/retry
+- GET  /api/uploads/{id}/quality
+- GET  /api/uploads/{id}/rejected
+
+Transações:
+- GET   /api/transactions
+- GET   /api/transactions/{id}
+- PATCH /api/transactions/{id}/category
+
+Filtros:
+- período;
+- categoria;
+- estabelecimento;
+- texto;
+- valor mínimo;
+- valor máximo;
+- ordenação;
+- paginação.
+
+Analytics:
+- GET /api/analytics/summary
+- GET /api/analytics/categories
+- GET /api/analytics/merchants
+- GET /api/analytics/timeline
+- GET /api/analytics/largest-transactions
+- GET /api/analytics/period-comparison
+
+Recorrências:
+- GET   /api/recurring-payments
+- PATCH /api/recurring-payments/{id}
+- GET   /api/notifications
+
+IA:
+- POST /api/ai/chats
+- GET  /api/ai/chats
+- GET  /api/ai/chats/{id}
+- POST /api/ai/chats/{id}/messages
+
+
+============================================================
+13. FRONTEND REACT E DASHBOARDS RECHARTS
+============================================================
+
+O frontend será desenvolvido com React, TypeScript e Vite.
+Todos os dashboards interativos serão construídos com Recharts.
+
+O Python permanecerá responsável por:
+- tratamento;
+- cálculos;
+- regras de negócio;
+- analytics;
+- acesso ao banco;
+- integração com IA.
+
+O React será responsável por:
+- interface;
+- navegação;
+- formulários;
+- filtros;
+- gráficos;
+- tabelas;
+- estados de carregamento e erro.
+
+Rotas:
+- /login
+- /register
+- /app/uploads
+- /app/uploads/{id}/mapping
+- /app/uploads/{id}/quality
+- /app/dashboard
+- /app/transactions
+- /app/recurring
+- /app/calendar
+- /app/assistant
+
+Componentes do dashboard:
+- card de gasto total;
+- card de quantidade de transações;
+- card de gasto médio;
+- card de maior despesa;
+- gráfico de rosca por categoria;
+- gráfico de barras por estabelecimento;
+- gráfico de linha temporal;
+- comparação entre períodos;
+- tabela de maiores despesas;
+- resumo de recorrências;
+- próximas cobranças.
+
+Interações:
+- filtro global de período;
+- filtro de categoria;
+- filtro de estabelecimento;
+- clique na categoria filtra transações;
+- clique no estabelecimento abre seus lançamentos;
+- alteração de período atualiza os gráficos;
+- correção de categoria pela tabela;
+- estados de vazio, erro e carregamento.
+
+O frontend nunca recalculará as métricas financeiras. Ele receberá dados
+prontos em JSON e os apresentará com Recharts.
+
+
+============================================================
+14. ETAPAS DE IMPLEMENTAÇÃO
+============================================================
+
+ETAPA 1 - FUNDAÇÃO
+- migrar a interface existente para React e TypeScript;
+- criar o backend FastAPI;
+- configurar PostgreSQL;
+- configurar SQLAlchemy e Alembic;
+- criar Docker Compose;
+- implementar autenticação;
+- configurar Pytest e Vitest.
+
+ETAPA 2 - UPLOAD E BRONZE
+- receber CSV e XLSX;
+- validar formato e tamanho;
+- salvar o original;
+- calcular hash;
+- criar o adaptador Nubank;
+- criar o mapeador genérico;
+- persistir Bronze;
+- mostrar o estado do upload.
+
+ETAPA 3 - SILVER E QUALIDADE
+- normalizar datas;
+- normalizar valores;
+- normalizar descrições;
+- identificar estabelecimento;
+- identificar compra, tarifa, estorno e pagamento;
+- separar rejeitados;
+- criar verificações de qualidade;
+- testar as transformações.
+
+ETAPA 4 - CATEGORIZAÇÃO E GOLD
+- criar categorias;
+- implementar regras;
+- classificar transações;
+- calcular métricas;
+- reconciliar totais;
+- criar endpoints analíticos.
+
+ETAPA 5 - DASHBOARD DINÂMICO
+- integrar Recharts;
+- criar cards;
+- criar gráficos;
+- implementar filtros;
+- adicionar drill-down;
+- conectar tabela de transações;
+- permitir correção de categoria.
+
+ETAPA 6 - RECORRÊNCIAS
+- analisar histórico;
+- detectar padrões mensais;
+- estimar valor e próxima data;
+- permitir confirmação;
+- criar calendário;
+- criar notificações.
+
+ETAPA 7 - IA
+- criar cliente OpenAI;
+- registrar ferramentas financeiras;
+- implementar o loop de function calling;
+- validar argumentos e respostas;
+- criar o chat React;
+- implementar cliente falso para testes.
+
+ETAPA 8 - CONSOLIDAÇÃO
+- executar todos os testes;
+- revisar tratamento de erros;
+- validar isolamento;
+- criar dados demonstrativos de três meses;
+- concluir documentação;
+- preparar execução com Docker Compose.
+
+
+============================================================
+15. TESTES
+============================================================
+
+Testes unitários:
+- conversão de valores brasileiros;
+- conversão de datas CSV e Excel;
+- normalização de descrições;
+- normalização de estabelecimentos;
+- identificação de compras e estornos;
+- categorização;
+- precedência de regras;
+- cálculos Gold;
+- reconciliação;
+- detecção de recorrência;
+- construção das ferramentas da IA.
+
+Testes de integração:
+- upload -> Bronze -> Silver -> Gold;
+- API -> PostgreSQL;
+- correção de categoria -> recálculo;
+- três faturas -> recorrência;
+- retry sem duplicação;
+- arquivo inválido -> mensagem compreensível;
+- usuário A sem acesso aos dados do usuário B.
+
+Testes frontend:
+- cadastro e login;
+- seleção e envio do arquivo;
+- confirmação do mapeamento;
+- visualização do processamento;
+- relatório de qualidade;
+- renderização dos gráficos;
+- aplicação de filtros;
+- correção de categoria;
+- envio de perguntas ao assistente.
+
+Metas:
+- pelo menos 80% de cobertura nos módulos de pipeline e analytics;
+- testes de integração para os fluxos críticos;
+- testes da IA sem chamadas reais à API.
+
+
+============================================================
+16. CRITÉRIOS DE ACEITE
+============================================================
+
+A primeira versão estará concluída quando:
+
+- dois usuários puderem utilizar o sistema sem cruzamento de dados;
+- CSV e XLSX forem aceitos;
+- uma fatura Nubank for reconhecida automaticamente;
+- arquivos genéricos puderem ser mapeados;
+- o arquivo original for preservado;
+- nenhuma linha desaparecer sem justificativa;
+- os totais Silver e Gold forem reconciliados;
+- o dashboard responder aos filtros;
+- os gráficos forem interativos;
+- as transações puderem ser pesquisadas;
+- as categorias puderem ser corrigidas;
+- três meses de dados puderem gerar recorrências;
+- o calendário mostrar cobranças previstas;
+- a IA responder com valores consultados pelo backend;
+- o pipeline e os endpoints críticos tiverem testes automatizados.
+
+
+============================================================
+17. PREMISSAS
+============================================================
+
+- O foco inicial será fatura de cartão.
+- A moeda inicial será BRL.
+- Extratos bancários entrarão posteriormente.
+- A primeira implantação utilizará uma única instância do backend.
+- PostgreSQL será a única persistência estruturada.
+- React e Recharts formarão a interface e os dashboards.
+- Pandas e SQL serão responsáveis pelos cálculos.
+- A IA será responsável por interpretação e explicação.
+- O sistema funcionará inicialmente com Docker Compose.
+- Novas ferramentas serão adicionadas somente após uma necessidade real.
