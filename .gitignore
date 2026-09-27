@@ -42,3 +42,7 @@ Thumbs.db
 # Editores
 .vscode/
 .idea/
+
+# Local frontend audit dependencies
+.audit-tools/
+.audit-tools-js/

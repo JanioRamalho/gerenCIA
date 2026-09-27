@@ -1,0 +1,52 @@
+[
+  {
+    "width": 320,
+    "height": 740,
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "width": 390,
+    "height": 844,
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "route": "login",
+    "violations": []
+  },
+  {
+    "route": "register",
+    "violations": []
+  },
+  {
+    "width": 568,
+    "height": 320,
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "width": 768,
+    "height": 1024,
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "width": 820,
+    "height": 900,
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "width": 1024,
+    "height": 768,
+    "overflow": false,
+    "violations": []
+  },
+  {
+    "width": 1440,
+    "height": 1000,
+    "overflow": false,
+    "violations": []
+  }
+]

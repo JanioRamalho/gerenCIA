@@ -1,0 +1,35 @@
+﻿/* Gerencia: primitive, semantic and component tokens. */
+:root {
+  --color-petrol-900: #103742;
+  --color-petrol-950: #0c3039;
+  --color-petrol-600: #48676e;
+  --color-mint-200: #a7e5d6;
+  --color-mint-100: #d9eee7;
+  --color-paper-50: #f7faf8;
+  --color-white: #ffffff;
+  --color-teal-700: #226b63;
+  --color-coral-300: #f2a16b;
+  --space-2: 8px;
+  --space-3: 12px;
+  --space-4: 16px;
+  --space-6: 24px;
+  --space-8: 32px;
+  --font-body: "IBM Plex Sans", system-ui, sans-serif;
+  --font-heading: "Bricolage Grotesque", system-ui, sans-serif;
+  --text-small: 0.875rem;
+  --text-body: 1rem;
+  --radius-control: 8px;
+  --duration-feedback: 160ms;
+  --color-text: var(--color-petrol-900);
+  --color-text-muted: var(--color-petrol-600);
+  --color-surface: var(--color-paper-50);
+  --color-surface-raised: var(--color-white);
+  --color-action: var(--color-mint-200);
+  --color-action-text: var(--color-petrol-900);
+  --color-focus: var(--color-teal-700);
+  --spacing-section: clamp(64px, 7vw, 104px);
+  --button-background: var(--color-action);
+  --button-text: var(--color-action-text);
+  --control-min-height: 44px;
+  --dashboard-gutter: clamp(16px, 2vw, 28px);
+}

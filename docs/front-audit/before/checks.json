@@ -1,0 +1,70 @@
+[
+  {
+    "viewport": "desktop",
+    "overflow": false,
+    "main_sections": 1,
+    "controls": [
+      "",
+      "Junho",
+      "Julho",
+      "Agosto",
+      "3 meses",
+      "AlimentaçãoR$ 1.186,7041%",
+      "TransporteR$ 734,3025%",
+      "LazerR$ 418,5014%",
+      "AssinaturasR$ 179,706%",
+      "OutrosR$ 393,8014%"
+    ]
+  },
+  {
+    "viewport": "mobile",
+    "overflow": false,
+    "main_sections": 1,
+    "controls": [
+      "",
+      "Junho",
+      "Julho",
+      "Agosto",
+      "3 meses",
+      "AlimentaçãoR$ 1.186,7041%",
+      "TransporteR$ 734,3025%",
+      "LazerR$ 418,5014%",
+      "AssinaturasR$ 179,706%",
+      "OutrosR$ 393,8014%"
+    ]
+  },
+  {
+    "viewport": "small",
+    "overflow": false,
+    "main_sections": 1,
+    "controls": [
+      "",
+      "Junho",
+      "Julho",
+      "Agosto",
+      "3 meses",
+      "AlimentaçãoR$ 1.186,7041%",
+      "TransporteR$ 734,3025%",
+      "LazerR$ 418,5014%",
+      "AssinaturasR$ 179,706%",
+      "OutrosR$ 393,8014%"
+    ]
+  },
+  {
+    "viewport": "tablet",
+    "overflow": false,
+    "main_sections": 1,
+    "controls": [
+      "",
+      "Junho",
+      "Julho",
+      "Agosto",
+      "3 meses",
+      "AlimentaçãoR$ 1.186,7041%",
+      "TransporteR$ 734,3025%",
+      "LazerR$ 418,5014%",
+      "AssinaturasR$ 179,706%",
+      "OutrosR$ 393,8014%"
+    ]
+  }
+]

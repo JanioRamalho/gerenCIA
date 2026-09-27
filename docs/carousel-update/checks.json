@@ -1,0 +1,53 @@
+[
+  {
+    "width": 320,
+    "carousel_slides": 3,
+    "keyboard": "passed",
+    "pie_hover_all_categories": "passed",
+    "hover_overlaps": 0,
+    "axe_violations": 0,
+    "runtime_errors": []
+  },
+  {
+    "width": 390,
+    "carousel_slides": 3,
+    "keyboard": "passed",
+    "pie_hover_all_categories": "passed",
+    "hover_overlaps": 0,
+    "axe_violations": 0,
+    "runtime_errors": []
+  },
+  {
+    "width": 768,
+    "carousel_slides": 3,
+    "keyboard": "passed",
+    "pie_hover_all_categories": "passed",
+    "hover_overlaps": 0,
+    "axe_violations": 0,
+    "runtime_errors": []
+  },
+  {
+    "width": 1024,
+    "carousel_slides": 3,
+    "keyboard": "passed",
+    "pie_hover_all_categories": "passed",
+    "hover_overlaps": 0,
+    "axe_violations": 0,
+    "runtime_errors": []
+  },
+  {
+    "width": 1440,
+    "carousel_slides": 3,
+    "keyboard": "passed",
+    "pie_hover_all_categories": "passed",
+    "hover_overlaps": 0,
+    "axe_violations": 0,
+    "runtime_errors": []
+  },
+  {
+    "autoplay": "passed",
+    "pause": "passed",
+    "focus_stops_autoplay": "passed",
+    "reduced_motion": "passed"
+  }
+]
