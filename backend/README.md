@@ -1,9 +1,10 @@
 # Backend
 
-Área reservada para a aplicação Python/FastAPI. Nenhum código funcional foi
-iniciado nesta reorganização.
+A aplicação FastAPI foi iniciada em app/api/main.py com a rota
+GET /api/health. Os demais módulos serão criados nas próximas
+etapas. Consulte o README principal para o comando de inicialização da API.
 
-## Responsabilidades
+## Responsabilidades previstas
 
 - app/api/: rotas HTTP e dependências de autenticação.
 - app/core/: configuração, segurança, exceções e logging.
