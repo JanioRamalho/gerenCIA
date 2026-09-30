@@ -26,9 +26,7 @@ o backend desenvolvido de forma acompanhada e didática.
 
 - backend/: API, domínio financeiro, pipeline, persistência, IA e testes.
 - frontend/: aplicação React, funcionalidades, componentes e testes.
-- data/: arquivos locais de desenvolvimento e amostras fictícias.
-- docs/: planejamento, decisões arquiteturais e documentação.
-- infra/: Docker e demais arquivos de infraestrutura, quando implementados.
+- docs/: planejamento do produto e da arquitetura.
 - scripts/: tarefas auxiliares de desenvolvimento.
 
 ## Ordem prevista
