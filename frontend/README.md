@@ -38,10 +38,10 @@ Os parâmetros `period`, `category` e `chart` na URL guardam o recorte escolhido
 Com o servidor local aberto em `http://127.0.0.1:5173` (ou com `GERENCIA_TEST_URL` apontando para outra porta):
 
 ```bash
-python scripts/check_front_experience.py
-python scripts/check_front_experience_a11y.py
-python scripts/check_carousel.py
-python scripts/check_dashboard.py
+python scripts/frontend/check_front_experience.py
+python scripts/frontend/check_front_experience_a11y.py
+python scripts/frontend/check_carousel.py
+python scripts/frontend/check_dashboard.py
 ```
 
 Os scripts usam Playwright e axe para conferir mascote, arrasto, carrossel, links, filtros, URL, visual da abertura, armazenamento bloqueado, acessibilidade básica e larguras de 320, 390, 768 e 1440 px. Capturas ficam em `.impeccable/review/` na raiz do repositório.
