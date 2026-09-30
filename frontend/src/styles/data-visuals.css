@@ -1,0 +1,135 @@
+/* Data visuals: a single, dark financial reading system. */
+:root {
+  --data-deep: #10343c;
+  --data-surface: #173f47;
+  --data-raised: #1e4b53;
+  --data-line: rgba(212, 236, 226, .2);
+  --data-text: #f2f7f1;
+  --data-muted: #c6ddd5;
+}
+
+.insight-visual {
+  min-height: 330px;
+  color: var(--data-text);
+  background: #1a4750;
+  border: 1px solid rgba(167, 229, 214, .17);
+  box-shadow: none;
+}
+.insight-visual-head { border-color: var(--data-line); color: #c5ded4; font-size: 14px; }
+.insight-visual-head strong { color: #f3f8f3; font-size: 17px; }
+.insight-visual > p { color: #c6ddd5; font-size: 14px; line-height: 1.55; }
+.mini-months { gap: 20px; padding-inline: 8px; }
+.mini-months > div { color: #e8f4ec; font-size: 14px; }
+.mini-month-rail { border-color: rgba(218, 238, 230, .24); }
+.mini-month-rail span { width: 70%; border-radius: 5px 5px 0 0; }
+.mini-months > div:last-child .mini-month-rail span { background: #91bbd1; }
+.mini-months strong { color: #f6faf5; font-size: 15px; }
+.mini-category-list > div { grid-template-columns: 122px 1fr 42px; border-color: var(--data-line); color: #eff7f1; font-size: 13px; }
+.mini-category-track { height: 9px; background: #315d64; }
+.mini-category-list strong { font-size: 14px; }
+.mini-transaction { border-color: var(--data-line); }
+.mini-transaction-mark { background: #315d64; color: #e7f5ed; }
+.mini-transaction strong, .mini-transaction b { color: #f4faf4; font-size: 15px; }
+.mini-transaction small { color: #c3dcd2; font-size: 13px; }
+
+.analytics-workspace {
+  color: var(--data-text);
+  background: var(--data-deep);
+  box-shadow: 0 34px 65px rgba(0, 17, 24, .28);
+}
+.analytics-heading { background: #0c2d35; border-bottom-color: var(--data-line); padding: 40px 44px 38px; }
+.analytics-heading h3 { color: var(--data-text); font-size: clamp(33px, 2.9vw, 42px); }
+.analytics-heading p:last-child { color: var(--data-muted); font-size: 15px; }
+.workspace-path { color: #b5e4d4; font-size: 13px; }
+.period-toolbar { background: #19454d; border-bottom-color: var(--data-line); padding: 19px 44px; }
+.period-toolbar-label { color: #d4e8df; font-size: 14px; }
+.period-toolbar button, .chart-switch button, .sort-switch button { color: #e3f1e9; font-size: 14px; }
+.period-toolbar button:hover, .chart-switch button:hover, .sort-switch button:hover { background: #315e63; }
+.period-toolbar button[aria-pressed="true"],
+.chart-switch button[aria-pressed="true"],
+.sort-switch button[aria-pressed="true"] { background: #a7e5d6; color: #0b343c; }
+.metric-strip { border-bottom-color: var(--data-line); }
+.metric-strip > div { min-height: 182px; border-color: var(--data-line); padding-inline: clamp(23px, 2.4vw, 38px); }
+.metric-strip > div:not(.metric-main) { background: #173f47; }
+.metric-strip .metric-main { background: #23545a; }
+.metric-strip > div > span { color: #c8e0d6; font-size: 14px; }
+.metric-strip strong { color: #f5faf5; font-size: clamp(26px, 2.1vw, 34px); }
+.metric-strip .metric-main strong { font-size: clamp(36px, 3.3vw, 51px); }
+.metric-strip small, .metric-main span, .metric-main small { color: #c8e0d6 !important; font-size: 13px; }
+.analysis-block { border-bottom-color: var(--data-line); padding: 54px 44px 58px; }
+.category-block { background: #1f515d; }
+.transactions-block { background: #285c58; }
+.block-heading h4 { color: var(--data-text); font-size: clamp(29px, 2.7vw, 38px); }
+.block-heading p { color: var(--data-muted); font-size: 16px; }
+.block-heading > span { color: #c9e0d6; font-size: 13px; }
+.chart-switch, .sort-switch { background: #173f4a; }
+.chart-switch button, .sort-switch button { min-height: 44px; }
+.category-layout { grid-template-columns: minmax(0, 1.45fr) minmax(290px, .85fr); gap: clamp(34px, 4vw, 64px); }
+.category-chart { height: 385px; }
+.category-chart svg { overflow: visible; }
+.category-ledger { border-color: var(--data-line); padding-left: 34px; }
+.chart-detail { color: #d5e9df; background: #2d6270; font-size: 14px; }
+.chart-detail strong { color: #fff; }
+.ledger-heading > strong { color: #f4faf3; font-size: 17px; }
+.category-options button { min-height: 69px; color: #f2f8f2; border-color: var(--data-line); font-size: 14px; }
+.category-options button:hover, .category-options button[aria-pressed="true"] { background: #2d6270; }
+.category-options button strong { font-size: 14px; }
+.category-options button small { color: #c7ded5; font-size: 13px; }
+.clear-category { color: #b8e9d8; font-size: 14px; }
+.clear-category:hover { color: #fff; }
+.donut-center small { color: #c2dcd2; }
+.donut-center strong { color: #f6faf5; font-size: 24px; }
+.transaction-list li { border-color: var(--data-line); }
+.transaction-symbol { background: #3b716a; color: #f4fbf6; }
+.transaction-info strong, .transaction-list li > strong { color: #f4faf3; font-size: 15px; }
+.transaction-info small { color: #c0d9ce; font-size: 13px; }
+.data-note { color: var(--data-muted); font-size: 14px; }
+.transactions-empty { background: #376b65; color: var(--data-text); }
+.transactions-empty button { color: #b5e8d7; }
+.dashboard-loading { background: var(--data-deep); color: var(--data-text); }
+.analytics-workspace :focus-visible { outline-color: #f2a16b; }
+
+@media (max-width: 1100px) {
+  .category-layout { gap: 28px; grid-template-columns: minmax(0, 1.25fr) minmax(260px, .9fr); }
+}
+@media (max-width: 900px) {
+  .category-layout { grid-template-columns: 1fr; }
+  .category-ledger { border-left: 0; border-top: 1px solid var(--data-line); padding: 27px 0 0; }
+}
+@media (max-width: 700px) {
+  .insight-visual { min-height: 310px; }
+  .analytics-heading { padding: 30px 27px; }
+  .period-toolbar { padding: 17px 27px; }
+  .analysis-block { padding: 39px 27px; }
+  .metric-strip > div { min-height: 151px; }
+}
+@media (max-width: 480px) {
+  .insight-visual { padding: 19px; }
+  .insight-visual-head { font-size: 12px; }
+  .insight-visual-head strong { font-size: 14px; }
+  .mini-months { gap: 9px; padding-inline: 0; }
+  .mini-months strong { font-size: 12px; }
+  .mini-category-list > div { grid-template-columns: 101px 1fr 36px; gap: 7px; font-size: 11px; }
+  .mini-category-list strong { font-size: 12px; }
+  .analytics-heading { padding: 27px 21px; }
+  .analytics-heading h3 { font-size: 32px; }
+  .analytics-heading p:last-child { font-size: 14px; }
+  .period-toolbar { padding: 15px 19px; }
+  .period-toolbar button { font-size: 12px; }
+  .metric-strip > div { min-height: 145px; padding: 18px 14px; }
+  .metric-strip > div > span { font-size: 12px; }
+  .metric-strip strong { font-size: 21px; }
+  .metric-strip .metric-main strong { font-size: 28px; }
+  .metric-strip small { font-size: 12px; }
+  .analysis-block { padding: 36px 20px; }
+  .block-heading h4 { font-size: 30px; }
+  .block-heading p { font-size: 14px; }
+  .category-chart { height: 335px; }
+  .chart-switch button, .sort-switch button { font-size: 12px; }
+  .category-options button { min-height: 66px; font-size: 12px; }
+  .category-options button strong { font-size: 12px; }
+  .category-options button small { font-size: 11px; }
+  .transaction-info strong, .transaction-list li > strong { font-size: 12px; }
+  .transaction-info small { font-size: 11px; }
+  .data-note { font-size: 13px; }
+}

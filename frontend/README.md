@@ -1,33 +1,51 @@
-# Frontend
+# Frontend do gerenCIA
 
-A página inicial apresenta o projeto e inclui uma demonstração interativa de gastos por categoria com Recharts. Os dados exibidos são fictícios (junho a agosto de 2026).
+Página pública para pessoas físicas, construída com React 19, TypeScript e Vite. A demonstração financeira usa dados **fictícios** de junho a agosto de 2026. Os lançamentos exibidos são exemplos e não formam um extrato completo.
 
-## Executar localmente
+## Executar
 
 ```bash
 cd frontend
 npm install
 npm run dev
+npm run build
 ```
 
-Use `npm run build` para gerar a versão de produção. As rotas `/login` e `/register` mostram uma página informativa até a autenticação ser implementada.
+A página inicial está em `/`. A rota `/register` apresenta o formulário de cadastro com validação local. Nenhuma informação é enviada, pois a API de autenticação ainda não está implementada. A rota `/login` informa que o acesso está em desenvolvimento.
 
-## Responsabilidades
+## Estrutura atual
 
-- src/app/: inicialização, rotas e providers globais.
-- src/pages/: composição das páginas.
-- src/features/: funcionalidades organizadas por domínio.
-- src/components/ui/: componentes visuais reutilizáveis.
-- src/components/dashboard/: cards e gráficos Recharts.
-- src/services/: comunicação tipada com a API.
-- src/hooks/: hooks reutilizáveis.
-- src/types/: contratos compartilhados no frontend.
-- src/styles/: tokens e estilos globais.
-- tests/: configuração e utilidades de testes.
+- `src/pages/ExperiencePage.tsx`: página completa e navegação.
+- `src/pages/RegistrationPage.tsx` e `src/styles/registration.css`: prévia do cadastro com validação local.
+- `src/components/HeroStory.tsx`: mensagem principal e entrada para a demonstração.
+- `src/components/HeroMascotExperience.tsx`: interação com arquivos fictícios, mastigação e insight ilustrativo.
+- `src/components/MascotCalculator.tsx`: mascote vetorial animável.
+- `src/components/InsightCarousel.tsx`: análises ligadas aos mesmos dados da demonstração.
+- `src/components/dashboard/demoData.ts`: registros fictícios originais.
+- `src/components/dashboard/demoModel.ts`: totais, percentuais, variações e textos derivados em um só lugar.
+- `src/components/dashboard/ConnectedDashboard.tsx`: gráficos Recharts por categoria, filtros e lançamentos.
+- `src/hooks/useDemoExperience.ts`: estado do período, categoria e gráfico refletido na URL.
+- `src/styles/tokens.css`, `experience.css`, `experience-responsive.css`, `premium.css`, `data-visuals.css` e `hero-mascot.css`: identidade, superfícies analíticas e responsividade em uso.
 
-O frontend apresentará métricas recebidas da API. Cálculos financeiros e regras
-de autorização permanecerão no backend.
+A abertura usa dois cartões de arquivo cenográficos. Eles podem ser arrastados até o mascote ou acionados por clique, toque e teclado; nenhum arquivo real é enviado ou analisado. O resultado usa os mesmos dados fictícios da dashboard. A animação respeita a preferência por movimento reduzido. A dashboard é carregada em módulo separado, e o carrossel de descobertas é manual.
 
-A dashboard permite alternar entre barras e pizza, ordenar categorias e salvar essas preferências no navegador. A métrica Média por dia considera os dias corridos do mês ou dos três meses selecionados. Detalhes e capturas: `docs/dashboard-update/README.md` (a partir da raiz do repositório).
+## Estado compartilhável
 
-A seção de relatórios inclui um carrossel com três exemplos dos mesmos dados da dashboard. A reprodução automática pode ser pausada e respeita movimento reduzido. Os detalhes das categorias ficam em uma faixa abaixo do gráfico, sem cobrir o total. Estilos compartilhados dos botões: `src/styles/controls.css`. Capturas e verificações: `docs/carousel-update/README.md`.
+Os parâmetros `period`, `category` e `chart` na URL guardam o recorte escolhido. Por exemplo: `/?period=ago&category=Alimentação&chart=bar#demo-categories`. Links das descobertas abrem a demonstração no contexto correspondente, e recarregar mantém a seleção. A preferência de ordenação pode ser salva em `localStorage`; se o armazenamento estiver bloqueado, a página continua funcionando.
+
+## Verificação
+
+Com o servidor local aberto em `http://127.0.0.1:5173` (ou com `GERENCIA_TEST_URL` apontando para outra porta):
+
+```bash
+python scripts/check_front_experience.py
+python scripts/check_front_experience_a11y.py
+python scripts/check_carousel.py
+python scripts/check_dashboard.py
+```
+
+Os scripts usam Playwright e axe para conferir mascote, arrasto, carrossel, links, filtros, URL, visual da abertura, armazenamento bloqueado, acessibilidade básica e larguras de 320, 390, 768 e 1440 px. Capturas ficam em `.impeccable/review/` na raiz do repositório.
+
+## Integração futura
+
+A interface consumirá a API quando autenticação e importação forem disponibilizadas. Cálculos financeiros e autorização dos dados reais pertencem ao backend.

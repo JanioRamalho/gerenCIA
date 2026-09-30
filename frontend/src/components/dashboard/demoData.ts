@@ -15,11 +15,11 @@ type Transaction = {
 };
 
 export const categories: { name: Category; color: string }[] = [
-  { name: "Alimentação", color: "#F2A16B" },
-  { name: "Transporte", color: "#42B9AD" },
-  { name: "Lazer", color: "#9889D9" },
-  { name: "Assinaturas", color: "#E8BA53" },
-  { name: "Outros", color: "#7299A8" },
+  { name: "Alimentação", color: "#E9A87F" },
+  { name: "Transporte", color: "#70C6B5" },
+  { name: "Lazer", color: "#AF9BD8" },
+  { name: "Assinaturas", color: "#D8B968" },
+  { name: "Outros", color: "#82AAB8" },
 ];
 
 export const demo: Record<

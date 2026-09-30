@@ -14,11 +14,12 @@
   --space-4: 16px;
   --space-6: 24px;
   --space-8: 32px;
-  --font-body: "IBM Plex Sans", system-ui, sans-serif;
-  --font-heading: "Bricolage Grotesque", system-ui, sans-serif;
+  --font-body: "DM Sans", system-ui, sans-serif;
+  --font-heading: "DM Sans", system-ui, sans-serif;
+  --font-display: "Instrument Serif", Georgia, serif;
   --text-small: 0.875rem;
   --text-body: 1rem;
-  --radius-control: 8px;
+  --radius-control: 5px;
   --duration-feedback: 160ms;
   --color-text: var(--color-petrol-900);
   --color-text-muted: var(--color-petrol-600);
