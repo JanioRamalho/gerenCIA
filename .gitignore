@@ -46,3 +46,7 @@ Thumbs.db
 # Local frontend audit dependencies
 .audit-tools/
 .audit-tools-js/
+# Generated design review artifacts
+.impeccable/review/
+.impeccable/build/
+.impeccable/mocks/
