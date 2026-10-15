@@ -1,16 +1,17 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
 import App from "./pages/ExperiencePage";
+import { AuthProvider } from "./auth/AuthContext";
 import "./styles/tokens.css";
-import "./styles/experience.css";
-import "./styles/experience-responsive.css";
-import "./styles/premium.css";
-import "./styles/data-visuals.css";
-import "./styles/hero-mascot.css";
-import "./styles/identity.css";
+import "./styles/base.css";
+import "./styles/site.css";
+import "./styles/figures.css";
+import "./styles/dashboard.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <App />
+    <AuthProvider>
+      <App />
+    </AuthProvider>
   </React.StrictMode>,
 );

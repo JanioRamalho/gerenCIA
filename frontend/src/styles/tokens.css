@@ -1,36 +1,103 @@
-﻿/* Gerencia: primitive, semantic and component tokens. */
+﻿/* gerenCIA after the Finmax reference: a petrol opening that glows into a white page,
+   pale panels holding white screens, mint pills for the action. */
+@font-face {
+  font-family: "Inter Tight";
+  src: url("/fonts/inter-tight-latin-variable.woff2") format("woff2");
+  font-weight: 400 700;
+  font-style: normal;
+  font-display: swap;
+}
+
 :root {
-  --color-petrol-900: #103742;
-  --color-petrol-950: #0c3039;
-  --color-petrol-600: #48676e;
-  --color-mint-200: #a7e5d6;
-  --color-mint-100: #d9eee7;
-  --color-paper-50: #f7faf8;
-  --color-white: #ffffff;
-  --color-teal-700: #226b63;
-  --color-coral-300: #f2a16b;
+  /* Night: header, opening, footer */
+  --night: #0b2a33;
+  --night-raised: #153f4a;
+  --night-hover: #1d4f5b;
+  --night-line: rgba(238, 245, 242, 0.16);
+  --on-night: #eef5f2;
+  --on-night-title: #f6faf8;
+  --on-night-lead: #d4e4de;
+  --on-night-2: #a9c6c0;
+
+  /* Ground, rounded blocks, panels and the white screens inside them */
+  --ground: #e3ede8;
+  --ground-glow: rgba(167, 229, 214, 0.55);
+  --panel: #eef4f1;
+  --paper: #ffffff;
+  --line: #cddbd6;
+  --field-border: #698388;
+
+  /* Ink */
+  --ink: #0f3440;
+  --ink-2: #45656b;
+
+  /* Brand: mint carries the action and the datum in focus */
+  --mint: #a7e5d6;
+  --mint-hover: #c4f0e4;
+  --mint-wash: #ddf3ec;
+  --mint-deep: #6fcfb5;
+  --teal: #1e6b62;
+  --error: #a3341f;
+  --focus: var(--teal);
+
+  /* Data marks */
+  --bar: #5b8a88;
+  --bar-focus: var(--ink);
+
+  /* Figure 1: the two statements behind the front one */
+  --stack-back: #c9dbd4;
+  --stack-deep: #8fb3aa;
+
+  /* Depth */
+  --shadow-soft: 0 1px 2px rgba(11, 42, 51, 0.05), 0 14px 34px -20px rgba(11, 42, 51, 0.28);
+  --shadow-card: 0 1px 2px rgba(11, 42, 51, 0.06), 0 18px 40px -22px rgba(11, 42, 51, 0.32);
+  --shadow-float: 0 2px 6px rgba(0, 0, 0, 0.2), 0 30px 60px -24px rgba(0, 0, 0, 0.55);
+
+  /* Shape: blocks hold panels, panels hold screens, screens hold controls, actions are pills */
+  --radius-block: clamp(24px, 2.6vw, 36px);
+  --block-inset: clamp(8px, 1.2vw, 20px);
+  --radius-panel: 24px;
+  --radius-card: 16px;
+  --radius-control: 12px;
+  --radius-small: 8px;
+  --radius-pill: 999px;
+
+  /* Type: one family, tight and heavy at the top */
+  --font-sans: "Inter Tight", system-ui, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
+  --text-display: clamp(2.25rem, 1.35rem + 2.6vw, 3.625rem);
+  --text-heading: clamp(1.75rem, 1.25rem + 1.35vw, 2.5rem);
+  --text-title: clamp(1.25rem, 1.1rem + 0.45vw, 1.5rem);
+  --text-subtitle: clamp(1.0625rem, 0.98rem + 0.25vw, 1.25rem);
+  --text-lead: 1.0625rem;
+  --text-body: 1rem;
+  --text-small: 0.875rem;
+
+  /* Space */
+  --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
   --space-4: 16px;
-  --space-6: 24px;
-  --space-8: 32px;
-  --font-body: "DM Sans", system-ui, sans-serif;
-  --font-heading: "DM Sans", system-ui, sans-serif;
-  --font-display: "Instrument Serif", Georgia, serif;
-  --text-small: 0.875rem;
-  --text-body: 1rem;
-  --radius-control: 5px;
-  --duration-feedback: 160ms;
-  --color-text: var(--color-petrol-900);
-  --color-text-muted: var(--color-petrol-600);
-  --color-surface: var(--color-paper-50);
-  --color-surface-raised: var(--color-white);
-  --color-action: var(--color-mint-200);
-  --color-action-text: var(--color-petrol-900);
-  --color-focus: var(--color-teal-700);
-  --spacing-section: clamp(64px, 7vw, 104px);
-  --button-background: var(--color-action);
-  --button-text: var(--color-action-text);
-  --control-min-height: 44px;
-  --dashboard-gutter: clamp(16px, 2vw, 28px);
+  --space-5: 24px;
+  --space-6: 32px;
+  --space-7: 48px;
+  --space-8: 64px;
+  --section-space: clamp(48px, 5vw, 80px);
+  --gutter: clamp(16px, 3.4vw, 48px);
+  --control-height: 40px;
+
+  /* Motion */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --duration: 180ms;
 }
+
+/* A coarse pointer needs the larger target; a mouse does not */
+@media (pointer: coarse) { :root { --control-height: 44px; } }
+
+/* Petrol regions: light ink, mint focus */
+.on-night {
+  --focus: var(--mint);
+  color: var(--on-night);
+  background: var(--night);
+}
+.on-night ::selection { background: var(--mint); color: var(--ink); }
