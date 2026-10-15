@@ -1,8 +1,11 @@
 --
--- PostgreSQL database dump
+-- Esquema inicial do gerenCIA para PostgreSQL 18.
+-- Baseado no dump original, com correções de integridade.
+-- Execute em um banco vazio; veja docs/database-setup.md.
 --
 
-\restrict 7BZbAvuYGGigRWhEYFxsSeq7CRm7bDHGhpIDQkB1q14HhIt6gbS7l8rIPoPuT1G
+\set ON_ERROR_STOP on
+BEGIN;
 
 -- Dumped from database version 18.6
 -- Dumped by pg_dump version 18.6
@@ -180,7 +183,11 @@ CREATE TABLE public.transactions (
     created_at timestamp with time zone DEFAULT now() NOT NULL,
     CONSTRAINT transactions_category_source_valid CHECK ((category_source = ANY (ARRAY['personal_rule'::text, 'bank'::text, 'merchant_rule'::text, 'keyword'::text, 'manual'::text, 'uncategorized'::text]))),
     CONSTRAINT transactions_description_not_empty CHECK ((length(TRIM(BOTH FROM description_raw)) > 0)),
-    CONSTRAINT transactions_installments_valid CHECK ((((installment_current IS NULL) AND (installment_total IS NULL)) OR ((installment_current > 0) AND (installment_total > 0) AND (installment_current <= installment_total)))),
+    CONSTRAINT transactions_installments_valid CHECK (
+        (installment_current IS NULL AND installment_total IS NULL)
+        OR (installment_current IS NOT NULL AND installment_total IS NOT NULL
+            AND installment_current > 0 AND installment_total > 0
+            AND installment_current <= installment_total)),
     CONSTRAINT transactions_source_row_positive CHECK ((source_row > 0)),
     CONSTRAINT transactions_type_valid CHECK ((transaction_type = ANY (ARRAY['purchase'::text, 'fee'::text, 'refund'::text, 'payment'::text, 'other'::text])))
 );
@@ -278,7 +285,7 @@ ALTER TABLE ONLY public.bronze_rows
 --
 
 ALTER TABLE ONLY public.bronze_rows
-    ADD CONSTRAINT bronze_rows_upload_row_uq UNIQUE (upload_id, row_number);
+    ADD CONSTRAINT bronze_rows_upload_row_uq UNIQUE NULLS NOT DISTINCT (upload_id, sheet_name, row_number);
 
 
 --
@@ -628,7 +635,7 @@ ALTER TABLE ONLY public.sessions
 --
 
 ALTER TABLE ONLY public.transactions
-    ADD CONSTRAINT transactions_bronze_row_fk FOREIGN KEY (bronze_row_id, upload_id, user_id) REFERENCES public.bronze_rows(id, upload_id, user_id) ON DELETE SET NULL;
+    ADD CONSTRAINT transactions_bronze_row_fk FOREIGN KEY (bronze_row_id, upload_id, user_id) REFERENCES public.bronze_rows(id, upload_id, user_id) ON DELETE SET NULL (bronze_row_id);
 
 
 --
@@ -682,5 +689,10 @@ ALTER TABLE ONLY public.uploads
 -- PostgreSQL database dump complete
 --
 
-\unrestrict 7BZbAvuYGGigRWhEYFxsSeq7CRm7bDHGhpIDQkB1q14HhIt6gbS7l8rIPoPuT1G
+-- Regras compartilhadas com a atualização de bancos existentes.
+\ir sql/category_integrity.sql
+\ir sql/display_codes.sql
+\ir sql/seed_categories.sql
+
+COMMIT;
 

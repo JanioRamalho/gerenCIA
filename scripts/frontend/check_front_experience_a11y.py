@@ -27,10 +27,11 @@ with sync_playwright() as playwright:
         page.goto(os.environ.get("GERENCIA_TEST_URL", "http://127.0.0.1:5173") + "/" + route, wait_until="networkidle")
         if route == "login":
             assert page.locator(".access-shell").count() == 1
-            assert page.locator(".access-copy .primary-button").count() == 1
+            assert page.locator(".access-form .form-submit").count() == 1
+            assert page.locator(".access-form input").count() == 2
         else:
             assert page.locator(".registration-page").count() == 1
-            assert page.locator(".registration-field input").count() == 4
+            assert page.locator(".form-field input").count() == 4
         page.add_script_tag(path=str(axe_path))
         report = page.evaluate("""async () => await axe.run(document, {runOnly: {type: 'tag', values: ['wcag2a','wcag2aa','wcag21aa','wcag22aa']}})""")
         violations = [{"id": item["id"], "nodes": [node["target"] for node in item["nodes"]]} for item in report["violations"]]
