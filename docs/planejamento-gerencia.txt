@@ -1,6 +1,10 @@
 PLANEJAMENTO DA APLICAÇÃO GERENCIA
 Sistema inteligente de gestão e análise financeira
 
+Leitura rápida: docs/arquitetura.md apresenta o mapa visual e o estado atual.
+Este documento descreve a arquitetura alvo e os requisitos da primeira versão;
+a presença de uma funcionalidade no plano não significa que já foi implementada.
+
 ============================================================
 1. VISÃO GERAL
 ============================================================
@@ -425,7 +429,7 @@ Tabelas principais:
 - users;
 - sessions;
 - uploads;
-- column_mappings;
+- upload_mappings;
 - bronze_rows;
 - transactions;
 - categories;
@@ -580,6 +584,10 @@ Interações:
 
 O frontend nunca recalculará as métricas financeiras. Ele receberá dados
 prontos em JSON e os apresentará com Recharts.
+
+Exceção de escopo: a demonstração pública usa somente dados fictícios e pode
+derivar métricas em demoModel.ts. Essa lógica não processará dados financeiros
+reais dos usuários, cujos cálculos continuarão no backend.
 
 
 ============================================================
