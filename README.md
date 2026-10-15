@@ -3,24 +3,17 @@
 Aplicação web de gestão e análise financeira baseada em faturas CSV e XLSX.
 
 O frontend já oferece uma demonstração interativa com dados fictícios. A API
-possui uma rota de saúde; os demais recursos serão construídos por etapas, com
+possui rotas de saúde, verificação do banco e consulta de categorias; os demais recursos serão construídos por etapas, com
 o backend desenvolvido de forma acompanhada e didática.
 
 ## Arquitetura
 
-    frontend React + Recharts
-            |
-            v
-    backend FastAPI
-            |
-            +-- autenticação e APIs
-            +-- pipeline Raw / Bronze / Silver / Gold
-            +-- qualidade de dados
-            +-- analytics e recorrências
-            +-- integração com IA
-            |
-            v
-    PostgreSQL
+React e Recharts formam a interface; FastAPI concentra os casos de uso,
+o processamento de faturas e o acesso ao PostgreSQL.
+
+Comece pelo [mapa da arquitetura com diagramas Mermaid](docs/arquitetura.md).
+Ele mostra as responsabilidades, o caminho de uma fatura e o estado atual.
+O [planejamento completo](docs/planejamento-gerencia.txt) detalha os requisitos.
 
 ## Diretórios
 
@@ -41,7 +34,7 @@ o backend desenvolvido de forma acompanhada e didática.
 8. Assistente com IA.
 9. Integração, testes e empacotamento.
 
-O planejamento detalhado está em docs/planejamento-gerencia.txt.
+O mapa da arquitetura distingue as funcionalidades existentes das etapas previstas.
 
 ## Como iniciar a API
 
@@ -53,7 +46,13 @@ No PowerShell, a partir da pasta principal do projeto, execute sempre que quiser
 
 Deixe o terminal aberto enquanto usa a API. Acesse http://127.0.0.1:8000/api/health para verificar a resposta {"status":"ok"} ou http://127.0.0.1:8000/docs para abrir a documentação automática. Para parar o servidor, pressione Ctrl+C.
 
-O comando usa o ambiente virtual .venv da pasta principal, com FastAPI e Uvicorn instalados. A API contém, por enquanto, somente a rota de saúde; o frontend ainda usa dados de demonstração.
+O comando usa o ambiente virtual .venv da pasta principal, com FastAPI e Uvicorn instalados. A conexão com PostgreSQL exige `DATABASE_URL` no `.env` e o driver `psycopg` no ambiente Python. Com a API no ar, o `npm run dev` do frontend encaminha `/api` para `http://127.0.0.1:8000`; para apontar para outro endereço, defina `GERENCIA_API_URL`. Cadastro e login funcionam de verdade; a análise financeira ainda usa dados de demonstração.
+
+## Banco de dados
+
+O script `scripts/init.sql` cria o esquema e as categorias iniciais em um banco
+PostgreSQL 18 vazio. Ele não cria o banco em si. Consulte o
+[guia de instalação, atualização e testes](docs/database-setup.md).
 
 ## Como iniciar o frontend
 
