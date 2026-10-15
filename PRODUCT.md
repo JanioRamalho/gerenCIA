@@ -20,13 +20,13 @@ O percurso planejado liga o arquivo de origem à revisão dos dados e à anális
 
 ## Operating Context
 
-O frontend é uma aplicação React, TypeScript e Vite. Os gráficos interativos usam Recharts. A demonstração atual usa valores fictícios de junho, julho e agosto de 2026, com alguns lançamentos exemplares por mês.
+O frontend é uma aplicação React, TypeScript e Vite. Os gráficos interativos usam Recharts. A demonstração atual usa valores fictícios de junho, julho e agosto de 2026, com o conjunto completo de lançamentos de cada mês.
 
 ## Capabilities and Constraints
 
 - A página pública e os gráficos demonstrativos funcionam sem cadastro.
-- Autenticação, importação de faturas e análise de dados pessoais ainda estão em desenvolvimento. `/register` demonstra um formulário com validação local, sem enviar ou salvar dados; `/login` é uma página informativa.
-- Os totais por categoria não representam a soma apenas dos lançamentos exibidos; estes são exemplos de um conjunto fictício maior.
+- Cadastro e login funcionam: a conta é criada com nome, e-mail e senha, e a sessão fica num cookie do navegador. Importação de faturas e análise de dados pessoais ainda estão em desenvolvimento, e a conta ainda não guarda nenhuma fatura.
+- Cada total por categoria é a soma exata dos lançamentos fictícios do período, e a demonstração mostra essa conciliação.
 - Cálculos financeiros e regras de autorização dos dados reais pertencerão ao backend.
 
 ## Brand Commitments
