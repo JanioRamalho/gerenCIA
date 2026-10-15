@@ -11,6 +11,7 @@ from sqlalchemy import (
     DateTime,
     ForeignKey,
     ForeignKeyConstraint,
+    Identity,
     Index,
     Integer,
     Numeric,
@@ -27,7 +28,13 @@ from sqlalchemy.orm import Mapped, mapped_column
 from app.db.base import Base
 
 
-class User(Base):
+class DisplayCodeMixin:
+    """Short code for display; UUID primary keys retain the relationships."""
+
+    code: Mapped[int] = mapped_column(BigInteger, Identity(always=True), unique=True, nullable=False)
+
+
+class User(DisplayCodeMixin, Base):
     __tablename__ = "users"
     __table_args__ = (
         CheckConstraint("length(trim(name)) > 0", name="users_name_not_empty"),
@@ -43,7 +50,7 @@ class User(Base):
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
-class SessionRecord(Base):
+class SessionRecord(DisplayCodeMixin, Base):
     __tablename__ = "sessions"
     __table_args__ = (
         CheckConstraint("expires_at > created_at", name="sessions_expiry_after_creation"),
@@ -59,7 +66,7 @@ class SessionRecord(Base):
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
-class Upload(Base):
+class Upload(DisplayCodeMixin, Base):
     __tablename__ = "uploads"
     __table_args__ = (
         CheckConstraint("length(trim(original_filename)) > 0", name="uploads_filename_not_empty"),
@@ -91,7 +98,7 @@ class Upload(Base):
     processing_finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
 
 
-class UploadMapping(Base):
+class UploadMapping(DisplayCodeMixin, Base):
     __tablename__ = "upload_mappings"
     __table_args__ = (
         ForeignKeyConstraint(["upload_id", "user_id"], ["uploads.id", "uploads.user_id"], ondelete="CASCADE", name="upload_mappings_upload_user_fk"),
@@ -107,13 +114,16 @@ class UploadMapping(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
-class BronzeRow(Base):
+class BronzeRow(DisplayCodeMixin, Base):
     __tablename__ = "bronze_rows"
     __table_args__ = (
         ForeignKeyConstraint(["upload_id", "user_id"], ["uploads.id", "uploads.user_id"], ondelete="CASCADE", name="bronze_rows_upload_user_fk"),
         CheckConstraint("row_number > 0", name="bronze_rows_row_number_positive"),
         CheckConstraint("jsonb_typeof(raw_data) = 'object'", name="bronze_rows_raw_is_object"),
-        UniqueConstraint("upload_id", "row_number", name="bronze_rows_upload_row_uq"),
+        UniqueConstraint(
+            "upload_id", "sheet_name", "row_number",
+            name="bronze_rows_upload_row_uq", postgresql_nulls_not_distinct=True,
+        ),
         UniqueConstraint("id", "upload_id", "user_id", name="bronze_rows_id_upload_user_uq"),
         Index("bronze_rows_user_upload_idx", "user_id", "upload_id"),
     )
@@ -128,7 +138,9 @@ class BronzeRow(Base):
     ingested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
-class Category(Base):
+class Category(DisplayCodeMixin, Base):
+    """Ownership is immutable and checked by the SQL installation's triggers."""
+
     __tablename__ = "categories"
     __table_args__ = (
         CheckConstraint("length(trim(name)) > 0", name="categories_name_not_empty"),
@@ -146,15 +158,21 @@ class Category(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
-class Transaction(Base):
+class Transaction(DisplayCodeMixin, Base):
     __tablename__ = "transactions"
     __table_args__ = (
         ForeignKeyConstraint(["upload_id", "user_id"], ["uploads.id", "uploads.user_id"], ondelete="CASCADE", name="transactions_upload_user_fk"),
-        ForeignKeyConstraint(["bronze_row_id", "upload_id", "user_id"], ["bronze_rows.id", "bronze_rows.upload_id", "bronze_rows.user_id"], ondelete="SET NULL", name="transactions_bronze_row_fk"),
+        ForeignKeyConstraint(["bronze_row_id", "upload_id", "user_id"], ["bronze_rows.id", "bronze_rows.upload_id", "bronze_rows.user_id"], ondelete="SET NULL (bronze_row_id)", name="transactions_bronze_row_fk"),
         CheckConstraint("length(trim(description_raw)) > 0", name="transactions_description_not_empty"),
         CheckConstraint("transaction_type IN ('purchase', 'fee', 'refund', 'payment', 'other')", name="transactions_type_valid"),
         CheckConstraint("category_source IN ('personal_rule', 'bank', 'merchant_rule', 'keyword', 'manual', 'uncategorized')", name="transactions_category_source_valid"),
-        CheckConstraint("(installment_current IS NULL AND installment_total IS NULL) OR (installment_current > 0 AND installment_total > 0 AND installment_current <= installment_total)", name="transactions_installments_valid"),
+        CheckConstraint(
+            "(installment_current IS NULL AND installment_total IS NULL) OR "
+            "(installment_current IS NOT NULL AND installment_total IS NOT NULL "
+            "AND installment_current > 0 AND installment_total > 0 "
+            "AND installment_current <= installment_total)",
+            name="transactions_installments_valid",
+        ),
         CheckConstraint("source_row > 0", name="transactions_source_row_positive"),
         Index("transactions_user_date_idx", "user_id", "transaction_date"),
         Index("transactions_user_category_date_idx", "user_id", "category_id", "transaction_date"),
@@ -182,7 +200,7 @@ class Transaction(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
-class CategoryRule(Base):
+class CategoryRule(DisplayCodeMixin, Base):
     __tablename__ = "category_rules"
     __table_args__ = (
         CheckConstraint("match_type IN ('merchant', 'description_contains')", name="category_rules_match_type_valid"),
@@ -201,7 +219,7 @@ class CategoryRule(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
-class QualityCheck(Base):
+class QualityCheck(DisplayCodeMixin, Base):
     __tablename__ = "quality_checks"
     __table_args__ = (
         ForeignKeyConstraint(["upload_id", "user_id"], ["uploads.id", "uploads.user_id"], ondelete="CASCADE", name="quality_checks_upload_user_fk"),
@@ -228,7 +246,7 @@ class QualityCheck(Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
-class RejectedRow(Base):
+class RejectedRow(DisplayCodeMixin, Base):
     __tablename__ = "rejected_rows"
     __table_args__ = (
         ForeignKeyConstraint(["upload_id", "user_id"], ["uploads.id", "uploads.user_id"], ondelete="CASCADE", name="rejected_rows_upload_user_fk"),

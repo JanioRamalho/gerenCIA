@@ -1,13 +1,18 @@
 from fastapi import Depends, FastAPI, HTTPException
+from fastapi.exceptions import RequestValidationError
 from sqlalchemy import select, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from app.api.auth import router as auth_router
+from app.api.errors import validation_error_handler
 from app.db.session import engine, get_db
 from app.models import Category
 from app.schemas.categories import CategoryResponse
 
 app = FastAPI(title="gerenCIA API")
+app.add_exception_handler(RequestValidationError, validation_error_handler)
+app.include_router(auth_router)
 
 @app.get("/api/health")
 def health():
