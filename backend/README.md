@@ -1,8 +1,62 @@
 # Backend
 
-A aplicação FastAPI foi iniciada em app/api/main.py com a rota
-GET /api/health. Os demais módulos serão criados nas próximas
-etapas. Consulte o README principal para o comando de inicialização da API.
+A aplicação FastAPI tem as rotas GET /api/health, GET /api/health/database,
+GET /api/categories e as de autenticação abaixo. Há conexão PostgreSQL e
+modelos SQLAlchemy; o processamento de faturas ainda será implementado.
+Consulte o README principal para o comando de inicialização da API.
+
+## Autenticação
+
+| Rota | O que faz |
+|---|---|
+| POST /api/auth/register | Cria a conta (nome, e-mail e senha) e já abre a sessão. 409 se o e-mail já existe |
+| POST /api/auth/login | Abre a sessão. 401 com a mesma mensagem para e-mail desconhecido e senha errada |
+| POST /api/auth/logout | Revoga a sessão no banco e apaga o cookie. Sempre responde 204 |
+| GET /api/auth/me | Devolve o usuário da sessão, ou 401 |
+
+- A senha é guardada só como hash scrypt com sal próprio (`app/core/security.py`);
+  a verificação usa comparação em tempo constante e roda mesmo para e-mail
+  desconhecido, para o tempo de resposta não revelar quem tem conta.
+- A sessão é um token aleatório num cookie `gerencia_session` (`HttpOnly`,
+  `SameSite=Lax`, e `Secure` quando `APP_ENV=production`). O banco guarda só o
+  SHA-256 do token, com validade e data de revogação.
+- O usuário sempre vem da sessão. Para proteger uma rota nova, use a dependência
+  `get_current_user` de `app/api/deps.py`; nenhuma rota recebe `user_id` do cliente.
+- Erros de validação voltam como `{"detail": ..., "fields": {campo: mensagem}}`,
+  em português, para o frontend mostrar junto de cada campo.
+- Configuração opcional no `.env`: `SESSION_TTL_DAYS` (padrão 14) e
+  `SESSION_COOKIE_SECURE` (padrão `true` só em produção).
+
+Ainda não há limite de tentativas de login, e-mail de confirmação nem
+recuperação de senha.
+
+O [mapa da arquitetura](../docs/arquitetura.md) mostra o fluxo completo e as
+responsabilidades de cada módulo. A consulta de categorias ainda é feita
+diretamente pela rota; sua separação em serviço e repositório é o ajuste
+pendente antes de ampliar os endpoints.
+
+## Banco e verificações
+
+O esquema completo é instalado por `scripts/init.sql`, com 10 tabelas,
+proteções de integridade e categorias globais iniciais. A configuração e a
+atualização de bancos existentes estão no [guia do banco](../docs/database-setup.md).
+
+Todas as tabelas têm um `code` numérico automático para consulta e mantêm
+`id` UUID como chave primária. O endpoint de categorias retorna os dois campos.
+
+Os modelos mapeiam esse esquema. `Base.metadata.create_all()` isoladamente
+não instala os triggers que protegem os vínculos com categorias.
+
+Para executar os testes com um PostgreSQL temporário e isolado:
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -o pythonpath=backend backend/tests -q
+```
+
+`test_auth.py` testa as rotas de autenticação contra esse mesmo banco
+temporário e nunca usa o `DATABASE_URL` do `.env`. Se o Windows negar acesso à
+pasta temporária do pytest, acrescente `--basetemp` apontando para uma pasta
+sua.
 
 ## Responsabilidades previstas
 
