@@ -1,0 +1,131 @@
+/* Figure 3: the interactive demonstration, a white screen on the mint stage */
+.analytics-workspace {
+  min-width: 0; padding: clamp(16px, 2.2vw, 32px);
+  border-radius: var(--radius-card); background: var(--paper); color: var(--ink); box-shadow: var(--shadow-card);
+  --focus: var(--teal);
+}
+.workspace-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--space-3); }
+.demo-badge {
+  display: inline-flex; align-items: center; gap: var(--space-2);
+  padding: 6px 14px; border-radius: var(--radius-pill); background: var(--mint-wash);
+  font-size: var(--text-small); font-weight: 600; color: var(--ink);
+}
+.dashboard-loading { padding: var(--space-8) var(--space-5); border-radius: var(--radius-card); background: var(--paper); color: var(--ink-2); text-align: center; }
+
+.period-toolbar { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-2) var(--space-3); padding-block: var(--space-4); }
+.toolbar-label { margin-right: var(--space-2); font-size: var(--text-small); font-weight: 600; color: var(--ink-2); }
+.period-toolbar button {
+  min-height: var(--control-height); padding: 0 18px;
+  border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--paper);
+  font-size: 0.875rem; font-weight: 600;
+  transition: background-color var(--duration) ease, border-color var(--duration) ease, color var(--duration) ease;
+}
+.period-toolbar button:hover { border-color: var(--ink-2); }
+.period-toolbar button[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--paper); }
+
+/* Period summary: four measures, each on its own pale card */
+.metric-strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); }
+.metric-strip > div { display: grid; align-content: start; gap: var(--space-2); padding: var(--space-4); border-radius: var(--radius-card); background: var(--panel); }
+.metric-strip > .metric-main { background: var(--mint-wash); }
+.metric-strip dt { font-size: var(--text-small); font-weight: 600; color: var(--ink-2); }
+.metric-strip dd { display: grid; gap: var(--space-2); }
+.metric-strip strong { font-size: clamp(1.375rem, 1rem + 0.9vw, 1.75rem); font-weight: 600; line-height: 1.1; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; }
+.metric-strip small { font-size: var(--text-small); color: var(--ink-2); }
+.delta-bars { display: grid; gap: 4px; max-width: 220px; }
+.delta-bars > span { display: grid; grid-template-columns: 2.25rem minmax(0, 1fr); align-items: center; gap: var(--space-2); }
+.delta-bars b { font-size: var(--text-small); font-weight: 600; color: var(--ink-2); }
+.delta-bars i { display: block; height: 8px; border-radius: 0 4px 4px 0; background: var(--bar); }
+.delta-bars .is-current i { background: var(--ink); }
+
+/* Analysis blocks */
+.analysis-block { padding-block: var(--space-6) var(--space-5); border-bottom: 1px solid var(--line); scroll-margin-top: var(--space-5); }
+.block-heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: var(--space-3); margin-bottom: var(--space-4); }
+.block-heading h3 { font-size: var(--text-subtitle); font-weight: 600; line-height: 1.25; letter-spacing: -0.02em; }
+.block-heading h3 span { color: var(--teal); }
+.block-heading p { margin-top: var(--space-1); font-size: var(--text-small); color: var(--ink-2); }
+.block-count { padding: 6px 14px; border-radius: var(--radius-pill); background: var(--panel); font-size: var(--text-small); font-weight: 600; color: var(--ink-2); font-variant-numeric: tabular-nums; }
+
+.category-layout { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(24px, 3vw, 40px); }
+.category-chart-area { display: grid; align-content: start; gap: var(--space-4); min-width: 0; }
+.category-chart { position: relative; height: 260px; }
+.category-chart.is-donut { height: 280px; }
+.category-chart .recharts-surface { overflow: visible; }
+.category-chart .recharts-wrapper:focus, .category-chart .recharts-surface:focus { outline: none; }
+.category-chart text { font-family: var(--font-sans); }
+.donut-center {
+  position: absolute; inset: 50% auto auto 50%; transform: translate(-50%, -50%);
+  display: grid; justify-items: center; gap: 2px; text-align: center; pointer-events: none;
+}
+.donut-center small { font-size: var(--text-small); color: var(--ink-2); }
+.donut-center strong { font-size: 1.25rem; font-weight: 600; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; }
+.chart-detail { padding: var(--space-3) var(--space-4); border-radius: var(--radius-control); background: var(--panel); font-size: var(--text-small); color: var(--ink-2); text-wrap: pretty; }
+.chart-detail strong { color: var(--ink); font-weight: 650; }
+.category-dot { vertical-align: -1px; }
+
+.category-ledger { min-width: 0; }
+.ledger-heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: var(--space-3); padding-bottom: var(--space-3); border-bottom: 1px solid var(--ink); }
+.ledger-heading strong { font-weight: 600; }
+.category-options { display: grid; }
+.category-options button {
+  display: grid; grid-template-columns: minmax(0, 1fr) auto 3rem; align-items: center; gap: var(--space-3);
+  min-height: 44px; padding: 0 var(--space-3);
+  border: 0; border-bottom: 1px solid var(--line); background: transparent;
+  text-align: left; font-variant-numeric: tabular-nums;
+  transition: background-color var(--duration) ease;
+}
+.category-options button:hover { background: var(--panel); }
+.category-options button[aria-pressed="true"] { background: var(--mint-wash); font-weight: 650; }
+.category-options button:focus-visible { outline-offset: -3px; }
+.category-options span { display: inline-flex; align-items: center; gap: var(--space-3); min-width: 0; }
+.category-options i { width: 10px; height: 10px; flex: none; border-radius: 3px; }
+.category-options strong { font-weight: inherit; white-space: nowrap; }
+.category-options small { justify-self: end; font-size: var(--text-small); color: var(--ink-2); }
+.clear-category { margin-top: var(--space-2); font-size: var(--text-small); }
+
+/* Entries table: the sum of every listed entry closes on the total */
+.transaction-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
+.transaction-table th, .transaction-table td { padding: 10px var(--space-4) 10px 0; text-align: left; vertical-align: top; }
+.transaction-table th:last-child, .transaction-table td:last-child { padding-right: 0; text-align: right; white-space: nowrap; }
+.transaction-table thead th { font-size: var(--text-small); font-weight: 600; color: var(--ink-2); border-bottom: 1px solid var(--ink); }
+.transaction-table tbody td { border-bottom: 1px solid var(--line); }
+.transaction-table td:first-child { width: 5.5rem; color: var(--ink-2); white-space: nowrap; }
+.transaction-table td strong { display: block; font-weight: 600; }
+.transaction-table td small { display: block; font-size: var(--text-small); color: var(--ink-2); }
+.transaction-table td:last-child { font-weight: 600; }
+.transaction-table tfoot th, .transaction-table tfoot td { padding-top: var(--space-3); border-top: 1px solid var(--ink); font-weight: 700; text-align: left; }
+.transaction-table tfoot td { text-align: right; }
+.show-entries { margin-top: var(--space-3); }
+.transactions-empty { display: grid; justify-items: start; gap: var(--space-2); padding: var(--space-5) 0; border-top: 1px solid var(--ink); color: var(--ink-2); }
+.analytics-workspace > .figure-source { margin-top: var(--space-4); }
+.transactions-block { border-bottom: 0; padding-bottom: 0; }
+
+@media (max-width: 1080px) {
+  .metric-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .category-layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 640px) {
+  .metric-strip > .metric-main { grid-column: 1 / -1; order: -2; }
+  .metric-strip > div:nth-child(2) { grid-column: 1 / -1; order: 1; }
+  .metric-strip > div:not(.metric-main) strong { font-size: 1.25rem; }
+  .metric-strip > div { padding: var(--space-4); }
+  .period-toolbar { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-2); }
+  .toolbar-label { grid-column: 1 / -1; }
+  .period-toolbar button { padding: 0 6px; font-size: 0.8125rem; white-space: nowrap; }
+  .category-chart { height: 230px; }
+  .category-chart.is-donut { height: 250px; }
+  .transaction-table thead { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); }
+  .transaction-table tbody tr {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 2px var(--space-3);
+    padding-block: var(--space-3); border-bottom: 1px solid var(--line);
+  }
+  .transaction-table tbody td { padding: 0; border: 0; }
+  .transaction-table td:first-child { width: auto; grid-column: 1; grid-row: 3; font-size: var(--text-small); }
+  .transaction-table td:nth-child(2) { grid-column: 1; grid-row: 1; }
+  .transaction-table td:nth-child(3) { grid-column: 1; grid-row: 2; font-size: var(--text-small); }
+  .transaction-table td:last-child { grid-column: 2; grid-row: 1; }
+  .transaction-table tfoot tr { display: flex; justify-content: space-between; gap: var(--space-3); border-top: 1px solid var(--ink); }
+  .transaction-table tfoot th, .transaction-table tfoot td { padding: var(--space-3) 0 0; border: 0; }
+}
+@media (max-width: 360px) {
+  .period-toolbar { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
