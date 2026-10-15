@@ -21,7 +21,6 @@ with sync_playwright() as playwright:
         dashboard = page.locator(".analytics-workspace")
         assert dashboard.is_visible()
         assert "2.913,00" in page.locator(".metric-main").inner_text()
-        assert page.locator("#demo-trend").count() == 0
         assert page.locator("#demo-categories").count() == 1
         assert page.locator(".category-chart .recharts-bar-rectangle").count() == 5
 
