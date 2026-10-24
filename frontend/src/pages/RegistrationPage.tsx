@@ -35,9 +35,13 @@ export default function RegistrationPage() {
   const [submitting, setSubmitting] = useState(false);
   const alertRef = useRef<HTMLParagraphElement>(null);
 
-  // Creating the account signs the person in; either way the next stop is the home page.
   useEffect(() => {
-    if (status === "authenticated") window.location.replace("/");
+    document.title = "Criar conta | gerenCIA";
+  }, []);
+
+  // Criar a conta já deixa a pessoa logada; nos dois casos, o destino é o painel.
+  useEffect(() => {
+    if (status === "authenticated") window.location.replace("/app");
   }, [status]);
 
   const change = (field: FieldName, value: string) => {
