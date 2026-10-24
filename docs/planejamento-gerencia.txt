@@ -9,27 +9,45 @@ a presença de uma funcionalidade no plano não significa que já foi implementa
 1. VISÃO GERAL
 ============================================================
 
-O Gerencia será uma aplicação web completa para transformar faturas
-financeiras em informações organizadas e fáceis de compreender.
+O Gerencia será uma aplicação web completa para transformar extratos
+bancários e faturas de cartão em informações organizadas e fáceis de
+compreender.
+
+A funcionalidade principal é enviar extratos e faturas e manter o
+histórico de todos os arquivos enviados, com as transações de cada um.
+
+A análise de dados é o eixo central do projeto e se apoia em três
+conceitos, explicados em docs/analise-de-dados.md:
+- transformação dos dados com pandas (seção 6);
+- limpeza e qualidade de dados (seções 6.2 e 8);
+- estatística descritiva dos gastos (seção 6.3).
+
+A qualidade do software se apoia em testes unitários com pytest para
+toda função de leitura, limpeza, análise e regra de negócio (seção 15).
 
 O usuário poderá:
 
 - criar uma conta e realizar login;
-- enviar faturas nos formatos CSV e XLSX;
-- confirmar o significado das colunas quando necessário;
-- acompanhar o processamento do arquivo;
+- enviar extratos bancários e faturas de cartão do Nubank, ou de outro
+  banco pela planilha-modelo do gerenCIA, nos formatos CSV e XLSX;
+- consultar o histórico de todos os arquivos enviados;
 - consultar a qualidade dos dados;
 - visualizar dashboards interativos;
 - pesquisar e filtrar transações;
 - corrigir categorias;
-- identificar cobranças recorrentes;
-- consultar um calendário de cobranças previstas;
-- conversar com uma IA sobre os próprios dados financeiros.
+- definir, opcionalmente, um limite mensal de gasto por categoria;
+- receber avisos no painel ao se aproximar ou passar de um limite;
+- ver os pagamentos recorrentes, com o total por mês e o custo no ano;
+- gerar um diagnóstico do mês com IA, com sugestões de economia.
 
-O projeto terá uma arquitetura acessível para alguém que está começando
-em análise e engenharia de dados. Ele continuará sendo complexo e
-funcional, mas evitará ferramentas de infraestrutura que não sejam
-necessárias para a primeira versão.
+A seção 18 reúne as ideias que ficaram fora da primeira versão, como o
+calendário de cobranças previstas, o mapeador genérico de colunas e as
+notificações por e-mail.
+
+O projeto terá um escopo enxuto e acabamento profissional: transformação
+e análise de dados, testes unitários e um uso controlado de IA. Ele
+evitará camadas de engenharia de dados e ferramentas de infraestrutura
+que não sejam necessárias para a primeira versão.
 
 
 ============================================================
@@ -43,7 +61,8 @@ Backend:
 - SQLAlchemy;
 - Alembic;
 - Pydantic;
-- OpenPyXL.
+- OpenPyXL;
+- SDK do provedor de IA, escolhido antes da Etapa 7 (seção 10).
 
 Banco de dados:
 - PostgreSQL.
@@ -54,16 +73,17 @@ Frontend:
 - Vite;
 - Recharts para todos os gráficos interativos.
 
-Inteligência artificial:
-- OpenAI Responses API;
-- function calling para acessar funções financeiras controladas.
-
 Testes:
-- Pytest para backend, pipeline e API;
-- Vitest e Testing Library para o frontend.
+- Pytest para as funções de leitura, limpeza e análise, as regras de
+  negócio e a API;
+- verificações da interface com Playwright, em scripts/frontend/.
 
 Execução:
 - Docker Compose.
+
+Abordagens que não entrarão na primeira versão:
+- arquitetura Medallion, com camadas Bronze, Silver e Gold;
+- processamento em segundo plano e filas.
 
 Ferramentas que não entrarão na primeira versão:
 - DuckDB;
@@ -91,15 +111,11 @@ Usuário
   -> API FastAPI
   -> autenticação e autorização
   -> upload
-  -> arquivo Raw
-  -> processamento em segundo plano
-  -> Bronze
-  -> Pandas
-  -> validação e qualidade
-  -> Silver
-  -> Gold
-  -> PostgreSQL
-  -> dashboard, recorrências e IA
+  -> leitura com pandas
+  -> limpeza, validação, categorização e qualidade
+  -> transações no PostgreSQL
+  -> análises e estatística descritiva
+  -> dashboard, limites, notificações e diagnóstico com IA
 
 A aplicação terá dois componentes principais:
 
@@ -108,14 +124,27 @@ A aplicação terá dois componentes principais:
 
 O PostgreSQL será o único banco de dados.
 
-O processamento inicial utilizará BackgroundTasks do FastAPI. Isso
-permite que a API responda ao upload e continue o tratamento em segundo
-plano sem adicionar Redis e Celery.
+O arquivo será processado durante a própria requisição de upload.
+Extratos e faturas têm poucos KB, e a resposta já traz o resultado, sem
+fila nem processamento em segundo plano.
 
-A primeira implantação terá somente uma instância do backend. Caso o
-sistema evolua para várias instâncias ou muitos uploads simultâneos,
-BackgroundTasks poderá ser substituído por uma fila e um worker sem
-reescrever as regras do pipeline.
+A primeira implantação terá somente uma instância do backend. Se o
+volume crescer, o processamento poderá passar para segundo plano sem
+reescrever as funções de transformação.
+
+Hospedagem:
+- a versão da banca será publicada somente em planos gratuitos;
+- o frontend e a API ficarão na mesma origem, com o FastAPI servindo o
+  build do React ou com o serviço do frontend repassando /api para a
+  API. Em domínios diferentes, o navegador não envia o cookie de sessão
+  SameSite=Lax nas chamadas à API e o login deixa de funcionar;
+- o disco dos planos gratuitos costuma ser apagado a cada reinício; como
+  o arquivo original não é guardado (seção 5), tudo o que precisa
+  persistir fica no PostgreSQL;
+- a chave do provedor de IA fica nas variáveis de ambiente da
+  hospedagem, nunca no frontend;
+- planos gratuitos costumam desligar a API após um período sem uso; antes
+  da apresentação, a aplicação deverá ser acessada para religar o servidor.
 
 
 ============================================================
@@ -145,78 +174,134 @@ O principal requisito de segurança será:
 Um usuário nunca poderá visualizar, alterar ou consultar dados
 financeiros pertencentes a outro usuário.
 
+Privacidade:
+
+A versão hospedada será aberta à turma e à banca. Dados fictícios são
+recomendados, mas cada pessoa poderá enviar os próprios arquivos se
+quiser. Por isso:
+- o sistema oferecerá extratos e faturas fictícios para baixar e testar;
+- a tela de upload recomendará os arquivos fictícios e avisará que as
+  transações de arquivos reais ficam guardadas no servidor;
+- o arquivo original não é guardado: depois do processamento, restam
+  somente as transações, as linhas rejeitadas e o registro no histórico;
+- o usuário poderá excluir um arquivo enviado, com as transações que
+  vieram dele;
+- o usuário poderá excluir a própria conta, com todos os seus dados;
+- o diagnóstico com IA envia ao provedor somente o resumo agregado do
+  mês, e a tela avisa isso antes de gerar (seção 10).
+
 
 ============================================================
-5. UPLOAD E MAPEAMENTO
+5. UPLOAD, HISTÓRICO E LEITURA DOS ARQUIVOS
 ============================================================
+
+Tipos de documento:
+- extrato bancário de conta corrente;
+- fatura de cartão de crédito.
 
 Formatos aceitos:
 - CSV;
 - XLSX;
-- tamanho máximo de 25 MB.
+- tamanho máximo de 5 MB, porque o processamento acontece durante a
+  requisição.
+
+Formatos reconhecidos:
+- extrato do Nubank;
+- fatura do Nubank;
+- planilha-modelo do gerenCIA, para arquivos de qualquer outro banco.
+
+Planilha-modelo:
+
+Arquivos de outros bancos entram pela planilha-modelo, disponível para
+baixar em CSV e XLSX na tela de upload. Ela tem colunas fixas: data,
+descrição e valor, obrigatórias, e categoria e identificador da
+transação, opcionais. O valor segue um único padrão: negativo para
+saída e positivo para entrada. Como o modelo não indica se o arquivo é
+extrato ou fatura, a pessoa escolhe o tipo do documento no envio.
+
+O mapeador genérico de colunas, com tela de confirmação, ficou para
+depois da primeira versão (seção 18).
 
 Fluxo:
 
 1. Receber o arquivo.
 2. Validar extensão e tamanho.
-3. Calcular SHA-256.
-4. Salvar o arquivo original.
-5. Registrar os metadados.
-6. Identificar encoding e delimitador do CSV.
-7. Identificar planilha e cabeçalho do XLSX.
-8. Detectar as colunas.
-9. Aplicar o adaptador Nubank ou o mapeador genérico.
-10. Solicitar confirmação se houver ambiguidade.
-11. Iniciar o pipeline.
+3. Calcular o SHA-256 do conteúdo.
+4. Ler o arquivo com pandas, com todas as colunas como texto:
+   no CSV, identificar encoding e delimitador; no XLSX, a planilha e o
+   cabeçalho.
+5. Reconhecer o formato pelas colunas.
+6. Recusar o arquivo não reconhecido, com uma mensagem que explica as
+   colunas da planilha-modelo.
+7. Limpar, validar e categorizar as linhas (seções 6 e 7).
+8. Gravar as transações, as linhas rejeitadas e o relatório de
+   qualidade.
+9. Registrar o upload no histórico e descartar o arquivo original.
 
-Campos obrigatórios:
-- data;
-- descrição;
-- valor.
+O processamento é atômico: ou o arquivo é gravado inteiro, com
+transações, rejeições e relatório, ou nada é gravado e a resposta
+explica o erro. Por isso o histórico só mostra arquivos processados, sem
+estados intermediários.
 
-Campos opcionais:
-- categoria bancária;
-- identificador da transação;
-- parcela;
-- tipo da movimentação.
+Campos usados:
+- data, descrição e valor, obrigatórios;
+- categoria do banco, identificador da transação e parcela, quando o
+  arquivo os traz;
+- saldo após a movimentação, quando o extrato o traz.
 
-Estados possíveis:
-- uploaded;
-- profiling;
-- awaiting_mapping;
-- processing;
-- completed;
-- failed.
+Histórico de arquivos:
+
+Todo arquivo processado permanece registrado. A tela de histórico
+mostra, para cada um:
+- nome original;
+- tipo do documento e formato reconhecido;
+- data do envio;
+- período coberto, da primeira à última transação;
+- quantidade de transações válidas e rejeitadas;
+- percentual de qualidade;
+- total de entradas e de saídas.
+
+A partir do histórico, o usuário abre as transações e o relatório de
+qualidade de cada arquivo.
 
 Arquivos idênticos do mesmo usuário serão identificados pelo hash. O
 sistema apontará o upload existente em vez de duplicar as transações.
 
+Extratos diferentes podem cobrir períodos sobrepostos, por exemplo
+janeiro a março e fevereiro a abril. A transação com o mesmo
+identificador bancário de um upload anterior do mesmo usuário será
+marcada como duplicada e não entrará nos totais. Sem identificador, a
+repetição será sinalizada para conferência, conforme a seção 6.2.
+
 
 ============================================================
-6. ARQUITETURA MEDALLION
+6. TRANSFORMAÇÃO E ANÁLISE DOS DADOS
 ============================================================
 
-6.1. Raw/Bronze
+Todo o tratamento usa pandas, em funções do módulo backend/app/pipeline/
+que não dependem do FastAPI nem do banco. Cada função recebe e devolve
+dados simples, o que permite testá-la isoladamente com pytest.
 
-O arquivo original será preservado em:
+A primeira versão não usa camadas de engenharia de dados, como a
+arquitetura Medallion. O arquivo é lido, limpo e gravado diretamente
+como transações, e as análises são calculadas a partir delas.
 
-data/raw/{user_id}/{upload_id}/arquivo_original.csv
+6.1. Leitura
 
-Cada registro também será armazenado na tabela bronze_rows com:
-- user_id;
-- upload_id;
-- número da linha;
-- planilha de origem;
-- dados originais em JSON;
-- hash da linha;
-- data da ingestão.
+O arquivo é lido em memória com read_csv ou read_excel (motor
+openpyxl), com todas as colunas como texto (dtype=str), para que o
+pandas não converta valores antes da limpeza. O adaptador do formato
+reconhecido (extrato Nubank, fatura Nubank ou planilha-modelo)
+renomeia as colunas para os campos internos.
 
-A Bronze deverá representar exatamente o conteúdo recebido.
+O arquivo original não é guardado. Cada transação e cada linha
+rejeitada guarda o número da linha de origem, o que mantém a
+rastreabilidade até o arquivo.
 
 
-6.2. Silver
+6.2. Limpeza e transformação
 
-A Silver será formada pela tabela transactions.
+O resultado da limpeza é gravado na tabela transactions.
 
 Campos principais:
 - id;
@@ -235,28 +320,47 @@ Campos principais:
 - source_row;
 - is_duplicate.
 
+Tipos de transação:
+- purchase: compra, débito, Pix ou boleto pago;
+- fee: tarifa ou juros;
+- refund: estorno;
+- payment: pagamento da fatura do cartão;
+- income: entrada no extrato, como salário, Pix ou transferência recebida;
+- other: movimentação que não se encaixa nos tipos anteriores.
+
+O tipo income ainda não existe na restrição transactions_type_valid do
+banco e será incluído na Etapa 3.
+
 Regras:
 - valores monetários usarão Decimal;
+- amount guardará o valor absoluto, e o sentido do dinheiro ficará em
+  transaction_type, porque extratos e faturas costumam usar sinais
+  opostos para o mesmo tipo de movimentação;
+- valores ausentes não serão estimados nem trocados por zero; a linha
+  será rejeitada com o motivo;
 - compras e tarifas aumentarão o gasto;
 - estornos reduzirão o gasto;
-- pagamento da própria fatura não será considerado uma nova despesa;
+- entradas do extrato serão registradas como receitas e não reduzirão
+  o gasto;
+- o pagamento da fatura não será considerado uma nova despesa; quando
+  aparecer no extrato, ficará fora do gasto por categoria, porque as
+  compras do cartão são analisadas pela própria fatura;
 - linhas inválidas serão armazenadas com o motivo da rejeição;
 - nenhuma linha poderá desaparecer silenciosamente;
 - duplicatas sem identificador bancário serão sinalizadas e mantidas;
 - datas, textos e estabelecimentos serão padronizados.
 
 
-6.3. Gold
+6.3. Análises e estatística descritiva
 
-Tabelas:
-- gold_summaries;
-- gold_categories;
-- gold_merchants;
-- gold_daily_spending;
-- gold_monthly_spending.
+As métricas são calculadas no momento da consulta, a partir de
+transactions, com agregações SQL e pandas. Não há tabelas de resultados
+pré-calculados: com o volume de dados de uma pessoa, a consulta direta é
+rápida e não precisa ser refeita quando uma categoria muda.
 
 Métricas:
 - gasto total;
+- total de entradas e de saídas do período, nos extratos;
 - quantidade de transações;
 - gasto médio;
 - maior despesa;
@@ -268,13 +372,34 @@ Métricas:
 - comparação entre períodos;
 - maiores despesas;
 - distribuição de valores;
-- total estimado de assinaturas.
+- pagamentos recorrentes, com o total por mês e o custo no ano.
 
-A Gold será recalculada quando:
-- um upload terminar;
-- uma categoria for corrigida;
-- uma regra pessoal for criada;
-- um arquivo for reprocessado.
+Estatística descritiva, por mês, pelo período inteiro e por categoria:
+- média e mediana do valor das compras;
+- moda: categoria e estabelecimento mais frequentes;
+- mínimo, máximo e amplitude;
+- desvio padrão populacional (ddof=0);
+- quartis e intervalo interquartil;
+- frequência por faixa de valor, para o histograma;
+- contagem e participação por categoria e estabelecimento.
+
+As medidas consideram somente compras e tarifas, sem estornos, entradas,
+pagamentos de fatura e duplicatas. Com menos de 4 despesas no grupo,
+desvio padrão e quartis serão exibidos como dados insuficientes. Somas
+e reconciliações usam Decimal; desvio padrão e quartis podem usar ponto
+flutuante, arredondados para centavos. A justificativa de cada decisão
+está em docs/analise-de-dados.md.
+
+Pagamentos recorrentes:
+
+Um pagamento é recorrente quando o mesmo estabelecimento aparece com o
+mesmo valor em todos os meses enviados, como uma assinatura ou uma
+mensalidade. Compras parceladas não entram, porque o valor da parcela
+também se repete. A lista mostra o estabelecimento, o valor, o dia da
+cobrança mais recente, o total por mês e o custo no ano. Ela é
+calculada na consulta, como as outras métricas, sem tabela própria.
+Valores parecidos, periodicidade estimada, calendário e aviso no
+sininho ficam para depois (seção 18.4).
 
 
 ============================================================
@@ -329,13 +454,26 @@ Cada processamento gerará um relatório com:
 - percentual de qualidade;
 - totais monetários.
 
+Dimensões de qualidade medidas em cada processamento:
+- completude: percentual de linhas com data, descrição e valor;
+- validade: percentual de datas existentes e valores convertidos;
+- unicidade: quantidade de duplicatas;
+- consistência: resultado das reconciliações.
+
+percentual de qualidade = linhas válidas ÷ total de linhas × 100
+
 Reconciliações obrigatórias:
 
 total de linhas = linhas válidas + linhas rejeitadas
 
-total Silver elegível = total apresentado na Gold
-
 soma das categorias = gasto total
+
+Nos extratos que trazem saldo, também será conferido:
+
+saldo inicial + movimentações = saldo final
+
+Uma reconciliação que falhe cancelará a gravação do arquivo inteiro,
+com uma mensagem de erro, em vez de publicar números inconsistentes.
 
 Tabelas:
 - quality_checks;
@@ -351,74 +489,101 @@ O usuário poderá visualizar e baixar os registros rejeitados.
 
 
 ============================================================
-9. RECORRÊNCIAS E PREVISÕES
+9. LIMITES POR CATEGORIA E NOTIFICAÇÕES
 ============================================================
 
-Uma cobrança poderá ser considerada recorrente quando:
-- houver pelo menos três ocorrências;
-- o estabelecimento normalizado for o mesmo;
-- os intervalos forem próximos de um padrão mensal;
-- a variação de valor estiver dentro da tolerância definida.
+9.1. Limites
 
-Informações geradas:
-- estabelecimento;
-- periodicidade;
-- valor médio;
-- última cobrança;
-- próxima data estimada;
-- nível de confiança;
-- status detectada, confirmada ou ignorada.
+O usuário poderá definir, opcionalmente, um limite de gasto para cada
+categoria. Exemplo: no máximo R$ 500,00 por mês com Lazer.
 
-As notificações serão calculadas quando o usuário acessar a aplicação.
-Isso evita adicionar cron ou outro serviço na primeira versão.
+Regras:
+- o limite é opcional; categorias sem limite não geram avisos;
+- na primeira versão, o período é o mês do calendário, do dia 1 ao
+  último dia, pela data da transação;
+- cada categoria terá no máximo um limite ativo por período;
+- o valor usará Decimal e deverá ser maior que zero;
+- o gasto considerado é o mesmo das análises para a categoria no mês:
+  compras e tarifas menos estornos, sem entradas, pagamento de fatura
+  nem duplicatas;
+- a tela de limites mostrará, para cada categoria, o gasto do mês, o
+  limite, o percentual usado e o valor restante.
 
-Exemplo:
+A tabela category_budgets também guardará o período do limite. A
+primeira versão aceitará somente o período mensal; o limite semanal
+(seção 18) poderá ser incluído sem reestruturar a tabela.
 
-Netflix pode ser cobrada em aproximadamente 3 dias.
-Valor estimado: R$ 39,90.
+
+9.2. Notificações no painel
+
+Os avisos aparecerão no sininho do painel, com o contador de
+notificações não lidas. A primeira versão não enviará e-mails.
+
+Avisos de limite:
+- ao atingir 80% do limite:
+  "Você já usou 82% do limite de Lazer neste mês: R$ 412,00 de R$ 500,00."
+- ao passar de 100% do limite:
+  "Você passou do limite planejado para Lazer: R$ 538,00 de R$ 500,00."
+
+Regras:
+- o backend verificará os limites sempre que o gasto do mês mudar: ao
+  terminar um upload, ao corrigir uma categoria, ao criar uma regra
+  pessoal e ao criar ou alterar um limite;
+- cada faixa, 80% e 100%, gerará no máximo um aviso por categoria e mês;
+- somente o mês atual gerará avisos; arquivos de meses anteriores
+  mostrarão a situação dos limites na tela de limites e no dashboard,
+  sem avisos no sininho;
+- as notificações ficarão guardadas na tabela notifications, com a data
+  de leitura;
+- o usuário poderá marcar uma notificação, ou todas, como lidas.
 
 
 ============================================================
-10. INTELIGÊNCIA ARTIFICIAL
+10. DIAGNÓSTICO DO MÊS COM IA
 ============================================================
 
-A IA usará a OpenAI Responses API com function calling.
-
-O modelo não receberá o arquivo bruto e não executará SQL. Ele poderá
-solicitar funções controladas do backend.
-
-Ferramentas disponíveis:
-- get_spending_summary;
-- get_category_breakdown;
-- get_top_merchants;
-- get_largest_transactions;
-- compare_periods;
-- list_transactions;
-- get_recurring_payments;
-- get_upcoming_charges.
+Objetivo: explicar os gastos de um mês em linguagem simples e sugerir
+onde economizar, a partir das análises que o backend já calculou.
 
 Fluxo:
 
-1. O usuário envia uma pergunta.
-2. O backend envia a pergunta e os schemas das ferramentas ao modelo.
-3. O modelo escolhe uma função.
-4. O backend valida os argumentos.
-5. O backend consulta somente os dados do usuário autenticado.
-6. O resultado estruturado volta ao modelo.
-7. O modelo explica o resultado ao usuário.
+1. No dashboard, o usuário escolhe o mês e pede o diagnóstico.
+2. O backend monta o resumo do mês com as mesmas funções das análises:
+   gasto total, total e participação por categoria, comparação com o
+   mês anterior, situação dos limites, maiores despesas, principais
+   estabelecimentos e medidas de estatística descritiva.
+3. O backend envia somente esse resumo ao modelo, com instruções fixas.
+4. O modelo devolve uma resposta estruturada: um resumo do mês, até
+   três destaques e até três sugestões de economia, cada uma ligada a
+   uma categoria ou estabelecimento do resumo.
+5. O backend valida a resposta com Pydantic e a guarda em ai_insights.
+6. O frontend apresenta o diagnóstico.
 
 Regras:
-- cálculos continuam em Python e SQL;
-- a IA interpreta e explica;
-- ferramentas utilizam schemas estritos;
-- respostas possuem formato validado;
-- o histórico enviado ao modelo será limitado;
-- testes utilizarão um cliente falso;
-- testes não gastarão créditos da API.
+- os cálculos continuam em Python e SQL; a IA interpreta e explica, e
+  os valores citados vêm do resumo enviado;
+- o modelo não recebe o arquivo, a lista completa de transações, o nome
+  nem o e-mail do usuário, e não executa SQL;
+- uma resposta fora do formato gera uma mensagem de erro, sem mostrar
+  texto não validado;
+- cada usuário tem um diagnóstico guardado por mês; gerar de novo
+  substitui o anterior;
+- há um limite de gerações por usuário e por dia, para controlar o custo
+  da API;
+- meses sem despesas não geram diagnóstico;
+- a tela avisa que o resumo do mês será enviado ao provedor de IA;
+- os testes usam um cliente falso e não gastam créditos da API.
 
-Documentação de referência:
-- https://developers.openai.com/api/docs/guides/function-calling
-- https://developers.openai.com/api/docs/guides/structured-outputs
+Provedor:
+
+O provedor e o modelo serão escolhidos antes da Etapa 7, considerando
+custo e a hospedagem em planos gratuitos. A chamada fica isolada em
+backend/app/ai/; trocar de provedor não muda as regras nem os testes.
+
+Exemplo de destaque:
+
+"Alimentação foi 38% do gasto de junho, R$ 412,00 acima de maio. A
+maior parte veio de pedidos por aplicativo."
 
 
 ============================================================
@@ -429,43 +594,46 @@ Tabelas principais:
 - users;
 - sessions;
 - uploads;
-- upload_mappings;
-- bronze_rows;
 - transactions;
 - categories;
 - category_rules;
 - quality_checks;
 - rejected_rows;
-- gold_summaries;
-- gold_categories;
-- gold_merchants;
-- gold_daily_spending;
-- gold_monthly_spending;
-- recurring_payments;
-- chat_sessions;
-- chat_messages.
+- category_budgets;
+- notifications;
+- ai_insights.
 
 Relacionamento resumido:
 
 user
   -> uploads
-       -> bronze_rows
        -> transactions
        -> quality_checks
        -> rejected_rows
   -> category_rules
-  -> gold_*
-  -> recurring_payments
-  -> chat_sessions
-       -> chat_messages
+  -> category_budgets
+  -> notifications
+  -> ai_insights
+
+Mudanças em relação ao esquema atual, feitas por migrações Alembic nas
+etapas correspondentes:
+- uploads recebe o tipo do documento (bank_statement ou
+  credit_card_invoice), o formato reconhecido e o período coberto;
+- saem de uploads a coluna storage_path, porque o arquivo original não
+  é guardado, e a coluna status, porque o processamento é atômico;
+- saem a tabela bronze_rows e a coluna transactions.bronze_row_id, da
+  arquitetura Medallion, e a tabela upload_mappings, do mapeador
+  genérico;
+- entram category_budgets, notifications e ai_insights.
 
 Índices principais:
 - uploads por user_id e created_at;
 - transactions por user_id e transaction_date;
 - transactions por user_id e category_id;
 - transactions por user_id e merchant;
-- Gold por user_id e período;
-- recorrências por user_id e próxima data.
+- category_budgets único por user_id, category_id e período;
+- notifications por user_id e data de leitura;
+- ai_insights único por user_id e mês.
 
 
 ============================================================
@@ -473,20 +641,19 @@ user
 ============================================================
 
 Autenticação:
-- POST /api/auth/register
-- POST /api/auth/login
-- POST /api/auth/logout
-- GET  /api/auth/me
+- POST   /api/auth/register
+- POST   /api/auth/login
+- POST   /api/auth/logout
+- GET    /api/auth/me
+- DELETE /api/auth/me            (exclui a conta e todos os dados)
 
-Uploads:
-- POST /api/uploads
-- GET  /api/uploads
-- GET  /api/uploads/{id}
-- GET  /api/uploads/{id}/profile
-- POST /api/uploads/{id}/mapping
-- POST /api/uploads/{id}/retry
-- GET  /api/uploads/{id}/quality
-- GET  /api/uploads/{id}/rejected
+Uploads e histórico:
+- POST   /api/uploads            (envia, processa e devolve o resultado)
+- GET    /api/uploads            (histórico de arquivos)
+- GET    /api/uploads/{id}
+- DELETE /api/uploads/{id}       (exclui o arquivo e suas transações)
+- GET    /api/uploads/{id}/quality
+- GET    /api/uploads/{id}/rejected
 
 Transações:
 - GET   /api/transactions
@@ -511,16 +678,19 @@ Analytics:
 - GET /api/analytics/largest-transactions
 - GET /api/analytics/period-comparison
 
-Recorrências:
-- GET   /api/recurring-payments
-- PATCH /api/recurring-payments/{id}
-- GET   /api/notifications
+Limites:
+- GET    /api/budgets?month=AAAA-MM   (limites com gasto e percentual do mês)
+- PUT    /api/budgets/{category_id}   (cria ou altera o limite)
+- DELETE /api/budgets/{category_id}
 
-IA:
-- POST /api/ai/chats
-- GET  /api/ai/chats
-- GET  /api/ai/chats/{id}
-- POST /api/ai/chats/{id}/messages
+Notificações:
+- GET   /api/notifications
+- PATCH /api/notifications/{id}/read
+- POST  /api/notifications/read-all
+
+Diagnóstico com IA:
+- GET  /api/insights?month=AAAA-MM   (diagnóstico guardado do mês)
+- POST /api/insights?month=AAAA-MM   (gera ou gera de novo)
 
 
 ============================================================
@@ -535,8 +705,9 @@ O Python permanecerá responsável por:
 - cálculos;
 - regras de negócio;
 - analytics;
-- acesso ao banco;
-- integração com IA.
+- verificação dos limites e geração das notificações;
+- montagem do resumo enviado à IA e validação da resposta;
+- acesso ao banco.
 
 O React será responsável por:
 - interface;
@@ -548,29 +719,56 @@ O React será responsável por:
 - estados de carregamento e erro.
 
 Rotas:
-- /login
-- /register
-- /app/uploads
-- /app/uploads/{id}/mapping
+- /                           (página pública; quem está logado vai
+                               para /app)
+- /login                      (depois de entrar, vai para /app)
+- /register                   (depois de criar a conta, vai para /app)
+- /app                        (painel: dashboard e diagnóstico do mês)
+- /app/uploads                (envio e histórico de arquivos)
 - /app/uploads/{id}/quality
-- /app/dashboard
 - /app/transactions
-- /app/recurring
-- /app/calendar
-- /app/assistant
+- /app/budgets                (limites por categoria)
+- /app/account                (dados da conta)
+
+Quem abre /app sem estar logado vai para /login.
+
+Componentes do painel:
+- barra lateral com Painel, Arquivos, Transações, Limites e Conta; as
+  seções ainda não construídas aparecem desativadas, com "em breve";
+- no pé da barra, o nome e o e-mail de quem entrou e o botão Sair;
+- em telas estreitas, a barra lateral vira uma barra no topo com menu;
+- enquanto não houver arquivos, o início do painel mostra as boas-vindas
+  e os próximos passos;
+- sininho de notificações com o contador de não lidas, em todas as
+  telas de /app.
+
+Tela de upload:
+- links para baixar os extratos e faturas fictícios de exemplo;
+- links para baixar a planilha-modelo em CSV e XLSX;
+- escolha do tipo do documento quando o arquivo usar a planilha-modelo;
+- aviso recomendando os arquivos fictícios e informando que as
+  transações de arquivos reais ficam guardadas no servidor.
 
 Componentes do dashboard:
 - card de gasto total;
 - card de quantidade de transações;
 - card de gasto médio;
+- card de mediana das compras;
 - card de maior despesa;
+- histograma da distribuição dos valores;
+- tabela estatística por categoria: quantidade, total, participação,
+  média, mediana, mínimo e máximo;
+- ranking de estabelecimentos por frequência e por valor;
 - gráfico de rosca por categoria;
 - gráfico de barras por estabelecimento;
 - gráfico de linha temporal;
 - comparação entre períodos;
 - tabela de maiores despesas;
-- resumo de recorrências;
-- próximas cobranças.
+- lista de pagamentos recorrentes, com o total por mês e por ano;
+- entradas e saídas do período, quando houver extratos;
+- progresso dos limites por categoria;
+- diagnóstico do mês com IA: botão para gerar, aviso de envio ao
+  provedor, resumo, destaques e sugestões de economia.
 
 Interações:
 - filtro global de período;
@@ -601,35 +799,38 @@ ETAPA 1 - FUNDAÇÃO
 - configurar SQLAlchemy e Alembic;
 - criar Docker Compose;
 - implementar autenticação;
-- configurar Pytest e Vitest.
+- configurar Pytest.
 
-ETAPA 2 - UPLOAD E BRONZE
-- receber CSV e XLSX;
-- validar formato e tamanho;
-- salvar o original;
-- calcular hash;
-- criar o adaptador Nubank;
-- criar o mapeador genérico;
-- persistir Bronze;
-- mostrar o estado do upload.
+ETAPA 2 - UPLOAD E HISTÓRICO
+- receber extratos e faturas em CSV e XLSX;
+- validar extensão e tamanho;
+- calcular o hash e recusar o envio repetido do mesmo arquivo;
+- registrar o upload no histórico, com o tipo do documento;
+- mostrar o histórico de arquivos;
+- permitir excluir um arquivo e a conta;
+- criar os arquivos fictícios de exemplo, a planilha-modelo e o aviso
+  sobre dados reais;
+- publicar a primeira versão na hospedagem gratuita.
 
-ETAPA 3 - SILVER E QUALIDADE
-- normalizar datas;
-- normalizar valores;
-- normalizar descrições;
+ETAPA 3 - LEITURA, LIMPEZA, CATEGORIZAÇÃO E QUALIDADE
+- ler CSV e XLSX com pandas, com todas as colunas como texto;
+- criar os adaptadores do extrato e da fatura Nubank e o da
+  planilha-modelo;
+- normalizar datas, valores e descrições;
 - identificar estabelecimento;
-- identificar compra, tarifa, estorno e pagamento;
-- separar rejeitados;
-- criar verificações de qualidade;
-- testar as transformações.
+- identificar compra, tarifa, estorno, pagamento e entrada;
+- sinalizar transações repetidas entre extratos sobrepostos;
+- aplicar as regras de categoria;
+- separar rejeitados com o motivo;
+- calcular o relatório de qualidade e as reconciliações;
+- completar o histórico com período, quantidades e totais;
+- testar cada função com pytest.
 
-ETAPA 4 - CATEGORIZAÇÃO E GOLD
-- criar categorias;
-- implementar regras;
-- classificar transações;
-- calcular métricas;
-- reconciliar totais;
-- criar endpoints analíticos.
+ETAPA 4 - ANÁLISES E ESTATÍSTICA
+- calcular as métricas a partir das transações;
+- calcular as medidas de estatística descritiva;
+- criar endpoints analíticos;
+- testar os cálculos com resultados feitos à mão.
 
 ETAPA 5 - DASHBOARD DINÂMICO
 - integrar Recharts;
@@ -640,72 +841,121 @@ ETAPA 5 - DASHBOARD DINÂMICO
 - conectar tabela de transações;
 - permitir correção de categoria.
 
-ETAPA 6 - RECORRÊNCIAS
-- analisar histórico;
-- detectar padrões mensais;
-- estimar valor e próxima data;
-- permitir confirmação;
-- criar calendário;
-- criar notificações.
+ETAPA 6 - LIMITES E NOTIFICAÇÕES
+- cadastrar, alterar e remover limites mensais por categoria;
+- calcular o gasto e o percentual usado de cada limite;
+- gerar os avisos de 80% e de 100%;
+- criar o sininho de notificações;
+- criar a tela de limites.
 
-ETAPA 7 - IA
-- criar cliente OpenAI;
-- registrar ferramentas financeiras;
-- implementar o loop de function calling;
-- validar argumentos e respostas;
-- criar o chat React;
-- implementar cliente falso para testes.
+ETAPA 7 - DIAGNÓSTICO COM IA
+- escolher o provedor e configurar a chave da API;
+- montar o resumo do mês a partir das análises;
+- definir as instruções e o formato da resposta;
+- validar e guardar o diagnóstico;
+- limitar as gerações por usuário;
+- criar o painel do diagnóstico no dashboard;
+- testar com um cliente falso.
 
 ETAPA 8 - CONSOLIDAÇÃO
 - executar todos os testes;
 - revisar tratamento de erros;
 - validar isolamento;
 - criar dados demonstrativos de três meses;
+- incluir o extrato na demonstração pública;
 - concluir documentação;
-- preparar execução com Docker Compose.
+- preparar execução com Docker Compose;
+- publicar a versão final na hospedagem gratuita e ensaiar a apresentação.
+
+
+CRONOGRAMA ATÉ A BANCA
+
+A banca será na primeira semana de dezembro de 2026, e só a apresentação
+será avaliada no dia. A dedicação prevista é de 10 a 20 horas por semana.
+A partir de 30/11 não entram funcionalidades novas.
+
+20/10 a 25/10  Etapa 1: Alembic com o esquema atual como base e Docker
+               Compose para desenvolvimento.
+26/10 a 01/11  Etapa 2: upload, histórico, exclusão de arquivo e de
+               conta, arquivos fictícios, planilha-modelo e primeira
+               publicação na hospedagem gratuita.
+02/11 a 08/11  Etapa 3: leitura do Nubank e da planilha-modelo, limpeza,
+               categorização e qualidade, com testes unitários.
+09/11 a 15/11  Etapa 4 e backend das Etapas 6 e 7: análises,
+               estatística descritiva, endpoints, limites, notificações
+               e diagnóstico com IA.
+16/11 a 22/11  Etapa 5 e telas das Etapas 6 e 7: dashboard com dados
+               reais, transações, correção de categoria, tela de
+               limites, sininho e painel do diagnóstico.
+23/11 a 29/11  Etapa 8: testes dos fluxos críticos e do isolamento,
+               demonstração pública com extrato, publicação final e
+               revisão da documentação.
+30/11 a 06/12  Ensaio geral e banca.
+
+Se o prazo apertar, o próximo corte será decidido em conjunto,
+preservando os testes unitários e a semana de consolidação.
+
+Publicar já na Etapa 2 antecipa os problemas de hospedagem, como cookie,
+banco e religamento do servidor, que seriam arriscados na última semana.
+
+
+FLUXO DE TRABALHO
+
+- Cada etapa terá uma branch própria, como feat/upload-historico.
+- A branch será mesclada na main por pull request, após revisão.
 
 
 ============================================================
 15. TESTES
 ============================================================
 
+Os testes unitários são obrigatórios. Toda função de leitura, limpeza,
+análise e regra de negócio terá testes com pytest, escritos junto com a
+função e entregues no mesmo pull request.
+
 Testes unitários:
 - conversão de valores brasileiros;
 - conversão de datas CSV e Excel;
+- reconhecimento dos formatos Nubank e da planilha-modelo;
 - normalização de descrições;
 - normalização de estabelecimentos;
 - identificação de compras e estornos;
+- identificação de entradas, saídas e pagamento de fatura no extrato;
 - categorização;
 - precedência de regras;
-- cálculos Gold;
+- cálculos das análises;
+- identificação de pagamentos recorrentes, sem contar as parcelas;
+- medidas de estatística descritiva, conferidas com resultados
+  calculados à mão em conjuntos pequenos;
+- dimensões de qualidade e percentual de qualidade;
 - reconciliação;
-- detecção de recorrência;
-- construção das ferramentas da IA.
+- percentual usado dos limites e faixas de 80% e 100%;
+- montagem do resumo enviado à IA e validação da resposta, com um
+  cliente falso.
 
 Testes de integração:
-- upload -> Bronze -> Silver -> Gold;
+- upload -> transações -> análises;
 - API -> PostgreSQL;
-- correção de categoria -> recálculo;
-- três faturas -> recorrência;
-- retry sem duplicação;
+- correção de categoria -> análises atualizadas;
+- upload que ultrapassa um limite -> uma única notificação por faixa;
+- extratos com períodos sobrepostos -> totais sem duplicação;
+- reenvio do mesmo arquivo -> nenhuma transação duplicada;
+- reconciliação que falha -> nada é gravado;
 - arquivo inválido -> mensagem compreensível;
+- diagnóstico além do limite diário -> recusado sem chamar a IA;
 - usuário A sem acesso aos dados do usuário B.
 
-Testes frontend:
-- cadastro e login;
-- seleção e envio do arquivo;
-- confirmação do mapeamento;
-- visualização do processamento;
-- relatório de qualidade;
-- renderização dos gráficos;
-- aplicação de filtros;
-- correção de categoria;
-- envio de perguntas ao assistente.
+Verificações da interface:
+
+O frontend não terá testes unitários. Os scripts Playwright de
+scripts/frontend/ serão estendidos para os fluxos principais: cadastro e
+login, envio de arquivo, histórico, dashboard, limites e sininho, e
+diagnóstico do mês.
 
 Metas:
-- pelo menos 80% de cobertura nos módulos de pipeline e analytics;
-- testes de integração para os fluxos críticos;
-- testes da IA sem chamadas reais à API.
+- toda função de leitura, limpeza, análise e regra de negócio com testes
+  do caso normal e dos casos de erro;
+- testes de integração para os fluxos críticos.
 
 
 ============================================================
@@ -715,33 +965,109 @@ Metas:
 A primeira versão estará concluída quando:
 
 - dois usuários puderem utilizar o sistema sem cruzamento de dados;
-- CSV e XLSX forem aceitos;
-- uma fatura Nubank for reconhecida automaticamente;
-- arquivos genéricos puderem ser mapeados;
-- o arquivo original for preservado;
+- extratos bancários e faturas em CSV e XLSX forem aceitos;
+- um extrato e uma fatura Nubank forem reconhecidos automaticamente;
+- arquivos de outros bancos puderem ser enviados pela planilha-modelo;
+- o histórico mostrar todos os arquivos processados e o resultado de
+  cada um;
+- o usuário puder excluir um arquivo e a própria conta;
+- houver arquivos fictícios para testar sem dados reais;
+- a versão hospedada funcionar com login e upload;
 - nenhuma linha desaparecer sem justificativa;
-- os totais Silver e Gold forem reconciliados;
+- as reconciliações fecharem em todo processamento;
+- o relatório de qualidade mostrar as quatro dimensões e o percentual de
+  qualidade de cada arquivo;
+- o dashboard apresentar as medidas de estatística descritiva;
 - o dashboard responder aos filtros;
 - os gráficos forem interativos;
 - as transações puderem ser pesquisadas;
 - as categorias puderem ser corrigidas;
-- três meses de dados puderem gerar recorrências;
-- o calendário mostrar cobranças previstas;
-- a IA responder com valores consultados pelo backend;
-- o pipeline e os endpoints críticos tiverem testes automatizados.
+- o usuário puder definir limites mensais por categoria;
+- o sininho avisar ao atingir 80% e ao passar de 100% de um limite;
+- o diagnóstico do mês com IA puder ser gerado a partir das análises,
+  com resposta validada;
+- toda função de leitura, limpeza, análise e regra de negócio tiver
+  testes unitários com pytest, e os fluxos críticos tiverem testes de
+  integração.
 
 
 ============================================================
 17. PREMISSAS
 ============================================================
 
-- O foco inicial será fatura de cartão.
+- A primeira versão aceitará extratos de conta corrente e faturas de
+  cartão.
 - A moeda inicial será BRL.
-- Extratos bancários entrarão posteriormente.
-- A primeira implantação utilizará uma única instância do backend.
-- PostgreSQL será a única persistência estruturada.
+- A primeira implantação utilizará uma única instância do backend, em
+  plano gratuito.
+- A versão hospedada será usada pela turma e pela banca; dados fictícios
+  serão recomendados.
+- PostgreSQL será a única persistência; os arquivos originais não são
+  guardados.
 - React e Recharts formarão a interface e os dashboards.
 - Pandas e SQL serão responsáveis pelos cálculos.
-- A IA será responsável por interpretação e explicação.
+- A IA explica as análises; ela não calcula nem acessa o banco.
+- Os avisos da primeira versão aparecerão somente no painel.
 - O sistema funcionará inicialmente com Docker Compose.
 - Novas ferramentas serão adicionadas somente após uma necessidade real.
+
+
+============================================================
+18. IDEIAS FUTURAS (FORA DA PRIMEIRA VERSÃO)
+============================================================
+
+Estas ideias orientam decisões de arquitetura, mas não fazem parte das
+etapas nem dos critérios de aceite da primeira versão.
+
+
+18.1. Conversa com a IA sobre os gastos
+
+Evolução do diagnóstico do mês (seção 10): o usuário pergunta em texto
+livre e o modelo consulta funções controladas do backend (function
+calling), como get_spending_summary, get_category_breakdown,
+get_top_merchants e compare_periods.
+
+As regras da seção 10 continuam valendo: o modelo não recebe o arquivo
+nem executa SQL, o backend valida os argumentos e consulta somente os
+dados do usuário autenticado, e os testes usam um cliente falso.
+
+Recursos previstos: tabelas chat_sessions e chat_messages, rotas em
+/api/ai/chats e a tela /app/assistant.
+
+
+18.2. Notificações por e-mail com Resend
+
+Enviar por e-mail, de forma opcional, os mesmos avisos do sininho, como
+os de 80% e 100% de um limite. O Resend será o serviço de envio.
+
+
+18.3. Limite semanal
+
+Permitir limites por semana além do mensal, por exemplo R$ 500,00 por
+semana com Lazer. A definição da semana, como segunda a domingo, será
+decidida quando a funcionalidade entrar.
+
+
+18.4. Previsão de cobranças e calendário
+
+A primeira versão lista os pagamentos recorrentes com a regra simples
+da seção 6.3: mesmo estabelecimento e mesmo valor em todos os meses
+enviados. Fica para depois aceitar valores parecidos e intervalos
+próximos de um mês, com pelo menos três ocorrências. Cada recorrência
+teria periodicidade, valor médio, próxima data estimada e nível de
+confiança, e as cobranças previstas apareceriam em um calendário e no
+sininho. Exemplo: "Netflix
+pode ser cobrada em aproximadamente 3 dias. Valor estimado: R$ 39,90."
+
+
+18.5. Mapeador genérico de colunas
+
+Aceitar CSV e XLSX de qualquer banco, detectando as colunas e pedindo
+ao usuário que confirme o significado de cada uma quando houver
+ambiguidade. Na primeira versão, esse papel é da planilha-modelo.
+
+
+18.6. Guardar o arquivo original
+
+Preservar o arquivo enviado no PostgreSQL, para baixá-lo de novo e
+reprocessá-lo quando uma regra de limpeza mudar.
