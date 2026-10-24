@@ -1,6 +1,7 @@
 # Arquitetura do gerenCIA
 
-O gerenCIA transforma faturas CSV e XLSX em análises financeiras pessoais. Este
+O gerenCIA transforma extratos bancários e faturas de cartão, em CSV e XLSX, em
+análises financeiras pessoais e guarda o histórico de todos os arquivos enviados. Este
 é o mapa rápido da arquitetura planejada. O [planejamento completo](planejamento-gerencia.txt)
 define os requisitos; a tabela de estado ao final mostra o que já existe.
 
@@ -18,13 +19,12 @@ flowchart LR
     subgraph backend ["Backend FastAPI"]
         api["API e autenticação"] --> services["Serviços e casos de uso"]
         services --> repositories["Repositórios e SQLAlchemy"]
-        services --> pipeline["Pipeline de faturas"]
-        services --> analytics["Análises e recorrências"]
-        services --> ai["Assistente e ferramentas financeiras"]
+        services --> pipeline["Leitura, limpeza e análises"]
+        services --> ai["Diagnóstico com IA"]
     end
 
     repositories <--> database[("PostgreSQL")]
-    ai -.->|"Perguntas e resultados autorizados"| openai["OpenAI"]
+    ai -->|"Resumo agregado do mês"| provider["Provedor de IA"]
 ```
 
 | Parte | Onde fica | Responsabilidade |
@@ -34,39 +34,53 @@ flowchart LR
 | Configuração e segurança | `backend/app/core/` | Configuração, sessões, segurança e erros compartilhados |
 | Serviços | `backend/app/services/` | Coordenar os casos de uso e o usuário autorizado |
 | Persistência | `backend/app/repositories/`, `models/` e `db/` | Consultas, modelos e conexão com PostgreSQL |
-| Processamento | `backend/app/pipeline/` | Leitura, normalização, validação e cálculos financeiros |
-| IA | `backend/app/ai/` | Orquestrar perguntas e ferramentas financeiras controladas |
-| Testes | `backend/tests/` e `scripts/frontend/` | Verificar regras, banco e interface |
+| Processamento | `backend/app/pipeline/` | Leitura, limpeza, categorização e cálculos das análises |
+| IA | `backend/app/ai/` | Montar o resumo do mês, chamar o provedor e validar a resposta |
+| Testes | `backend/tests/` e `scripts/frontend/` | Testes unitários e de integração com pytest; verificações da interface com Playwright |
 
 Crie os módulos futuros quando houver funcionalidade para implementar. A direção
 de dependência é `API → Serviços → Repositórios → Banco`. Serviços também
-coordenam o pipeline e as ferramentas de IA; o pipeline não depende do FastAPI.
-Análises e recorrências são implementadas nos serviços e no pipeline conforme
+coordenam o pipeline e a IA; nenhum dos dois depende do FastAPI. Análises,
+limites e notificações são implementados nos serviços e no pipeline conforme
 necessário, sem adicionar outra aplicação.
 
-## Caminho de uma fatura
+## Caminho de um arquivo
 
 Este diagrama representa os dados ao longo do processamento, não as dependências
-entre arquivos Python. A API e os serviços coordenam o fluxo; os repositórios
+entre arquivos Python. Os conceitos de análise de dados aplicados em cada passo
+estão em [análise de dados](analise-de-dados.md). A API e os serviços coordenam o fluxo; os repositórios
 persistem os registros.
 
 ```mermaid
 flowchart TD
-    file["Fatura CSV ou XLSX"] --> upload["Validar arquivo e registrar upload"]
-    upload --> raw["Raw guarda o arquivo original"]
-    raw --> bronze["Bronze preserva as linhas recebidas"]
-    bronze --> treatment["Normalizar e validar os dados"]
-    treatment -->|"Linhas válidas"| silver["Silver guarda transações padronizadas"]
-    treatment -->|"Linhas inválidas"| rejected["Guardar rejeições e seus motivos"]
-    silver --> gold["Gold reúne métricas financeiras"]
-    gold --> api["API consulta os resultados do usuário"]
-    api --> dashboard["Dashboard apresenta os resultados"]
+    file["Extrato ou fatura em CSV ou XLSX"] --> upload["Validar o arquivo e calcular o hash"]
+    upload --> read["Ler com pandas e reconhecer o formato"]
+    read --> treatment["Limpar, validar e categorizar"]
+    treatment -->|"Linhas válidas"| transactions["Transações padronizadas"]
+    treatment -->|"Linhas inválidas"| rejected["Rejeições e seus motivos"]
+    treatment --> quality["Relatório de qualidade"]
+    transactions --> analytics["Análises e estatística, calculadas na consulta"]
+    analytics --> dashboard["Dashboard apresenta os resultados"]
+    analytics --> limits["Comparar o gasto do mês com os limites"]
+    limits -->|"80% ou 100% do limite"| bell["Notificação no sininho do painel"]
+    analytics --> ai["Diagnóstico do mês com IA"]
 ```
 
-Raw guarda os arquivos no armazenamento local previsto no plano. Bronze, Silver,
-Gold e os registros de qualidade ficam no PostgreSQL. Inicialmente, o backend
-terá uma instância e usará `BackgroundTasks` para continuar o processamento após
-responder ao upload, sem adicionar fila ou worker separado.
+O arquivo é processado durante a própria requisição de upload e gravado numa
+única transação do banco: ou entram as transações, as rejeições e o relatório
+de qualidade, ou nada entra. O arquivo original não é guardado. As análises são
+calculadas na consulta, a partir das transações, sem tabelas de resultados
+pré-calculados. A primeira versão não usa a arquitetura Medallion nem
+processamento em segundo plano.
+
+## Hospedagem
+
+A versão da banca será publicada em planos gratuitos e usada pela turma e pela
+banca. O frontend e a API ficam na mesma origem: em domínios diferentes, o
+navegador não envia o cookie de sessão `SameSite=Lax` nas chamadas à API. A
+primeira publicação acontece já na etapa de upload, para que problemas de
+hospedagem apareçam cedo. A chave do provedor de IA fica nas variáveis de
+ambiente da hospedagem, nunca no frontend.
 
 ## Regras para manter o projeto organizado
 
@@ -76,10 +90,13 @@ responder ao upload, sem adicionar fila ou worker separado.
   o dono dos dados. Categorias globais são a exceção pública já implementada.
 - O backend calcula as métricas reais; o frontend as apresenta. A demonstração
   pública pode calcular exemplos fictícios em `demoModel.ts`, sem dados pessoais.
-- A IA usa ferramentas controladas, que passam pelos serviços e repositórios.
-  O modelo não executa SQL nem recebe o arquivo bruto.
-- PostgreSQL é a única persistência estruturada. Redis, Celery, Kafka e outros
-  serviços continuam fora da primeira versão.
+- PostgreSQL é a única persistência; o arquivo original não é guardado. Redis,
+  Celery, Kafka e outros serviços continuam fora da primeira versão.
+- A IA recebe somente o resumo agregado do mês e explica as análises; os
+  cálculos continuam no backend.
+- Toda função de leitura, limpeza, análise e regra de negócio tem testes
+  unitários com pytest, entregues no mesmo pull request.
+- Cada etapa tem uma branch própria, mesclada na `main` por pull request.
 - Testes do banco usam um servidor PostgreSQL temporário separado do banco de
   desenvolvimento. Produção será configurada na implantação.
 - Mantenha os testes de interface em `scripts/frontend/`. Capturas geradas vão
@@ -93,23 +110,33 @@ responder ao upload, sem adicionar fila ou worker separado.
 |---|---|
 | PostgreSQL e SQLAlchemy | Conexão funcionando, 10 tabelas mapeadas e 11 categorias globais ativas |
 | API | Saúde da aplicação, saúde do banco, consulta de categorias e autenticação (`/api/auth/register`, `login`, `logout` e `me`) |
-| Frontend | Demonstração fictícia; cadastro e login reais, com sessão por cookie |
+| Frontend | Demonstração fictícia para visitantes; cadastro e login reais, com sessão por cookie; painel em `/app` com barra lateral, próximos passos e dados da conta |
 | Testes do banco | Suíte de integridade e códigos numéricos; 97 casos aprovados na revisão |
 | Camadas do backend | Autenticação já usa serviço e repositórios; a rota de categorias ainda consulta diretamente o banco |
-| Funcionalidades financeiras | Upload, pipeline, Gold, recorrências e IA ainda pendentes |
-| Ferramentas previstas | Alembic, Docker Compose, Vitest e Testing Library ainda pendentes; limite de tentativas de login ainda pendente |
+| Funcionalidades financeiras | Upload e histórico, leitura e limpeza, análises, limites, notificações e diagnóstico com IA ainda pendentes |
+| Hospedagem | Ainda não publicada; prevista em plano gratuito a partir da etapa de upload |
+| Fora da primeira versão | Conversa com a IA, previsão de cobranças com calendário, mapeador genérico, arquivo original guardado, e-mails pelo Resend e limite semanal (seção 18 do planejamento) |
+| Ferramentas previstas | Alembic e Docker Compose ainda pendentes; limite de tentativas de login ainda pendente |
 
 Antes de ampliar os endpoints, adequar a consulta de categorias às camadas
-previstas. Depois, concluir a fundação com Alembic, Docker Compose e Vitest.
-Funções independentes de tratamento, como a conversão monetária, podem ser
-estudadas e testadas em paralelo, sem depender do banco.
+previstas. Depois, concluir a fundação com Alembic e Docker Compose. Funções
+independentes de tratamento, como a conversão monetária, podem ser estudadas e
+testadas em paralelo, sem depender do banco.
 
-O esquema atual usa `upload_mappings` para o mapeamento de colunas dos uploads.
+O esquema atual ainda tem peças do desenho anterior: a tabela `bronze_rows`, a
+coluna `transactions.bronze_row_id`, a tabela `upload_mappings` e as colunas
+`storage_path` e `status` de `uploads`. Elas saem por migração Alembic na
+etapa 2. O esquema também ainda não distingue extrato de fatura em `uploads`,
+não aceita o tipo `income` em `transactions` e não tem as tabelas
+`category_budgets`, `notifications` e `ai_insights`, que entram nas etapas 2,
+3, 6 e 7.
+
 As atualizações existentes estão em `scripts/migrations/` e são SQL manuais;
 a adoção de Alembic deverá preservar esse histórico e os dados existentes.
 
 ## Documentos de apoio
 
+- [Análise de dados](analise-de-dados.md): transformação, limpeza e qualidade, estatística descritiva.
 - [Planejamento completo](planejamento-gerencia.txt): requisitos, etapas e critérios de aceite.
 - [Configuração do banco](database-setup.md): instalação, atualizações e testes isolados.
 - [Guia de conversão de valores](guia-conversao-valores.md): primeira atividade de programação acompanhada.

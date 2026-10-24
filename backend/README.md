@@ -2,7 +2,7 @@
 
 A aplicação FastAPI tem as rotas GET /api/health, GET /api/health/database,
 GET /api/categories e as de autenticação abaixo. Há conexão PostgreSQL e
-modelos SQLAlchemy; o processamento de faturas ainda será implementado.
+modelos SQLAlchemy; o processamento de extratos e faturas ainda será implementado.
 Consulte o README principal para o comando de inicialização da API.
 
 ## Autenticação
@@ -67,8 +67,8 @@ sua.
 - app/schemas/: contratos Pydantic de entrada e saída.
 - app/repositories/: consultas ao banco sempre limitadas pelo usuário.
 - app/services/: casos de uso e regras da aplicação.
-- app/pipeline/: ingestão e camadas Bronze, Silver e Gold.
-- app/ai/: cliente OpenAI, ferramentas financeiras e orquestração.
+- app/pipeline/: leitura, limpeza, categorização e cálculos das análises.
+- app/ai/: resumo do mês enviado à IA, chamada ao provedor e validação da resposta.
 - migrations/: migrações Alembic.
 - tests/: testes unitários, integração e fixtures.
 
@@ -76,7 +76,8 @@ sua.
 
     API -> Services -> Repositories -> Models/Database
                      -> Pipeline
-                     -> AI tools
+                     -> AI
 
 Rotas não deverão conter transformações Pandas, consultas SQL diretas ou
-cálculos financeiros. O pipeline não deverá depender do FastAPI.
+cálculos financeiros. O pipeline e a IA não deverão depender do FastAPI. Toda
+função do pipeline tem testes unitários com pytest.
