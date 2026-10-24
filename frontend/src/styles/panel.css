@@ -1,0 +1,181 @@
+/* Painel (/app): barra lateral em petróleo à esquerda e o conteúdo no chão
+   sálvia à direita, em cartões brancos de sombra suave, como no resto do site. */
+.panel-shell {
+  display: grid;
+  grid-template-columns: 264px minmax(0, 1fr);
+  min-height: 100vh;
+  background: var(--ground);
+}
+
+/* Barra lateral: fica parada enquanto o conteúdo rola */
+.panel-sidebar {
+  position: sticky; top: 0; align-self: start;
+  display: flex; flex-direction: column; gap: var(--space-6);
+  height: 100vh; padding: var(--space-5) var(--space-4);
+  overflow-y: auto;
+  scrollbar-color: var(--night-hover) var(--night);
+  /* O brilho menta que sobe do pé da barra, como no /login */
+  background: radial-gradient(130% 36% at 50% 100%, rgba(111, 207, 181, 0.2), transparent 72%), var(--night);
+}
+.panel-sidebar-top { display: flex; align-items: center; justify-content: space-between; padding-inline: var(--space-2); }
+.panel-sidebar-body { display: flex; flex: 1; flex-direction: column; gap: var(--space-6); }
+
+/* Menu: a seção aberta ganha fundo erguido e o sublinhado menta do cabeçalho do site */
+.panel-menu { display: grid; gap: 2px; }
+.panel-menu-item {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-3);
+  min-height: 44px; padding: 0 var(--space-3);
+  border-radius: var(--radius-control);
+  font-weight: 500; color: var(--on-night);
+  transition: background-color var(--duration) ease;
+}
+a.panel-menu-item:hover { background: var(--night-hover); }
+.panel-menu-item[aria-current="page"] {
+  background: var(--night-raised); color: var(--on-night-title); font-weight: 600;
+  text-decoration: underline; text-decoration-color: var(--mint);
+  text-decoration-thickness: 2px; text-underline-offset: 0.45em;
+}
+/* Seções que ainda não existem: sem link, em tom de apoio, com a marca "em breve" */
+.panel-menu-item.is-planned { color: var(--on-night-2); cursor: default; }
+.panel-menu-item small {
+  padding: 1px 8px; border: 1px solid var(--night-line); border-radius: var(--radius-pill);
+  font-size: 0.8125rem; font-weight: 500; white-space: nowrap;
+}
+
+/* Pé da barra: quem está logado e o botão de sair */
+.panel-account {
+  display: grid; gap: 2px; margin-top: auto;
+  padding: var(--space-5) var(--space-2) 0; border-top: 1px solid var(--night-line);
+}
+/* Enquanto a sessão é conferida, a área guarda o espaço sem piscar vazia */
+.panel-account[data-state="loading"] { visibility: hidden; }
+.panel-account-name { font-weight: 600; color: var(--on-night-title); overflow-wrap: anywhere; }
+.panel-account-email { font-size: var(--text-small); color: var(--on-night-2); overflow-wrap: anywhere; }
+.panel-account .header-pill { justify-self: start; margin-top: var(--space-3); }
+.panel-account .header-pill:disabled { cursor: progress; opacity: 0.7; }
+.panel-account-error { margin-top: var(--space-2); font-size: var(--text-small); color: var(--on-night-lead); }
+
+/* Área principal: o chão sálvia com duas poças de luz menta presas às bordas,
+   uma no alto à direita (55%) e outra embaixo à esquerda (35%), como no site */
+.panel-main {
+  min-width: 0;
+  padding: clamp(28px, 3.4vw, 48px) var(--gutter) var(--space-8);
+  background:
+    radial-gradient(38% 34% at 100% 0%, var(--ground-glow), transparent 72%),
+    radial-gradient(34% 30% at 0% 100%, rgba(167, 229, 214, 0.35), transparent 72%);
+}
+.panel-page { display: grid; gap: var(--space-6); max-width: 1180px; }
+.panel-page-head { display: grid; gap: var(--space-3); }
+.panel-page-head h1, .panel-message h1, .panel-welcome h1 {
+  font-size: 2rem; font-weight: 600; line-height: 1.1; letter-spacing: -0.03em; text-wrap: balance;
+}
+
+/* Boas-vindas: um campo de menta com o degradê do painel de fechamento da
+   página inicial e o símbolo de três barras grande, esmaecido e cortado pela borda */
+.panel-welcome {
+  position: relative; overflow: hidden;
+  display: grid; gap: var(--space-3);
+  padding: clamp(24px, 3vw, 40px) clamp(24px, 3vw, 40px) clamp(28px, 3.4vw, 44px);
+  border-radius: var(--radius-block);
+  background: linear-gradient(180deg, #ecf9f4 0%, #c6ede2 52%, #95dcc8 100%);
+}
+.panel-welcome h1, .panel-welcome .lead { position: relative; }
+.panel-welcome .lead { max-width: 40em; color: var(--ink); }
+.panel-welcome-mark {
+  position: absolute; top: 50%; right: -28px;
+  width: clamp(120px, 14vw, 200px); height: auto;
+  fill: var(--ink); opacity: 0.07;
+  transform: translateY(-50%) rotate(8deg);
+}
+
+/* Cartões brancos sobre o chão */
+.panel-card { padding: clamp(22px, 2.4vw, 32px); border-radius: var(--radius-panel); background: var(--paper); box-shadow: var(--shadow-soft); }
+.panel-card > h2 { font-size: 1.25rem; font-weight: 600; line-height: 1.15; letter-spacing: -0.025em; }
+/* Grade 8/4: o cartão principal à esquerda e o de apoio à direita */
+.panel-grid { display: grid; grid-template-columns: minmax(0, 8fr) minmax(0, 4fr); gap: var(--space-5); align-items: start; }
+
+/* Próximos passos: uma sequência real, então numerada e ligada por uma linha */
+.panel-steps ol { display: grid; gap: var(--space-1); margin-top: var(--space-4); }
+.panel-steps li {
+  position: relative;
+  display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; column-gap: var(--space-4); align-items: start;
+  padding: var(--space-4); border-radius: var(--radius-card);
+}
+/* A linha sai de baixo de um marcador e chega ao marcador seguinte */
+.panel-steps li:not(:last-child)::after {
+  content: ""; position: absolute; top: 68px; bottom: -12px; left: calc(var(--space-4) + 21px);
+  width: 2px; border-radius: 2px; background: var(--line);
+}
+/* A etapa que vem a seguir ganha a lavagem de menta, a cor do dado em foco */
+.panel-steps li.is-next { background: var(--mint-wash); }
+.panel-step-no {
+  display: grid; place-items: center; width: 44px; height: 44px;
+  border: 1px solid var(--line); border-radius: 50%; background: var(--panel);
+  font-size: 1.0625rem; font-weight: 600; font-variant-numeric: tabular-nums;
+}
+.panel-steps li.is-next .panel-step-no { border-color: var(--ink-2); background: var(--paper); }
+.panel-steps h3 { padding-top: 2px; font-size: 1.0625rem; font-weight: 600; line-height: 1.3; letter-spacing: -0.02em; }
+.panel-steps li p:not(.status-line) { max-width: 52ch; margin-top: var(--space-1); color: var(--ink-2); text-wrap: pretty; }
+.panel-steps .status-line { padding-top: 5px; white-space: nowrap; }
+.panel-steps li.is-next .status-line { color: var(--ink); font-weight: 600; }
+
+/* Fatos da conta: rótulo pequeno e valor, separados por réguas */
+.panel-facts { display: grid; margin-top: var(--space-4); }
+.panel-facts div { display: grid; gap: 2px; padding-block: var(--space-3); border-top: 1px solid var(--line); }
+.panel-facts div:first-child { padding-top: 0; border-top: 0; }
+.panel-facts dt { font-size: var(--text-small); font-weight: 600; color: var(--ink-2); }
+.panel-facts dd { overflow-wrap: anywhere; font-variant-numeric: tabular-nums; }
+.panel-note { margin-top: var(--space-2); font-size: var(--text-small); color: var(--ink-2); text-wrap: pretty; }
+.panel-account-card .text-link { margin-top: var(--space-2); }
+
+/* Página da conta: os fatos em duas colunas, rótulo à esquerda */
+.panel-facts.is-wide div { grid-template-columns: 12rem minmax(0, 1fr); align-items: baseline; gap: var(--space-4); padding-block: var(--space-4); }
+.panel-facts.is-wide div:first-child { padding-top: var(--space-2); }
+.panel-card-foot { margin-top: var(--space-4); padding-top: var(--space-4); border-top: 1px solid var(--line); }
+
+/* Avisos de erro e de página inexistente: centralizados na área principal */
+.panel-message {
+  display: grid; justify-items: start; gap: var(--space-4);
+  max-width: 560px; margin: clamp(32px, 14vh, 140px) auto 0;
+}
+.panel-message p { color: var(--ink-2); }
+
+/* Telas médias: os dois cartões da grade empilham */
+@media (max-width: 1180px) {
+  .panel-grid { grid-template-columns: 1fr; }
+  .panel-grid > .panel-card { max-width: 760px; }
+}
+
+/* Telas estreitas: a barra lateral vira uma barra no topo, com o menu atrás do botão */
+@media (max-width: 960px) {
+  .panel-shell { grid-template-columns: 1fr; }
+  .panel-sidebar {
+    z-index: 30; height: auto; gap: 0; padding: 0 var(--gutter);
+    overflow: visible; border-bottom: 1px solid var(--night-line);
+    background: var(--night);
+  }
+  .panel-sidebar-top { min-height: 60px; padding-inline: 0; }
+  .panel-sidebar-body {
+    position: absolute; top: 100%; left: 0; right: 0;
+    display: none; gap: var(--space-5);
+    padding: var(--space-3) var(--gutter) var(--space-6);
+    border-bottom: 1px solid var(--night-line); background: var(--night);
+  }
+  .panel-sidebar-body.is-open { display: flex; }
+  .panel-menu { gap: 0; }
+  .panel-menu li { border-bottom: 1px solid var(--night-line); }
+  .panel-menu-item { min-height: 52px; padding-inline: var(--space-2); border-radius: 0; font-size: 1.0625rem; }
+  .panel-menu-item[aria-current="page"] { background: transparent; }
+  .panel-account { margin-top: 0; padding: 0; border-top: 0; }
+}
+
+/* Celular: a situação de cada etapa desce para baixo do texto */
+@media (max-width: 640px) {
+  .panel-page-head h1, .panel-message h1, .panel-welcome h1 { font-size: 1.75rem; }
+  /* No celular o símbolo desce para o canto de baixo, longe do texto */
+  .panel-welcome-mark { top: auto; bottom: -26px; right: -18px; width: 92px; opacity: 0.05; transform: rotate(8deg); }
+  .panel-steps li { grid-template-columns: 44px minmax(0, 1fr); padding: var(--space-3); }
+  .panel-steps li:not(:last-child)::after { top: 64px; left: calc(var(--space-3) + 21px); }
+  .panel-steps .status-line { grid-column: 2; padding-top: var(--space-2); }
+  .panel-facts.is-wide div { grid-template-columns: 1fr; gap: 2px; }
+}

@@ -208,15 +208,39 @@ components:
     padding: "0 24px"
   header-pill-hover:
     backgroundColor: "{colors.mint-hover}"
-  nav-user:
+  panel-sidebar:
+    backgroundColor: "{colors.night}"
     textColor: "{colors.on-night}"
-    typography: "{typography.body}"
-  hero-note:
-    backgroundColor: "{colors.night-raised}"
-    textColor: "{colors.on-night-lead}"
-    typography: "{typography.small}"
+    width: "264px"
+  panel-menu-item:
+    textColor: "{colors.on-night}"
     rounded: "{rounded.control}"
-    padding: "10px 20px"
+    height: "44px"
+    padding: "0 12px"
+  panel-menu-item-hover:
+    backgroundColor: "{colors.night-hover}"
+  panel-menu-item-current:
+    backgroundColor: "{colors.night-raised}"
+    textColor: "{colors.on-night-title}"
+  panel-menu-badge:
+    textColor: "{colors.on-night-2}"
+    rounded: "{rounded.pill}"
+    padding: "1px 8px"
+  panel-welcome:
+    backgroundColor: "{colors.closing-mid}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.block}"
+    padding: "clamp(24px, 3vw, 40px)"
+  panel-card:
+    backgroundColor: "{colors.paper}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.panel}"
+    padding: "{spacing.panel-padding}"
+  panel-step-next:
+    backgroundColor: "{colors.mint-wash}"
+    textColor: "{colors.ink}"
+    rounded: "{rounded.card}"
+    padding: "16px"
   pill-link:
     backgroundColor: "{colors.paper}"
     textColor: "{colors.ink}"
@@ -452,7 +476,7 @@ O gerenCIA se apresenta como uma vitrine de produto adaptada do modelo Finmax (W
 
 A peça-assinatura continua sendo a Figura 1, uma pilha de faturas mensais com abas: ela sobe do brilho da abertura entre dois cartões petróleo que trazem números reais da demonstração. Abaixo, a página alterna as superfícies: três cartões de números (o do meio em menta) sobre o gráfico do trimestre, um bloco branco de ponta a ponta para o Problema com a Tabela 1 num painel claro, um cartão branco para o procedimento, o bento da Figura 2 em cartões brancos com telas claras, um bloco petróleo de ponta a ponta para a Demonstração com a Figura 3 numa tela branca, cartões brancos para as perguntas e o painel de fechamento em menta, também de ponta a ponta, antes do rodapé. Em tela muito larga não sobra uma coluna estreita boiando num fundo chapado: os blocos ocupam a largura, e o chão entre eles tem luz e dado. Dentro das telas, a densidade é a de um documento de consulta: réguas finas, rótulos e valores diretos, algarismos tabulares, legenda acima e linha "Fonte:" abaixo.
 
-O acesso é de verdade e vive no mesmo mundo. O /login é o petróleo inteiro em duas colunas: à esquerda o texto e a saída para a demonstração; à direita um bloco branco que pousa sobre o petróleo com a sombra flutuante e guarda o formulário, cujo envio é um botão petróleo de largura total. O /register repete a gramática dos campos sobre o chão sálvia. Quem já entrou é reconhecido no cabeçalho ("Olá, nome" e a pílula "Sair") e numa nota na abertura, e o site público segue inteiro — com a demonstração aberta a todos — mesmo sem conta ou com a API fora do ar.
+O acesso é de verdade e vive no mesmo mundo. O /login é o petróleo inteiro em duas colunas: à esquerda o texto e a saída para a demonstração; à direita um bloco branco que pousa sobre o petróleo com a sombra flutuante e guarda o formulário, cujo envio é um botão petróleo de largura total. O /register repete a gramática dos campos sobre o chão sálvia. Quem entra ou cria a conta vai direto ao painel, em /app, e quem já entrou e abre o início, o /login ou o /register também é levado para lá. A página pública fica para os visitantes e segue inteira — com a demonstração aberta a todos — mesmo com a API fora do ar. O painel vive no mesmo mundo: barra lateral em petróleo, boas-vindas num campo de menta e cartões brancos sobre o chão sálvia.
 
 A adaptação recusa o que o gerenCIA não pode sustentar com verdade: depoimentos, planos e preços, faixa de logotipos de parceiros, captura de e-mail, animação de letras por rolagem e maquete de celular ficam de fora. Também ficam de fora a página branca chapada, o fundo em grade de planilha ou campo de linhas, o texto em degradê, o mascote e as setas em botões. A menta age, seleciona e acende; o petróleo abre, mostra a demonstração e fecha a página.
 
@@ -462,7 +486,8 @@ A adaptação recusa o que o gerenCIA não pode sustentar com verdade: depoiment
 - Chão sálvia em toda a página, com luz medida (poças de menta nas bordas, alternando de lado) e o gasto diário real do trimestre desenhado a 9% na base dos números.
 - O conteúdo pousa em cartões brancos de sombra suave ou em blocos arredondados (24–36px) de ponta a ponta, recuados 8–20px da janela, que alternam branco, petróleo e menta.
 - Dentro dos blocos e cartões, painéis claros (24px) e telas brancas (16px); ações em pílula, a principal em menta sobre o petróleo e em petróleo sobre o branco e sobre a menta.
-- Acesso real: /login em petróleo com o bloco branco do formulário flutuando à direita; /register no chão sálvia; o cabeçalho e a abertura reconhecem quem entrou, e a área de conta guarda o espaço enquanto a sessão é verificada.
+- Acesso real: /login em petróleo com o bloco branco do formulário flutuando à direita; /register no chão sálvia; quem entra vai ao painel (/app), e a área de conta guarda o espaço enquanto a sessão é verificada.
+- Painel em /app: barra lateral em petróleo com brilho menta no pé, boas-vindas num campo de menta, etapas numeradas num cartão branco e seções futuras marcadas "em breve".
 - Uma só família, Inter Tight, com títulos em peso 600 e espaçamento negativo; algarismos tabulares em todo número alinhado.
 - Degradês só nos campos de menta, nunca em texto.
 - Um único momento de carga (a abertura assenta com deslocamento e desfoque) mais as respostas da Figura 1; com movimento reduzido, nada se move.
@@ -473,7 +498,7 @@ Chão sálvia com luz medida, petróleo em três momentos, branco para erguer e 
 
 ### Primary
 - **Petróleo Noturno** (#0b2a33): chão do cabeçalho fixo, do topo da abertura, do bloco da Demonstração, do rodapé, da página /login inteira e do menu móvel aberto; fundo do botão de envio dos formulários brancos e do botão principal no campo de menta. É o escopo `.on-night`, onde o foco passa a menta; o bloco branco do formulário do /login, mesmo dentro dele, restaura o foco teal e os links em tinta.
-- **Petróleo Erguido** (#153f4a): cartões flutuantes da abertura, abas de mês da Figura 1, a nota de quem entrou na abertura, botão secundário e botão de menu sobre o petróleo, e hover do botão de envio petróleo.
+- **Petróleo Erguido** (#153f4a): cartões flutuantes da abertura, abas de mês da Figura 1, a linha da seção aberta no menu do painel, botão secundário e botão de menu sobre o petróleo, e hover do botão de envio petróleo.
 - **Petróleo de Hover** (#1d4f5b): hover das abas de mês e do botão secundário sobre o petróleo.
 - **Tinta Petróleo** (#0f3440): todo o texto sobre o chão, os blocos claros, os painéis e as telas; ícones e sinal de mais dentro dos discos menta; réguas de 1px de cabeçalho de tabela, de soma e de eixo; a barra em foco; o preenchimento das opções pressionadas; o símbolo grande e esmaecido do fechamento. 13,2:1 sobre o branco, 11,9:1 sobre o painel e 11,1:1 sobre o chão.
 - **Petróleo de Apoio** (#45656b): texto secundário — introduções de seção, legendas, linhas "Fonte:", cabeçalhos de coluna, datas, percentuais, respostas das perguntas e texto de exemplo dos campos. 6,3:1 sobre o branco, 5,7:1 sobre o painel, 5,4:1 sobre a lavagem de menta e 5,3:1 sobre o chão.
@@ -481,10 +506,10 @@ Chão sálvia com luz medida, petróleo em três momentos, branco para erguer e 
 ### Secondary
 - **Menta** (#a7e5d6): a cor da ação — fundo do botão principal, das etiquetas dos cartões flutuantes e ponto de partida das etiquetas dos cartões de números. No petróleo, é o anel de foco e o sublinhado da seção atual e dos links (10,6:1 sobre o petróleo noturno). A tinta sobre a menta chega a 9,4:1. É também a cor de seleção de texto.
 - **Menta Clara** (#c4f0e4): hover do botão principal e da pílula "Cadastrar"; ponto claro do degradê dos discos e do ladrilho do logotipo.
-- **Lavagem de Menta** (#ddf3ec): o dado selecionado — a linha escolhida da Figura 1, a categoria escolhida no resumo da Figura 3, a medida principal da Figura 3 e o selo "Dados fictícios".
-- **Menta Profunda** (#6fcfb5): ponto escuro do degradê dos discos (ícones, etapa disponível, sinal de mais das perguntas, ladrilho do logotipo) e, translúcida, os brilhos radiais da abertura (55%), do bloco da Demonstração (22% no alto e 16% no canto de baixo) e do /login (32%). A tinta sobre ela fica em 7,1:1.
-- **Campos de menta**: o brilho da abertura desce do petróleo noturno por **Petróleo do Brilho** (#10404a), **Teal do Brilho** (#2a7a70), **Menta do Brilho** (#8fd6c3) e **Névoa do Brilho** (#d4ede4) até o chão. O cartão de destaque dos números vai, a 160°, de **Destaque Claro** (#e9f8f2) por **Destaque Médio** (#c2ebdf) até **Destaque Profundo** (#b3e6d8); a tinta sobre o ponto mais escuro fica em 9,6:1. O painel de fechamento desce de **Fechamento Claro** (#ecf9f4) por **Fechamento Médio** (#c6ede2) até **Fechamento Profundo** (#95dcc8); a tinta sobre o ponto mais escuro fica em 8,4:1.
-- **Luz do Chão** (rgba(167, 229, 214, 0.55)): a menta a 55% no centro das poças de luz que acendem as bordas do chão em Números, Como funciona e Perguntas; a segunda poça de cada seção usa a mesma menta a 35%. No ponto mais forte da poça, o apoio ainda fica em 4,8:1 e a tinta em 10,1:1.
+- **Lavagem de Menta** (#ddf3ec): o dado selecionado — a linha escolhida da Figura 1, a categoria escolhida no resumo da Figura 3, a medida principal da Figura 3, o selo "Dados fictícios" e, no painel, a etapa que vem a seguir em "Próximos passos".
+- **Menta Profunda** (#6fcfb5): ponto escuro do degradê dos discos (ícones, etapa disponível, sinal de mais das perguntas, ladrilho do logotipo) e, translúcida, os brilhos radiais da abertura (55%), do bloco da Demonstração (22% no alto e 16% no canto de baixo), do /login (32%) e do pé da barra lateral do painel (20%). A tinta sobre ela fica em 7,1:1.
+- **Campos de menta**: o brilho da abertura desce do petróleo noturno por **Petróleo do Brilho** (#10404a), **Teal do Brilho** (#2a7a70), **Menta do Brilho** (#8fd6c3) e **Névoa do Brilho** (#d4ede4) até o chão. O cartão de destaque dos números vai, a 160°, de **Destaque Claro** (#e9f8f2) por **Destaque Médio** (#c2ebdf) até **Destaque Profundo** (#b3e6d8); a tinta sobre o ponto mais escuro fica em 9,6:1. O painel de fechamento — e, no painel do usuário, o campo das boas-vindas — desce de **Fechamento Claro** (#ecf9f4) por **Fechamento Médio** (#c6ede2) até **Fechamento Profundo** (#95dcc8); a tinta sobre o ponto mais escuro fica em 8,4:1.
+- **Luz do Chão** (rgba(167, 229, 214, 0.55)): a menta a 55% no centro das poças de luz que acendem as bordas do chão em Números, Como funciona, Perguntas e na área principal do painel (no alto à direita); a segunda poça de cada seção usa a mesma menta a 35% (no painel, embaixo à esquerda). No ponto mais forte da poça, o apoio ainda fica em 4,8:1 e a tinta em 10,1:1.
 - **Borda do Bloco** (#f0f7f3): a menta pálida para onde o bloco branco do Problema esfria longe do conteúdo; até 58% do raio o bloco é branco puro.
 
 ### Tertiary
@@ -496,9 +521,9 @@ Chão sálvia com luz medida, petróleo em três momentos, branco para erguer e 
 - **Painel** (#eef4f1): o painel que segura a Tabela 1 dentro do bloco do Problema e as telas claras dos cartões da Figura 2; também as medidas da Figura 3, o detalhe do gráfico, a contagem de lançamentos, o fundo do marcador de etapa e o hover de linhas, opções e do botão "Mostrar".
 - **Linha** (#cddbd6): contorno de 1px do botão secundário, da pílula de link, do seletor segmentado, dos botões de período e dos marcadores de etapa; contorno das perguntas no hover e quando abertas; réguas entre linhas; ligação entre as etapas. É contorno, não fronteira de controle (1,4:1 sobre o branco).
 - **Borda de Campo** (#698388): contorno dos campos em repouso, 4,0:1 contra o campo branco.
-- **Tijolo de Erro** (#a3341f): borda e mensagem dos campos inválidos, texto do alerta de formulário e seu anel de foco; 6,8:1 sobre o branco. Nunca sobre o petróleo (2,2:1): ali o erro de saída do cabeçalho usa o corrido noturno.
+- **Tijolo de Erro** (#a3341f): borda e mensagem dos campos inválidos, texto do alerta de formulário e seu anel de foco; 6,8:1 sobre o branco. Nunca sobre o petróleo (2,2:1): ali o erro de saída da barra lateral do painel usa o corrido noturno.
 - **Faixa de Erro** (#fbeae6): fundo do alerta de formulário, a faixa rosada acima dos campos que traz falhas do formulário inteiro (credenciais recusadas, e-mail já cadastrado, servidor fora do ar); o texto em tijolo sobre ela fica em 5,9:1. Fica a 1,2:1 do branco, por isso a faixa se distingue também pelo peso 600, pela mensagem e pelo `role="alert"`, não só pelo tom.
-- **Texto Noturno** (#eef5f2), **Título Noturno** (#f6faf8), **Corrido Noturno** (#d4e4de), **Apoio Noturno** (#a9c6c0) e **Linha Noturna** (rgba(238, 245, 242, 0.16)): texto de interface, títulos, resumo e introdução, texto de apoio e réguas sobre o petróleo (13,6:1, 14,3:1, 11,5:1 e 8,3:1; sob o brilho do bloco da Demonstração, o corrido noturno ainda fica acima de 7:1). Sobre o petróleo erguido, o apoio noturno fica em 6,3:1 e o corrido noturno, usado na nota de quem entrou, em 8,7:1. O nome de quem entrou ("Olá, nome", peso 500) é texto noturno. O texto noturno a 7% desenha a palavra gigante do rodapé; a 14% e 22%, os contornos dos cartões flutuantes, do botão secundário e do botão de menu no petróleo.
+- **Texto Noturno** (#eef5f2), **Título Noturno** (#f6faf8), **Corrido Noturno** (#d4e4de), **Apoio Noturno** (#a9c6c0) e **Linha Noturna** (rgba(238, 245, 242, 0.16)): texto de interface, títulos, resumo e introdução, texto de apoio e réguas sobre o petróleo (13,6:1, 14,3:1, 11,5:1 e 8,3:1; sob o brilho do bloco da Demonstração, o corrido noturno ainda fica acima de 7:1). Sobre o petróleo erguido, o apoio noturno fica em 6,3:1 e o corrido noturno em 8,7:1. No painel, as seções futuras do menu e o e-mail de quem entrou ficam em apoio noturno, e o nome de quem entrou e a seção aberta, em título noturno. O texto noturno a 7% desenha a palavra gigante do rodapé; a 14% e 22%, os contornos dos cartões flutuantes, do botão secundário e do botão de menu no petróleo.
 - **Folhas de Trás** (#c9dbd4 e #8fb3aa): as duas faturas que aparecem atrás da Figura 1, a mais clara por cima.
 
 ### Dados
@@ -514,7 +539,7 @@ Chão sálvia com luz medida, petróleo em três momentos, branco para erguer e 
 
 **A Regra da Luz Medida.** O chão recebe luz, não cor: duas poças de menta por seção (55% e 35% no centro), presas às bordas e alternando de lado — Números e Perguntas acendem a esquerda no alto e a direita embaixo, Como funciona espelha. Nenhum campo novo de cor se abre no chão; em tela larga o centro das poças fica fora do contêiner, e mesmo onde a luz alcança o texto, o apoio fica acima de 4,5:1.
 
-**A Regra do Petróleo em Três Momentos.** O petróleo noturno aparece três vezes na página — na abertura, no bloco da Demonstração e no rodapé — e ocupa o /login inteiro; entre esses momentos, o chão é sálvia. No petróleo, o texto é quase branco e a menta substitui o teal, que ali fica em 2,4:1; dentro de uma tela ou de um bloco branco, mesmo sobre o petróleo, o foco volta ao teal.
+**A Regra do Petróleo em Três Momentos.** O petróleo noturno aparece três vezes na página — na abertura, no bloco da Demonstração e no rodapé — e ocupa o /login inteiro; entre esses momentos, o chão é sálvia. No painel, o petróleo é a barra lateral inteira, e a área de trabalho fica no chão sálvia. No petróleo, o texto é quase branco e a menta substitui o teal, que ali fica em 2,4:1; dentro de uma tela ou de um bloco branco, mesmo sobre o petróleo, o foco volta ao teal.
 
 **A Regra do Bloco Branco no Petróleo.** Um bloco branco dentro de uma região petróleo — o formulário do /login, a Figura 3 no bloco da Demonstração — restaura as cores de superfície clara: texto em tinta, links de texto em tinta com sublinhado teal, foco em teal e a sombra flutuante. Só o botão de envio, em petróleo, volta a levar texto noturno. Os mesmos links, fora do bloco, seguem em texto noturno com sublinhado menta.
 
@@ -542,10 +567,11 @@ A Inter Tight é servida pelo próprio site em WOFF2 (`frontend/public/fonts/int
 - **Intro** (400, 16–18px fluido, entrelinha 1,55, até 38–40em): o resumo da abertura, do /login e do /register, em corrido noturno no petróleo e em apoio no claro. As introduções de seção usam o mesmo passo, limitado a 17px; no bloco da Demonstração, em corrido noturno.
 - **Lead** (400, 17px, entrelinha 1,6): respostas das perguntas e, com entrelinha 1,5, a frase do painel de fechamento.
 - **Action** (600, 16px, -0,01em): botões em pílula, etiquetas dos cartões de números e títulos das colunas do rodapé; os links da navegação usam o mesmo tamanho em 500.
-- **Body** (400, 16px, entrelinha 1,5): interface, linhas das figuras e células de tabela. Links em 600; a categoria selecionada em 650; o nome de quem entrou em 500; o alerta de formulário em 600.
+- **Body** (400, 16px, entrelinha 1,5): interface, linhas das figuras e células de tabela. Links em 600; a categoria selecionada em 650; as linhas do menu do painel em 500 (600 na seção aberta e no nome de quem entrou); o alerta de formulário em 600.
 - **Caption** (400, 14px, entrelinha 1,4): legendas "Figura N" e "Tabela N" (o rótulo em 650 e tinta, o resto em apoio), botões de período (600) e o rótulo dos cartões flutuantes; as pílulas de link ficam em 15px (600).
-- **Small** (400, 14px, entrelinha 1,45): linhas "Fonte:", dicas, percentuais, totais das abas, notas das medidas, a nota de quem entrou e o erro de saída do cabeçalho, e linhas de status (500). Em 600, os **rótulos**: cabeçalhos de coluna, termos das medidas, rótulo do período, selo, contagem, opções do seletor segmentado e mensagens de erro.
+- **Small** (400, 14px, entrelinha 1,45): linhas "Fonte:", dicas, percentuais, totais das abas, notas das medidas, o e-mail e o erro de saída no pé da barra do painel, a nota de privacidade do painel e linhas de status (500). Em 600, os **rótulos**: cabeçalhos de coluna, termos das medidas, rótulo do período, selo, contagem, opções do seletor segmentado e mensagens de erro.
 - **Wordmark** (600, 56–176px fluido, entrelinha 0,9, -0,04em): só a palavra "gerenCIA" gigante e esmaecida que o rodapé corta.
+- **Painel:** interface de trabalho, com tamanhos fixos em vez de fluidos: título da página em 32px (28px até 640px), títulos dos cartões em 20px, títulos das etapas em 17px, todos em 600 com espaçamento negativo; a marca "em breve" do menu em 13px 500.
 - **Logotipo** (21px, 20px até 720px, -0,03em): "geren" em 650 e "CIA" em 400.
 
 ### Named Rules
@@ -562,6 +588,8 @@ O espaço segue a vitrine do Finmax: contêiner de até 1240px (1320px a partir 
 A abertura é centrada, com 40–72px acima e 56–96px abaixo: título, resumo e ações num bloco de até 780px e, a 36–56px dele, a Figura 1 num palco de até 640px (580px até 1360px). Os cartões flutuantes saem do palco para os lados — o da esquerda mais baixo, o da direita mais alto — e somem até 1180px.
 
 As seções são faixas sobre o chão, com 36–60px acima e abaixo (48–72px na primeira depois da abertura) e sem régua entre elas. Números, Como funciona e Perguntas ficam soltas no chão, com cabeçalho centrado (título até 18ch, introdução até 38em) e poças de luz nas bordas; Números tem ainda o gráfico do trimestre na base, na largura toda, atrás dos cartões. Problema se ergue num bloco branco de ponta a ponta, de cantos de 24–36px, com 24–56px de respiro acima e abaixo e sombra suave; dentro, o contêiner divide 7/5: a Tabela 1 no painel claro à esquerda e o argumento à direita. A Demonstração se ergue num bloco petróleo de ponta a ponta, de cantos de 24–36px (32–64px de respiro acima, 20–56px embaixo), com o cabeçalho dividido em duas colunas (título à esquerda, introdução à direita) em texto claro e a Figura 3 logo abaixo, direto sobre o petróleo. Os cartões de números ocupam três colunas iguais com 16px entre elas. Em Como funciona, o procedimento é um só cartão branco de três colunas, seguido do bento da Figura 2: duas colunas, com o terceiro cartão na largura toda, dividido 5/7. As perguntas ficam numa coluna central de até 760px. O fechamento é um painel menta de ponta a ponta, com o mesmo recuo dos blocos e o conteúdo centrado. O rodapé sobe com os cantos de cima arredondados (24–36px), tem grade 5/4/3 (marca, links em duas colunas, fatos) e a palavra gigante no pé.
+
+O painel (/app) é uma moldura de aplicativo: barra lateral fixa de 264px à esquerda, na altura toda da janela, e a área principal à direita, com margem fluida de 16 a 48px e conteúdo de até 1180px. As páginas do painel abrem com o título (ou, no início, o campo de boas-vindas) e seguem numa grade 8/4, com o cartão principal à esquerda e o de apoio à direita, separados por 24px. Até 1180px, a grade empilha, com cartões de até 760px; até 960px, a barra lateral vira uma barra no topo de 60px, com o menu atrás do botão de menu; até 640px, a situação de cada etapa desce para baixo do texto e os fatos da conta empilham rótulo e valor.
 
 O /login e o /register dividem 5/6 entre o texto e o bloco branco do formulário, com as colunas centradas na vertical no /login e alinhadas ao topo no /register: no /login, o texto (título de até 10ch, resumo e a pílula secundária) à esquerda e o bloco à direita, sobre o petróleo; no /register, sobre o chão, a introdução com a lista do previsto à esquerda e o bloco à direita. Nas duas, a página ocupa pelo menos a altura da janela e o conjunto fica centrado na vertical no espaço abaixo do cabeçalho.
 
@@ -598,16 +626,16 @@ A profundidade vem do contraste entre o chão e o que se ergue dele. O chão sá
 
 A forma é macia e aninhada, como no Finmax: o bloco de 24–36px segura o painel de 24px, que segura a tela de 16px, que segura o controle de 12px; ações e seletores são pílulas.
 
-- **24–36px (bloco):** bloco branco do Problema, bloco petróleo da Demonstração e painel de fechamento (os três de ponta a ponta), blocos de formulário do /login e do /register e cantos de cima do rodapé.
-- **24px:** painel claro da Tabela 1, cartões de números, cartão do procedimento, e cartões da Figura 2.
-- **16px:** telas brancas (Tabela 1, Figura 3), folhas da Figura 1 — a da frente com o canto superior esquerdo reto, onde a aba pressionada se funde a ela —, topo das telas claras da Figura 2, cartões das perguntas, cartões flutuantes, medidas da Figura 3 e lista do previsto no /register.
-- **12px:** cantos de cima das abas de mês, campos, detalhe do gráfico, alerta de formulário e nota de quem entrou.
+- **24–36px (bloco):** bloco branco do Problema, bloco petróleo da Demonstração e painel de fechamento (os três de ponta a ponta), blocos de formulário do /login e do /register, campo de boas-vindas do painel e cantos de cima do rodapé.
+- **24px:** painel claro da Tabela 1, cartões de números, cartão do procedimento, cartões da Figura 2 e cartões do painel.
+- **16px:** telas brancas (Tabela 1, Figura 3), folhas da Figura 1 — a da frente com o canto superior esquerdo reto, onde a aba pressionada se funde a ela —, topo das telas claras da Figura 2, cartões das perguntas, cartões flutuantes, medidas da Figura 3, lista do previsto no /register e linhas das etapas do painel.
+- **12px:** cantos de cima das abas de mês, campos, detalhe do gráfico, alerta de formulário e linhas do menu do painel.
 - **8px:** sinal de mais das perguntas, topo das colunas e pontas da barra de composição da Figura 2.
-- **Pílula:** botões (inclusive o envio de formulário), pílulas "Cadastrar" e "Sair", pílulas de link, seletor segmentado e suas opções, botões de período, selo, contagem, etiquetas dos cartões de números e dos flutuantes e o link de pular para o conteúdo.
+- **Pílula:** botões (inclusive o envio de formulário), pílulas "Cadastrar" e "Sair", marcas "em breve" do menu do painel, pílulas de link, seletor segmentado e suas opções, botões de período, selo, contagem, etiquetas dos cartões de números e dos flutuantes e o link de pular para o conteúdo.
 - **Círculo:** discos de ícone (40px), marcadores de etapa (44px), botão de menu (44px), discos brancos das etiquetas (30px) e marcas de disponibilidade (10px).
 - **Pequenos cantos:** chaves de categoria são quadrados de 10px com cantos de 3px (12px com 4px na legenda da Figura 2); chamadas de nota têm cantos de 6px; as barras têm ponta livre de 4–6px e base reta no eixo; o ladrilho do logotipo tem 38px com cantos de 11px.
 
-Os glifos são desenhados. Há um só conjunto de ícones — calendário, recibo, etiquetas, linhas e colunas —, em grade de 24px, traço de 1,75 e pontas redondas, sempre em tinta dentro de um disco menta. Além dele, só o sinal de mais feito de duas barras de 2px, as duas barras do botão de menu e o símbolo de três barras ascendentes: no ladrilho do logotipo e, grande, preenchido e esmaecido, nas laterais do painel de fechamento. Não há setas nem ícones de pacote.
+Os glifos são desenhados. Há um só conjunto de ícones — calendário, recibo, etiquetas, linhas e colunas —, em grade de 24px, traço de 1,75 e pontas redondas, sempre em tinta dentro de um disco menta. Além dele, só o sinal de mais feito de duas barras de 2px, as duas barras do botão de menu e o símbolo de três barras ascendentes: no ladrilho do logotipo e, grande, preenchido e esmaecido, nas laterais do painel de fechamento e na borda direita das boas-vindas do painel. O menu do painel não leva ícones: só texto. Não há setas nem ícones de pacote.
 
 ### Named Rules
 **A Regra do Aninhamento.** O canto de dentro é sempre menor que o de fora: bloco de 24–36px, painel de 24px, tela de 16px, controle de 12px, pílula na ação. Um cartão solto no chão usa o canto do nível em que está.
@@ -622,7 +650,7 @@ Pílulas diretas: sem seta, sem sombra e com um só rótulo.
 - **Principal no campo de menta:** no painel de fechamento, o principal vira petróleo noturno com texto noturno; hover em petróleo erguido.
 - **Envio de formulário:** a mesma variante em petróleo, em largura total, 48px de altura e 24px acima, ao fim dos campos: "Entrar" e "Criar conta". Enquanto envia, o rótulo vira "Entrando…" ou "Criando conta…", o botão se desativa, o cursor vira progresso e a opacidade cai a 70% (o texto ainda fica em 5,3:1). O foco é o anel teal sobre o branco do bloco.
 - **Secondary:** pílula branca com contorno de linha e texto em tinta; o hover escurece o contorno para o apoio. No petróleo, pílula em petróleo erguido com contorno claro a 22%; hover em petróleo de hover com contorno de apoio noturno. "Como funciona" na abertura, "Explorar a demonstração" no /login e "Criar conta" no fechamento.
-- **Pílula "Cadastrar" / "Sair":** no cabeçalho, pílula branca de 44px com 24px de respiro e texto em tinta; hover em menta clara. Para quem entrou, a mesma pílula, agora um botão, diz "Sair".
+- **Pílula "Cadastrar" / "Sair":** no cabeçalho, pílula branca de 44px com 24px de respiro e texto em tinta; hover em menta clara. No pé da barra lateral do painel, a mesma pílula, como botão, diz "Sair" ("Saindo…" enquanto a sessão é encerrada, com opacidade de 70%).
 - **Pílula de link:** 40px (44px em toque), 20px de respiro, contorno de linha, 15px em 600 — "Abrir 2a na demonstração".
 - **Link de texto:** 600 com sublinhado de 1px afastado 0,3em — teal sobre o claro, menta no petróleo —, que engrossa para 2px no hover; alvo de 40px (44px em toque). As referências cruzadas no texto ("Tabela 1", "Figura 2") usam o mesmo sublinhado, afastado 0,2em. Dentro de um bloco branco sobre o petróleo (o formulário do /login), os links ficam em tinta com sublinhado teal.
 
@@ -651,7 +679,7 @@ Pílulas diretas: sem seta, sem sombra e com um só rótulo.
 - **Troca de página:** abaixo do botão, 16px, uma linha em apoio — "Ainda não tem conta? Criar conta" no /login, "Já tem conta? Entrar" no /register — com o link em tinta e sublinhado teal.
 
 ### Navigation
-- **Cabeçalho:** fixo, em petróleo noturno, com linha noturna abaixo e 68px de altura. À esquerda, o logotipo: ladrilho menta de 38px com as três barras em tinta e "gerenCIA" em texto noturno. Ao centro, Problema, Como funciona, Demonstração e Perguntas, no tamanho action em 500 e texto noturno, sem números; o hover mostra um sublinhado de 2px em apoio noturno, e a seção atual, sublinhado menta afastado 0,5em. À direita, "Entrar" (link que ganha sublinhado menta no hover) e a pílula branca "Cadastrar". Quem entrou vê no lugar deles "Olá, {primeiro nome}" em texto noturno 500 e a pílula branca "Sair"; se a saída falhar, a mensagem "Não foi possível sair. Tente de novo." aparece ao lado, em small e corrido noturno. Enquanto a sessão é verificada, a área de conta guarda o espaço mas fica invisível, para que nada pisque.
+- **Cabeçalho:** fixo, em petróleo noturno, com linha noturna abaixo e 68px de altura. À esquerda, o logotipo: ladrilho menta de 38px com as três barras em tinta e "gerenCIA" em texto noturno. Ao centro, Problema, Como funciona, Demonstração e Perguntas, no tamanho action em 500 e texto noturno, sem números; o hover mostra um sublinhado de 2px em apoio noturno, e a seção atual, sublinhado menta afastado 0,5em. À direita, "Entrar" (link que ganha sublinhado menta no hover) e a pílula branca "Cadastrar". Quem já entrou não fica neste cabeçalho: é levado ao painel. Enquanto a sessão é verificada, a área de conta guarda o espaço mas fica invisível, para que nada pisque.
 - **Móvel (até 960px):** cabeçalho de 60px; botão circular de 44px em petróleo erguido, com contorno claro e duas barras que se cruzam em ×. O painel ocupa a largura, em petróleo, com linhas de 52px em 17px separadas por linha noturna e as ações de conta no pé. Escape fecha e devolve o foco ao botão; tirar o foco do cabeçalho também fecha.
 - **/login e /register:** o mesmo cabeçalho em petróleo, só com o logotipo e dois links de texto — "Criar conta" e "Voltar ao início" no /login, "Entrar" e "Voltar ao início" no /register —, que nunca quebram de linha; até 480px "Voltar ao início" some.
 
@@ -659,7 +687,6 @@ Pílulas diretas: sem seta, sem sombra e com um só rótulo.
 O primeiro momento da página.
 - **Fundo:** petróleo noturno até a metade, que desce por petróleo do brilho, teal do brilho, menta do brilho e névoa do brilho até o chão sálvia, com um brilho radial de menta profunda sob a figura.
 - **Bloco centrado:** título display em título noturno ("Sua fatura diz mais que o total."), resumo em corrido noturno, principal "Explorar a demonstração" e secundário "Como funciona".
-- **Nota de quem entrou:** sob os botões, uma caixa em petróleo erguido com contorno de 1px em linha noturna, cantos de 12px, 10px 20px de respiro, small em corrido noturno e até 40em, com `role="status"`: "Você entrou como {e-mail}. O envio de faturas ainda está em desenvolvimento; a demonstração abaixo usa dados fictícios." Aparece só depois que a sessão é confirmada, com a mesma animação de assentar da abertura.
 - **Palco:** a Figura 1 completa entre dois cartões flutuantes em petróleo erguido (204px, cantos de 16px, contorno claro a 14%, sombra flutuante), girados -5° à esquerda e 4° à direita. Cada cartão tem rótulo em caption de apoio noturno, número em 24px 600 título noturno e tabular, e uma etiqueta menta em pílula: "Saídas no trimestre" com o número de lançamentos, e "Agosto em relação a julho" com o percentual a menos. Os dois são calculados dos mesmos dados das figuras.
 - **Movimento:** o único momento de carga do site. Título, resumo e ações sobem 16px saindo de um desfoque de 6px em 720ms, com 0, 80 e 160ms de atraso; o palco faz o mesmo em 900ms, a partir de 220ms. Nada começa invisível: o texto só é suavizado. Curva de saída exponencial.
 
@@ -718,7 +745,17 @@ Petróleo noturno com os cantos de cima arredondados (24–36px), deixando o ch�
 ### /login e /register
 - **/login:** o petróleo inteiro, com um brilho radial de menta profunda vindo de baixo, em duas colunas 5/6 centradas na vertical. À esquerda, display em título noturno ("Entre na sua conta."), resumo em corrido noturno e a pílula secundária "Explorar a demonstração". À direita, o bloco branco do formulário com a sombra flutuante: título "Entrar" em title, os campos "E-mail" e "Senha" (com "Mostrar"/"Ocultar"), o alerta de formulário quando houver, o envio "Entrar" em petróleo na largura toda e, abaixo, "Ainda não tem conta? Criar conta". Em uma coluna até 1080px.
 - **/register:** chão sálvia. À esquerda, o título "Crie sua conta.", o resumo e a lista do previsto num cartão branco de cantos de 16px com sombra suave e marcas em anel; à direita, o formulário num bloco branco de cantos de 24–36px com sombra suave: "Dados da conta" em title, os campos nome, e-mail, senha (com a dica "8 caracteres ou mais") e confirmação, o alerta de formulário quando houver, o envio "Criar conta" em petróleo na largura toda ("Criando conta…" enquanto envia) e "Já tem conta? Entrar".
-- **Comportamento:** quem já entrou é levado de /login e /register para o início; se a API não responder, o site público segue inteiro e os formulários dizem que não foi possível falar com o servidor.
+- **Comportamento:** depois de entrar ou de criar a conta, a pessoa vai ao painel (/app), e quem já entrou é levado de /login e /register para lá; se a API não responder, o site público segue inteiro e os formulários dizem que não foi possível falar com o servidor.
+
+### Painel (/app)
+A área de quem entrou. É uma superfície de trabalho, não uma segunda vitrine: o mesmo mundo, com densidade e tamanhos fixos de interface. Quem abre /app sem sessão vai para /login.
+- **Barra lateral:** 264px, na altura toda da janela e parada enquanto o conteúdo rola, em petróleo noturno com um brilho de menta profunda a 20% subindo do pé. No alto, o logotipo, que leva a /app. O menu lista Painel, Arquivos, Transações, Limites e Conta, só em texto: linhas de 44px, cantos de 12px, texto noturno em 500 e hover em petróleo de hover. A seção aberta (`aria-current="page"`) ganha fundo em petróleo erguido, título noturno em 600 e o sublinhado menta de 2px do cabeçalho do site. As seções que ainda não existem não são links: ficam em apoio noturno, com a marca "em breve" numa pílula de contorno noturno (13px, 500). No pé, sobre uma linha noturna, o nome de quem entrou em título noturno 600, o e-mail em small de apoio noturno e a pílula branca "Sair"; enquanto a sessão é verificada, o pé guarda o espaço sem aparecer.
+- **Móvel (até 960px):** a barra vira uma barra no topo de 60px, em petróleo liso, com o logotipo e o botão de menu do site. O menu abre por baixo, na largura toda, com linhas de 52px em 17px separadas por linha noturna e o pé da conta no fim. Escape fecha e devolve o foco ao botão; tirar o foco da barra também fecha.
+- **Chão:** a área principal é chão sálvia com duas poças de luz: menta a 55% no alto à direita e a 35% embaixo à esquerda.
+- **Boas-vindas:** no início do painel, um campo de menta com o degradê do painel de fechamento, cantos de bloco e 24–40px de respiro: "Olá, {primeiro nome}." em 32px 600 e uma frase em tinta que diz o estado do painel e o que vem a seguir. Na borda direita, o símbolo de três barras em tinta a 7%, girado 8° e cortado pela borda (até 640px, a 5%, pequeno e no canto de baixo).
+- **Próximos passos:** enquanto não há arquivos, um cartão branco com as quatro etapas que vão preencher o painel, na ordem em que o projeto as constrói. Cada etapa é uma linha de cantos de 16px com o marcador numerado de 44px do procedimento, o título em 17px 600, a explicação em apoio e, à direita, a linha de situação com a marca em anel. Uma linha de 2px liga os marcadores. A etapa seguinte ganha lavagem de menta, o marcador branco com contorno de apoio e a situação "Em desenvolvimento" em tinta 600; as outras dizem "Em breve". Não há botão nem ação falsa.
+- **Cartões de apoio:** à direita, na grade 8/4, cartões brancos de 24px com fatos em lista: rótulo em small 600 de apoio, valor no corpo, réguas de linha entre eles. No início, "Sua conta" (data de criação, arquivos enviados, nota de privacidade e o link "Ver dados da conta"); na página /app/account, "Dados da conta" com os fatos em duas colunas e "Acesso e privacidade" ao lado.
+- **Avisos:** a falha da API e o endereço inexistente aparecem num cartão branco de até 560px, centrado na área principal, com o título em 32px, a explicação em apoio e um único principal em petróleo ("Tentar de novo" ou "Voltar ao painel").
 
 ### Named Rules
 **A Regra da Prova Verdadeira.** O gerenCIA não tem depoimentos, clientes, preços nem parceiros para mostrar, e as contas já existem mas ainda não guardam faturas (o envio está em desenvolvimento), por isso as seções do Finmax que dependem disso — depoimentos, planos e preços, faixa de logotipos de parceiros, captura de e-mail e maquete de celular — não existem aqui. Todo número exibido, inclusive os dos cartões flutuantes e dos cartões de números, é calculado dos dados fictícios das figuras, e o aviso de dados fictícios fica no selo da Figura 3 e nas linhas "Fonte:".
