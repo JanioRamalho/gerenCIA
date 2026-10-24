@@ -15,6 +15,12 @@ if not database_url:
         "DATABASE_URL não foi definida. Configure-a no arquivo .env na raiz do projeto."
     )
 
+# Provedores como Neon/Vercel entregam "postgres://" ou "postgresql://"; o driver instalado é o psycopg 3.
+for prefix in ("postgres://", "postgresql://"):
+    if database_url.startswith(prefix):
+        database_url = "postgresql+psycopg://" + database_url[len(prefix):]
+        break
+
 engine = create_engine(database_url, pool_pre_ping=True)
 SessionLocal = sessionmaker(bind=engine, autoflush=False, autocommit=False)
 
