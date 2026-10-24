@@ -23,8 +23,8 @@ Com o frontend local em execução, rode os testes atuais:
 .\.venv\Scripts\python.exe scripts/frontend/check_dashboard.py
 ```
 
-Há também `check_auth_flow.py`, que percorre cadastro, entrada e saída com a
-API real e **cria usuários**. Rode-o apenas contra um banco descartável, nunca
+Há também `check_auth_flow.py`, que percorre cadastro, entrada, painel (`/app`)
+e saída com a API real e **cria usuários**. Rode-o apenas contra um banco descartável, nunca
 o do `.env`: suba a API com um `DATABASE_URL` de teste, inicie o Vite com
 `GERENCIA_API_URL` apontando para ela e passe o endereço do Vite em
 `GERENCIA_TEST_URL`.
