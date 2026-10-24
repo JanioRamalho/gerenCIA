@@ -5,8 +5,6 @@ import GroundChart from "../components/GroundChart";
 import Icon from "../components/Icon";
 import ReadingsFigure from "../components/ReadingsFigure";
 import SourceTable from "../components/SourceTable";
-import LoginPage from "./LoginPage";
-import RegistrationPage from "./RegistrationPage";
 import { useAuth } from "../auth/AuthContext";
 import useDemoExperience from "../hooks/useDemoExperience";
 import { categories, demo, formatPercentage, money, monthKeys, monthlyDelta, monthRows, type DemoPreset } from "../components/dashboard/demoModel";
@@ -34,17 +32,20 @@ const stats = [
 const BarsMark = ({ className }: { className: string }) => <svg className={className} viewBox="0 0 30 29" aria-hidden="true"><path d="M2 27h6l3-11H5L2 27Zm10 0h6l5-20h-6l-5 20Zm10 0h6l6-27h-6l-6 27Z" /></svg>;
 
 export default function ExperiencePage() {
-  const path = window.location.pathname.replace(/\/$/, "");
   const [menuOpen, setMenuOpen] = useState(false);
   const menuButton = useRef<HTMLButtonElement>(null);
   const { state, update } = useDemoExperience();
-  const { status, user, signOut } = useAuth();
-  const [signOutFailed, setSignOutFailed] = useState(false);
+  const { status } = useAuth();
   const [current, setCurrent] = useState<string | null>(null);
 
   useEffect(() => {
-    document.title = path === "/login" ? "Entrar | gerenCIA" : path === "/register" ? "Criar conta | gerenCIA" : "gerenCIA — entenda o caminho do seu dinheiro";
-  }, [path]);
+    document.title = "gerenCIA — entenda o caminho do seu dinheiro";
+  }, []);
+
+  // A página inicial é só para visitantes: quem já está logado vai para o painel.
+  useEffect(() => {
+    if (status === "authenticated") window.location.replace("/app");
+  }, [status]);
   useEffect(() => {
     const onKey = (event: KeyboardEvent) => {
       if (event.key === "Escape" && menuOpen) { setMenuOpen(false); menuButton.current?.focus(); }
@@ -55,25 +56,16 @@ export default function ExperiencePage() {
 
   // The header marks the section that crosses the middle of the screen.
   useEffect(() => {
-    if (path === "/register" || path === "/login") return;
     const sections = contents.map((item) => document.querySelector(item.href)).filter((node): node is Element => !!node);
     const observer = new IntersectionObserver((records) => {
       records.forEach((record) => { if (record.isIntersecting) setCurrent(`#${record.target.id}`); });
     }, { rootMargin: "-45% 0px -50% 0px" });
     sections.forEach((section) => observer.observe(section));
     return () => observer.disconnect();
-  }, [path]);
-
-  if (path === "/register") return <RegistrationPage />;
-  if (path === "/login") return <LoginPage />;
+  }, []);
 
   const openPreset = (preset: DemoPreset) => update({ period: preset.period ?? "ago", category: preset.category ?? null, chart: preset.chart ?? "bar" }, preset.focus);
   const closeMenu = () => setMenuOpen(false);
-  const leave = async () => {
-    setSignOutFailed(false);
-    try { await signOut(); } catch { setSignOutFailed(true); }
-  };
-  const firstName = user?.name.split(" ")[0];
 
   return <div className="experience-shell"><a className="skip-link" href="#main-content">Pular para o conteúdo</a>
     <header className="site-header on-night" onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) closeMenu(); }}>
@@ -82,10 +74,9 @@ export default function ExperiencePage() {
         <button ref={menuButton} className="menu-toggle" type="button" aria-label={menuOpen ? "Fechar menu" : "Abrir menu"} aria-expanded={menuOpen} aria-controls="site-navigation" onClick={() => setMenuOpen((value) => !value)}><span /><span /></button>
         <nav id="site-navigation" className={menuOpen ? "site-nav is-open" : "site-nav"} aria-label="Navegação principal">
           <ol>{contents.map((item) => <li key={item.href}><a href={item.href} onClick={closeMenu} aria-current={current === item.href ? "location" : undefined}>{item.label}</a></li>)}</ol>
+          {/* Quem está logado já está a caminho do painel, então só visitantes veem estes links. */}
           <div className="nav-account" data-state={status}>
-            {status === "authenticated"
-              ? <><span className="nav-user">Olá, {firstName}</span><button className="header-pill" type="button" onClick={leave}>Sair</button>{signOutFailed && <span className="nav-error" role="alert">Não foi possível sair. Tente de novo.</span>}</>
-              : <><a className="nav-signin" href="/login">Entrar</a><a className="header-pill" href="/register">Cadastrar</a></>}
+            {status !== "authenticated" && <><a className="nav-signin" href="/login">Entrar</a><a className="header-pill" href="/register">Cadastrar</a></>}
           </div>
         </nav>
       </div>
@@ -98,7 +89,6 @@ export default function ExperiencePage() {
             <h1 id="hero-title">Sua fatura diz mais que o total.</h1>
             <p className="lead">O gerenCIA está sendo construído para transformar faturas de cartão em CSV ou XLSX numa leitura por mês e por categoria, em que cada total leva aos lançamentos que o formam.</p>
             <div className="action-row"><a className="primary-button" href="#demo">Explorar a demonstração</a><a className="secondary-button" href="#como-funciona">Como funciona</a></div>
-            {status === "authenticated" && <p className="hero-note" role="status">Você entrou como {user?.email}. O envio de faturas ainda está em desenvolvimento; a demonstração abaixo usa dados fictícios.</p>}
           </div>
           <div className="hero-stage">
             <div className="float-card is-left"><p>Saídas no trimestre</p><strong>{money(quarterTotal)}</strong><span>{entryCount} lançamentos</span></div>

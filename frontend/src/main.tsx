@@ -1,12 +1,13 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import App from "./pages/ExperiencePage";
+import App from "./App";
 import { AuthProvider } from "./auth/AuthContext";
 import "./styles/tokens.css";
 import "./styles/base.css";
 import "./styles/site.css";
 import "./styles/figures.css";
 import "./styles/dashboard.css";
+import "./styles/panel.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>

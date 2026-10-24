@@ -15,9 +15,13 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
   const alertRef = useRef<HTMLParagraphElement>(null);
 
-  // Signing in, or arriving already signed in, both end on the home page.
   useEffect(() => {
-    if (status === "authenticated") window.location.replace("/");
+    document.title = "Entrar | gerenCIA";
+  }, []);
+
+  // Depois de entrar, ou se a pessoa já chegou logada, o destino é o painel.
+  useEffect(() => {
+    if (status === "authenticated") window.location.replace("/app");
   }, [status]);
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
