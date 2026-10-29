@@ -3,9 +3,11 @@
 Aplicação web de gestão e análise financeira baseada em extratos bancários e
 faturas de cartão, em CSV e XLSX, com o histórico de todos os arquivos enviados.
 
-O frontend já oferece uma demonstração interativa com dados fictícios. A API
-possui rotas de saúde, verificação do banco e consulta de categorias; os demais recursos serão construídos por etapas, com
-o backend desenvolvido de forma acompanhada e didática.
+O frontend já oferece uma demonstração interativa com dados fictícios, cadastro,
+login e o painel do usuário em `/app`. A API possui rotas de saúde, verificação
+do banco, consulta de categorias e autenticação com sessão por cookie; os demais
+recursos serão construídos por etapas, com o backend desenvolvido de forma
+acompanhada e didática.
 
 ## Arquitetura
 
@@ -27,10 +29,14 @@ simples e sugere onde economizar.
 
 ## Qualidade de software
 
-Toda função de leitura, limpeza, análise e regra de negócio tem testes
-unitários com pytest, entregues no mesmo pull request da função. Os fluxos
-críticos têm testes de integração com um PostgreSQL temporário, e a interface
-tem verificações com Playwright em `scripts/frontend/`.
+Hoje os testes com pytest cobrem a autenticação, a integridade do banco, os
+códigos de exibição, as configurações e as rotas de saúde. Os que usam banco
+rodam contra um PostgreSQL temporário, criado e apagado a cada execução, e a
+interface tem verificações com Playwright em `scripts/frontend/`.
+
+A regra do projeto vale para o que ainda será construído: cada função de
+leitura, limpeza, análise e regra de negócio entra com os seus testes unitários
+no mesmo pull request.
 
 ## Diretórios
 

@@ -112,14 +112,13 @@ ambiente da hospedagem, nunca no frontend.
 | API | Saúde da aplicação, saúde do banco, consulta de categorias e autenticação (`/api/auth/register`, `login`, `logout` e `me`) |
 | Frontend | Demonstração fictícia para visitantes; cadastro e login reais, com sessão por cookie; painel em `/app` com barra lateral, próximos passos e dados da conta |
 | Testes do banco | Suíte de integridade e códigos numéricos; 97 casos aprovados na revisão |
-| Camadas do backend | Autenticação já usa serviço e repositórios; a rota de categorias ainda consulta diretamente o banco |
+| Camadas do backend | Autenticação usa serviço e repositórios; a rota de categorias usa o repositório `repositories/categories.py`, sem serviço, porque ainda não tem regra de negócio |
 | Funcionalidades financeiras | Upload e histórico, leitura e limpeza, análises, limites, notificações e diagnóstico com IA ainda pendentes |
 | Hospedagem | Ainda não publicada; prevista em plano gratuito a partir da etapa de upload |
 | Fora da primeira versão | Conversa com a IA, previsão de cobranças com calendário, mapeador genérico, arquivo original guardado, e-mails pelo Resend e limite semanal (seção 18 do planejamento) |
 | Ferramentas previstas | Alembic e Docker Compose ainda pendentes; limite de tentativas de login ainda pendente |
 
-Antes de ampliar os endpoints, adequar a consulta de categorias às camadas
-previstas. Depois, concluir a fundação com Alembic e Docker Compose. Funções
+O próximo passo da fundação é concluir Alembic e Docker Compose. Funções
 independentes de tratamento, como a conversão monetária, podem ser estudadas e
 testadas em paralelo, sem depender do banco.
 
