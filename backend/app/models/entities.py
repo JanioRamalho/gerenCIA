@@ -1,3 +1,15 @@
+"""Modelos do SQLAlchemy: uma classe para cada tabela do PostgreSQL.
+
+As tabelas são criadas pelo scripts/init.sql; estas classes só descrevem como
+o Python as enxerga. Mapped[tipo] diz o tipo do campo no Python, e
+mapped_column diz como ele é no banco. __table_args__ repete as regras do
+banco (CHECK, UNIQUE, índices) para que o modelo e o banco contem a mesma
+história.
+
+Nas tabelas ligadas a um arquivo, a chave estrangeira usa (upload_id, user_id)
+juntos: assim o banco impede ligar o dado de um usuário ao arquivo de outro.
+"""
+
 from datetime import date, datetime
 from decimal import Decimal
 from typing import Any
@@ -29,12 +41,15 @@ from app.db.base import Base
 
 
 class DisplayCodeMixin:
-    """Short code for display; UUID primary keys retain the relationships."""
+    """Código curto para mostrar na tela (1, 2, 3...). As relações entre as
+    tabelas continuam usando o id UUID, que não revela quantos registros existem."""
 
     code: Mapped[int] = mapped_column(BigInteger, Identity(always=True), unique=True, nullable=False)
 
 
 class User(DisplayCodeMixin, Base):
+    """Uma pessoa com conta. A senha fica guardada só como hash."""
+
     __tablename__ = "users"
     __table_args__ = (
         CheckConstraint("length(trim(name)) > 0", name="users_name_not_empty"),
@@ -51,6 +66,8 @@ class User(DisplayCodeMixin, Base):
 
 
 class SessionRecord(DisplayCodeMixin, Base):
+    """Uma sessão de login. O banco guarda só o SHA-256 do token, nunca o token."""
+
     __tablename__ = "sessions"
     __table_args__ = (
         CheckConstraint("expires_at > created_at", name="sessions_expiry_after_creation"),
@@ -67,6 +84,8 @@ class SessionRecord(DisplayCodeMixin, Base):
 
 
 class Upload(DisplayCodeMixin, Base):
+    """Um arquivo CSV ou XLSX enviado. O sha256 impede o mesmo usuário de enviar o mesmo arquivo duas vezes."""
+
     __tablename__ = "uploads"
     __table_args__ = (
         CheckConstraint("length(trim(original_filename)) > 0", name="uploads_filename_not_empty"),
@@ -99,6 +118,9 @@ class Upload(DisplayCodeMixin, Base):
 
 
 class UploadMapping(DisplayCodeMixin, Base):
+    """Sobra do desenho anterior: o mapeamento das colunas de um arquivo.
+    Sai por migração na etapa 2 (veja docs/arquitetura.md)."""
+
     __tablename__ = "upload_mappings"
     __table_args__ = (
         ForeignKeyConstraint(["upload_id", "user_id"], ["uploads.id", "uploads.user_id"], ondelete="CASCADE", name="upload_mappings_upload_user_fk"),
@@ -115,6 +137,9 @@ class UploadMapping(DisplayCodeMixin, Base):
 
 
 class BronzeRow(DisplayCodeMixin, Base):
+    """Sobra da arquitetura Medallion: uma linha do arquivo como veio, sem tratamento.
+    Sai por migração na etapa 2 (veja docs/arquitetura.md)."""
+
     __tablename__ = "bronze_rows"
     __table_args__ = (
         ForeignKeyConstraint(["upload_id", "user_id"], ["uploads.id", "uploads.user_id"], ondelete="CASCADE", name="bronze_rows_upload_user_fk"),
@@ -139,7 +164,8 @@ class BronzeRow(DisplayCodeMixin, Base):
 
 
 class Category(DisplayCodeMixin, Base):
-    """Ownership is immutable and checked by the SQL installation's triggers."""
+    """Uma categoria de gasto. Sem user_id, é do sistema e vale para todos; com
+    user_id, é pessoal. O dono não pode mudar depois: triggers do SQL conferem isso."""
 
     __tablename__ = "categories"
     __table_args__ = (
@@ -159,6 +185,8 @@ class Category(DisplayCodeMixin, Base):
 
 
 class Transaction(DisplayCodeMixin, Base):
+    """Um lançamento já tratado. O valor é Numeric(14, 2), que vira Decimal no Python, nunca float."""
+
     __tablename__ = "transactions"
     __table_args__ = (
         ForeignKeyConstraint(["upload_id", "user_id"], ["uploads.id", "uploads.user_id"], ondelete="CASCADE", name="transactions_upload_user_fk"),
@@ -201,6 +229,8 @@ class Transaction(DisplayCodeMixin, Base):
 
 
 class CategoryRule(DisplayCodeMixin, Base):
+    """Regra do usuário que escolhe a categoria pelo estabelecimento ou por um trecho da descrição."""
+
     __tablename__ = "category_rules"
     __table_args__ = (
         CheckConstraint("match_type IN ('merchant', 'description_contains')", name="category_rules_match_type_valid"),
@@ -220,6 +250,9 @@ class CategoryRule(DisplayCodeMixin, Base):
 
 
 class QualityCheck(DisplayCodeMixin, Base):
+    """O resultado da checagem de qualidade de uma tentativa de processar um arquivo:
+    total de linhas, válidas, rejeitadas e repetidas. Válidas + rejeitadas = total."""
+
     __tablename__ = "quality_checks"
     __table_args__ = (
         ForeignKeyConstraint(["upload_id", "user_id"], ["uploads.id", "uploads.user_id"], ondelete="CASCADE", name="quality_checks_upload_user_fk"),
@@ -247,6 +280,8 @@ class QualityCheck(DisplayCodeMixin, Base):
 
 
 class RejectedRow(DisplayCodeMixin, Base):
+    """Uma linha do arquivo que não passou na limpeza, com o código e a mensagem do erro."""
+
     __tablename__ = "rejected_rows"
     __table_args__ = (
         ForeignKeyConstraint(["upload_id", "user_id"], ["uploads.id", "uploads.user_id"], ondelete="CASCADE", name="rejected_rows_upload_user_fk"),

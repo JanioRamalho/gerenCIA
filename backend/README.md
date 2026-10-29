@@ -24,16 +24,18 @@ Consulte o README principal para o comando de inicialização da API.
   `get_current_user` de `app/api/deps.py`; nenhuma rota recebe `user_id` do cliente.
 - Erros de validação voltam como `{"detail": ..., "fields": {campo: mensagem}}`,
   em português, para o frontend mostrar junto de cada campo.
-- Configuração opcional no `.env`: `SESSION_TTL_DAYS` (padrão 14) e
-  `SESSION_COOKIE_SECURE` (padrão `true` só em produção).
+- Configuração opcional no `.env`: `SESSION_TTL_DAYS` (padrão 14; um valor que
+  não seja um número inteiro maior que zero impede a API de subir, com uma
+  mensagem dizendo o que corrigir) e `SESSION_COOKIE_SECURE` (padrão `true` só
+  em produção). Todas as variáveis são lidas em `app/core/config.py`.
 
 Ainda não há limite de tentativas de login, e-mail de confirmação nem
 recuperação de senha.
 
 O [mapa da arquitetura](../docs/arquitetura.md) mostra o fluxo completo e as
-responsabilidades de cada módulo. A consulta de categorias ainda é feita
-diretamente pela rota; sua separação em serviço e repositório é o ajuste
-pendente antes de ampliar os endpoints.
+responsabilidades de cada módulo. A consulta de categorias fica em
+`app/repositories/categories.py`; ela não tem serviço porque ainda não tem
+regra de negócio, só a consulta.
 
 ## Banco e verificações
 

@@ -26,11 +26,20 @@ KEY_LENGTH = 32  # tamanho do hash gerado, em bytes
 SALT_LENGTH = 16  # tamanho do sal, em bytes
 
 
-def derive_key(password: str, salt: bytes, n: int, r: int, p: int, key_length: int) -> bytes:
+def derive_key(
+    password: str,
+    salt: bytes,
+    *,
+    n: int = SCRYPT_N,
+    r: int = SCRYPT_R,
+    p: int = SCRYPT_P,
+    key_length: int = KEY_LENGTH,
+) -> bytes:
     """Transforma a senha em um hash com o algoritmo scrypt.
 
     O scrypt é lento de propósito: para quem tenta adivinhar senhas testando
-    milhões de combinações, cada tentativa sai cara.
+    milhões de combinações, cada tentativa sai cara. Sem os parâmetros, valem
+    os atuais; ao conferir uma senha antiga, valem os gravados no hash dela.
     """
     # A normalização NFKC faz senhas visualmente iguais virarem os mesmos
     # bytes, mesmo digitadas em teclados diferentes. Exemplo: "é" pode ser um
@@ -58,7 +67,7 @@ def hash_password(password: str) -> str:
     # O sal é um valor aleatório diferente para cada senha. Por causa dele,
     # duas pessoas com a mesma senha têm hashes diferentes.
     salt = secrets.token_bytes(SALT_LENGTH)
-    key = derive_key(password, salt, SCRYPT_N, SCRYPT_R, SCRYPT_P, KEY_LENGTH)
+    key = derive_key(password, salt)
 
     # base64 transforma bytes em texto, para caber numa coluna de texto.
     salt_text = base64.b64encode(salt).decode()
@@ -83,7 +92,7 @@ def verify_password(password: str, stored_hash: str) -> bool:
 
         salt = base64.b64decode(salt_text)
         expected_key = base64.b64decode(key_text)
-        typed_key = derive_key(password, salt, int(n), int(r), int(p), len(expected_key))
+        typed_key = derive_key(password, salt, n=int(n), r=int(r), p=int(p), key_length=len(expected_key))
     except (ValueError, TypeError):
         return False
 
