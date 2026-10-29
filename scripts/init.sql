@@ -47,7 +47,6 @@ CREATE TABLE public.bronze_rows (
 );
 
 
-ALTER TABLE public.bronze_rows OWNER TO postgres;
 
 --
 -- TOC entry 224 (class 1259 OID 24701)
@@ -66,7 +65,6 @@ CREATE TABLE public.categories (
 );
 
 
-ALTER TABLE public.categories OWNER TO postgres;
 
 --
 -- TOC entry 226 (class 1259 OID 24778)
@@ -87,7 +85,6 @@ CREATE TABLE public.category_rules (
 );
 
 
-ALTER TABLE public.category_rules OWNER TO postgres;
 
 --
 -- TOC entry 227 (class 1259 OID 24811)
@@ -115,7 +112,6 @@ CREATE TABLE public.quality_checks (
 );
 
 
-ALTER TABLE public.quality_checks OWNER TO postgres;
 
 --
 -- TOC entry 228 (class 1259 OID 24851)
@@ -138,7 +134,6 @@ CREATE TABLE public.rejected_rows (
 );
 
 
-ALTER TABLE public.rejected_rows OWNER TO postgres;
 
 --
 -- TOC entry 220 (class 1259 OID 24596)
@@ -156,7 +151,6 @@ CREATE TABLE public.sessions (
 );
 
 
-ALTER TABLE public.sessions OWNER TO postgres;
 
 --
 -- TOC entry 225 (class 1259 OID 24725)
@@ -193,8 +187,6 @@ CREATE TABLE public.transactions (
 );
 
 
-ALTER TABLE public.transactions OWNER TO postgres;
-
 --
 -- TOC entry 222 (class 1259 OID 24652)
 -- Name: upload_mappings; Type: TABLE; Schema: public; Owner: postgres
@@ -210,8 +202,6 @@ CREATE TABLE public.upload_mappings (
     CONSTRAINT upload_mappings_is_object CHECK ((jsonb_typeof(mapping) = 'object'::text))
 );
 
-
-ALTER TABLE public.upload_mappings OWNER TO postgres;
 
 --
 -- TOC entry 221 (class 1259 OID 24618)
@@ -240,8 +230,6 @@ CREATE TABLE public.uploads (
 );
 
 
-ALTER TABLE public.uploads OWNER TO postgres;
-
 --
 -- TOC entry 219 (class 1259 OID 24577)
 -- Name: users; Type: TABLE; Schema: public; Owner: postgres
@@ -257,9 +245,6 @@ CREATE TABLE public.users (
     CONSTRAINT users_email_not_empty CHECK ((length(TRIM(BOTH FROM email)) > 0)),
     CONSTRAINT users_name_not_empty CHECK ((length(TRIM(BOTH FROM name)) > 0))
 );
-
-
-ALTER TABLE public.users OWNER TO postgres;
 
 --
 -- TOC entry 4976 (class 2606 OID 24694)
