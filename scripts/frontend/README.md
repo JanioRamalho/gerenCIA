@@ -23,6 +23,9 @@ Com o frontend local em execução, rode os testes atuais:
 .\.venv\Scripts\python.exe scripts/frontend/check_dashboard.py
 ```
 
+As partes comuns (endereço testado, tamanhos de tela, erros de página, axe e
+bloqueio do `localStorage`) ficam em `helpers.py`.
+
 Há também `check_auth_flow.py`, que percorre cadastro, entrada, painel (`/app`)
 e saída com a API real e **cria usuários**. Rode-o apenas contra um banco descartável, nunca
 o do `.env`: suba a API com um `DATABASE_URL` de teste, inicie o Vite com

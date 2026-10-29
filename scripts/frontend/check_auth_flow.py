@@ -6,18 +6,10 @@ banco do projeto: este roteiro cria usuários.
 
     GERENCIA_TEST_URL=http://127.0.0.1:5199 python scripts/frontend/check_auth_flow.py
 """
-import json
-import os
-import sys
-from pathlib import Path
 from uuid import uuid4
 
-ROOT = Path(__file__).resolve().parents[2]
-sys.path.insert(0, str(ROOT / ".audit-tools"))
-from playwright.sync_api import expect, sync_playwright
+from helpers import BASE, OUT, axe_violations, expect, has_horizontal_scroll, print_results, sync_playwright
 
-BASE = os.environ.get("GERENCIA_TEST_URL", "http://127.0.0.1:5173").rstrip("/")
-OUT = ROOT / ".impeccable" / "review"
 OUT.mkdir(parents=True, exist_ok=True)
 
 EMAIL = f"teste-{uuid4().hex[:8]}@exemplo.test"
@@ -25,19 +17,9 @@ PASSWORD = "senha-de-teste-1"
 results = []
 
 
-AXE = ROOT / ".audit-tools-js" / "node_modules" / "axe-core" / "axe.min.js"
-
-
-def axe_violations(page):
-    """Roda o axe (verificador de acessibilidade) e devolve as violações encontradas."""
-    page.add_script_tag(path=str(AXE))
-    report = page.evaluate("""async () => await axe.run(document, {runOnly: {type: 'tag', values: ['wcag2a','wcag2aa','wcag21aa','wcag22aa']}})""")
-    return [{"id": item["id"], "nodes": [node["target"] for node in item["nodes"]]} for item in report["violations"]]
-
-
 def no_overflow(page, label):
     """Confere que a página não rola para os lados."""
-    assert not page.evaluate("document.documentElement.scrollWidth > innerWidth"), label
+    assert not has_horizontal_scroll(page), label
 
 
 def log_in(page):
@@ -194,4 +176,4 @@ with sync_playwright() as playwright:
 
     browser.close()
 
-print(json.dumps(results, ensure_ascii=False, indent=2))
+print_results(results)
