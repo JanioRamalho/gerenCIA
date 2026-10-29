@@ -1,4 +1,4 @@
-/* Header: petrol, the mark in a mint tile, sections centred, account on the right */
+/* Cabeçalho: petróleo, o símbolo num ladrilho menta, seções no centro e conta à direita */
 .site-header { position: sticky; top: 0; z-index: 30; border-bottom: 1px solid var(--night-line); }
 .header-inner { display: flex; align-items: center; gap: var(--space-6); min-height: 68px; }
 .brand {
@@ -7,7 +7,7 @@
 }
 .brand svg {
   width: 38px; height: 38px; padding: 8px 7px 7px; border-radius: 11px;
-  background: linear-gradient(150deg, var(--mint-hover) 0%, var(--mint-deep) 100%); color: var(--ink);
+  background: linear-gradient(150deg, var(--mint-hover) 0%, var(--mint-deep) 100%); color: var(--ink); fill: currentColor;
 }
 .brand b { font-weight: 400; }
 .site-nav { display: flex; flex: 1; align-items: center; gap: var(--space-6); }
@@ -37,7 +37,7 @@ button.header-pill { border: 0; font-size: inherit; line-height: inherit; }
 .account-nav { display: flex; gap: var(--space-5); margin-left: auto; }
 .account-nav a { white-space: nowrap; }
 
-/* Opening: centred headline on petrol; the statement stack rises out of a mint glow into the white page */
+/* Abertura: título centralizado sobre petróleo; a pilha de faturas sobe de um brilho menta para a página branca */
 .hero {
   position: relative; overflow: hidden;
   padding-block: clamp(40px, 4.8vw, 72px) clamp(56px, 6vw, 96px);
@@ -58,7 +58,7 @@ button.header-pill { border: 0; font-size: inherit; line-height: inherit; }
 .hero-copy > :nth-child(2) { animation-delay: 80ms; }
 .hero-copy > :nth-child(3) { animation-delay: 160ms; }
 .hero-stage { position: relative; width: min(640px, 100%); margin-top: clamp(36px, 4vw, 56px); text-align: left; animation: rise 900ms var(--ease-out) 220ms both; }
-/* The one load moment: the opening settles into focus; text is never hidden, only softened */
+/* A única animação de entrada: a abertura entra em foco; o texto nunca some, só fica suave */
 @keyframes rise { from { transform: translateY(16px); filter: blur(6px); } }
 .float-card {
   position: absolute; z-index: 2; display: grid; gap: 4px; width: 204px; padding: 16px 18px;
@@ -74,7 +74,7 @@ button.header-pill { border: 0; font-size: inherit; line-height: inherit; }
 .float-card.is-left { top: 190px; right: calc(100% + 20px); transform: rotate(-5deg); }
 .float-card.is-right { top: 92px; left: calc(100% + 40px); transform: rotate(4deg); }
 
-/* The ground: sage, with the quarter's daily spending drawn faint along the base of the numbers section */
+/* O chão: sálvia, com os gastos de cada dia do trimestre desenhados bem apagados na base da seção de números */
 main { position: relative; isolation: isolate; }
 .ground-chart {
   position: absolute; left: 0; right: 0; bottom: 0; z-index: -1; pointer-events: none;
@@ -83,7 +83,7 @@ main { position: relative; isolation: isolate; }
   -webkit-mask-image: linear-gradient(180deg, transparent 0%, #000 55%);
   mask-image: linear-gradient(180deg, transparent 0%, #000 55%);
 }
-/* Ambient light: soft mint pools at the edges, alternating sides down the page */
+/* Luz de fundo: manchas menta suaves nas bordas, alternando de lado ao longo da página */
 .band.has-glow { position: relative; }
 .band.has-glow::before {
   content: ""; position: absolute; inset: 0; z-index: -1; pointer-events: none;
@@ -97,10 +97,10 @@ main { position: relative; isolation: isolate; }
     radial-gradient(closest-side, rgba(167, 229, 214, 0.35), transparent) left -16vw bottom 8% / 40vw 60% no-repeat;
 }
 
-/* Body bands; the white, petrol and mint blocks run edge to edge, inset and rounded */
+/* Faixas do corpo: os blocos branco, petróleo e menta vão de borda a borda, recuados e arredondados */
 .band { padding-block: clamp(36px, 4vw, 60px); }
 .band-sheet, .band-night { margin-inline: var(--block-inset); border-radius: var(--radius-block); }
-/* White at the centre where the content sits, warming to a pale mint toward the far edges */
+/* Branco no centro, onde fica o conteúdo, passando a um menta claro nas bordas */
 .band-sheet {
   padding-block: clamp(24px, 3.6vw, 56px); box-shadow: var(--shadow-soft);
   background: radial-gradient(75% 130% at 50% 50%, var(--paper) 58%, #f0f7f3 100%);
@@ -125,13 +125,13 @@ main { position: relative; isolation: isolate; }
 .section-intro { font-size: clamp(1rem, 0.96rem + 0.2vw, 1.0625rem); line-height: 1.55; color: var(--ink-2); text-wrap: pretty; }
 .section-head.is-split .section-intro { padding-top: 0.4em; max-width: 36em; }
 
-/* The demonstration in numbers */
+/* A demonstração em números */
 .stat-cards { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-4); }
 .stat-cards li {
   display: grid; align-content: start; gap: var(--space-3);
   padding: clamp(20px, 2.1vw, 28px); border-radius: var(--radius-panel); background: var(--paper); box-shadow: var(--shadow-soft);
 }
-/* The middle card carries the brand: the entries are what every total sums back to */
+/* O cartão do meio leva a cor da marca: os lançamentos são a base de todos os totais */
 .stat-cards li.is-featured { background: linear-gradient(160deg, #e9f8f2 0%, #c2ebdf 55%, #b3e6d8 100%); }
 .stat-cards li.is-featured .stat-label { background: rgba(255, 255, 255, 0.6); padding-right: 20px; }
 .stat-cards li.is-featured p { color: var(--ink); }
@@ -149,9 +149,9 @@ main { position: relative; isolation: isolate; }
 }
 .stat-cards p { max-width: 32ch; color: var(--ink-2); text-wrap: pretty; }
 
-/* Problem: the table on a pale panel beside the argument */
+/* Problema: a tabela num painel claro ao lado do texto */
 .split { display: grid; grid-template-columns: minmax(0, 7fr) minmax(0, 5fr); gap: clamp(28px, 4vw, 56px); align-items: center; }
-/* Inside the block the panel's corner stays smaller than the block's, at every width */
+/* Dentro do bloco, o canto do painel é sempre menor que o do bloco, em qualquer largura */
 .split-media { min-width: 0; padding: clamp(12px, 2.2vw, 32px); border-radius: min(var(--radius-panel), calc(var(--radius-block) - 10px)); background: var(--panel); }
 .split-copy { display: grid; gap: var(--space-4); }
 .feature-list { display: grid; margin-top: var(--space-2); }
@@ -160,7 +160,7 @@ main { position: relative; isolation: isolate; }
 .feature-list h3 { font-size: var(--text-subtitle); font-weight: 600; line-height: 1.25; letter-spacing: -0.02em; }
 .feature-list p { margin-top: var(--space-2); color: var(--ink-2); text-wrap: pretty; }
 
-/* Procedure: a real sequence, so numbered and joined by a line */
+/* Como funciona: uma sequência de verdade, por isso numerada e ligada por uma linha */
 .procedure {
   display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: var(--space-5);
   margin-bottom: var(--space-5); padding: clamp(22px, 2.4vw, 32px);
@@ -181,7 +181,7 @@ main { position: relative; isolation: isolate; }
 .procedure p:not(.status-line) { max-width: 30em; color: var(--ink-2); }
 .procedure .status-line { margin-top: var(--space-1); }
 
-/* Questions: outlined cards, one per question */
+/* Perguntas: um cartão com contorno para cada pergunta */
 .question-list { display: grid; gap: var(--space-3); max-width: 760px; margin-inline: auto; }
 .question-list details { border: 1px solid transparent; border-radius: var(--radius-card); background: var(--paper); box-shadow: var(--shadow-soft); transition: border-color var(--duration) ease; }
 .question-list details:hover, .question-list details[open] { border-color: var(--line); }
@@ -203,7 +203,7 @@ main { position: relative; isolation: isolate; }
 .question-list details[open] summary::after { transform: rotate(45deg); }
 .question-list details p { max-width: 40em; padding: 0 clamp(18px, 2.2vw, 26px) var(--space-5); font-size: var(--text-lead); line-height: 1.6; color: var(--ink-2); }
 
-/* Closing: a mint panel with the mark drawn large at both sides */
+/* Fechamento: um painel menta com o símbolo grande dos dois lados */
 .closing { padding-block: clamp(36px, 4vw, 60px) clamp(48px, 5.5vw, 80px); }
 .closing-panel {
   position: relative; overflow: hidden; display: grid; justify-items: center; gap: var(--space-4);
@@ -221,7 +221,7 @@ main { position: relative; isolation: isolate; }
 .closing-mark.is-left { left: -28px; transform: translateY(-50%) rotate(-8deg); }
 .closing-mark.is-right { right: -28px; transform: translateY(-50%) rotate(8deg); }
 
-/* Footer: petrol, link columns, the name set huge at the bottom edge */
+/* Rodapé: petróleo, colunas de links e o nome gigante na borda de baixo */
 .site-footer {
   position: relative; overflow: hidden; padding-top: clamp(40px, 4.4vw, 64px); color: var(--on-night-2);
   border-radius: var(--radius-block) var(--radius-block) 0 0;
@@ -238,7 +238,7 @@ main { position: relative; isolation: isolate; }
 .footer-facts { display: grid; align-content: start; gap: var(--space-4); }
 .footer-facts dd { margin-top: var(--space-1); }
 .footer-legal { grid-column: 1 / -1; padding-top: var(--space-5); border-top: 1px solid var(--night-line); font-size: var(--text-small); }
-/* Drawn as generated content: pure decoration, kept out of the reading order */
+/* Feito com content no CSS: é só enfeite e fica fora da leitura do leitor de tela */
 .footer-wordmark::before {
   content: "gerenCIA"; display: block;
   margin: var(--space-5) 0 -0.16em; text-align: center; white-space: nowrap; user-select: none;
@@ -246,7 +246,7 @@ main { position: relative; isolation: isolate; }
   color: rgba(238, 245, 242, 0.07);
 }
 
-/* Login: the notice centred on petrol, the statement stack below in its glow */
+/* Login: o texto centralizado sobre petróleo, com o brilho menta embaixo */
 .access-shell {
   display: flex; flex-direction: column; min-height: 100vh;
   background: radial-gradient(60% 42% at 50% 100%, rgba(111, 207, 181, 0.32), transparent 72%), var(--night);
@@ -264,10 +264,10 @@ main { position: relative; isolation: isolate; }
   background: var(--paper); color: var(--ink); box-shadow: var(--shadow-float); --focus: var(--teal);
 }
 .form-block > h2 { font-size: var(--text-title); font-weight: 600; letter-spacing: -0.025em; }
-/* The block is white even inside a petrol region, so its links use the light-surface colours */
+/* O bloco é branco mesmo dentro de uma área petróleo, então os links usam as cores de fundo claro */
 .form-block .text-link { color: var(--ink); text-decoration-color: var(--teal); }
 
-/* Registration preview: intro on the sage ground, the form on a white block */
+/* Cadastro: a apresentação sobre o chão sálvia e o formulário num bloco branco */
 .registration-page { display: flex; flex-direction: column; min-height: 100vh; background: var(--ground); }
 .registration-main {
   flex: 1; align-content: center;
@@ -316,7 +316,7 @@ main { position: relative; isolation: isolate; }
 .form-switch { margin-top: var(--space-4); color: var(--ink-2); }
 .form-switch .text-link { min-height: 0; }
 
-/* Responsive */
+/* Telas menores */
 @media (max-width: 1360px) {
   .hero-stage { width: min(580px, 100%); }
   .float-card { width: 188px; padding: 14px 16px; }
@@ -373,7 +373,7 @@ main { position: relative; isolation: isolate; }
   .closing-mark { opacity: 0.05; }
 }
 @media (max-width: 480px) {
-  /* The logo already leads home, and there is no room for a third link */
+  /* O logotipo já leva ao início, e não há espaço para um terceiro link */
   .account-nav a[href="/"] { display: none; }
 }
 @media (max-width: 420px) {

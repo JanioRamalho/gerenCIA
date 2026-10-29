@@ -1,5 +1,6 @@
-﻿/* gerenCIA after the Finmax reference: a petrol opening that glows into a white page,
-   pale panels holding white screens, mint pills for the action. */
+﻿/* Variáveis de estilo do gerenCIA, inspiradas na referência Finmax: uma abertura
+   petróleo que se ilumina numa página branca, painéis claros com telas brancas
+   e botões menta para as ações. */
 @font-face {
   font-family: "Inter Tight";
   src: url("/fonts/inter-tight-latin-variable.woff2") format("woff2");
@@ -9,7 +10,7 @@
 }
 
 :root {
-  /* Night: header, opening, footer */
+  /* Noite: cabeçalho, abertura e rodapé */
   --night: #0b2a33;
   --night-raised: #153f4a;
   --night-hover: #1d4f5b;
@@ -19,7 +20,7 @@
   --on-night-lead: #d4e4de;
   --on-night-2: #a9c6c0;
 
-  /* Ground, rounded blocks, panels and the white screens inside them */
+  /* Chão, blocos arredondados, painéis e as telas brancas dentro deles */
   --ground: #e3ede8;
   --ground-glow: rgba(167, 229, 214, 0.55);
   --panel: #eef4f1;
@@ -27,11 +28,11 @@
   --line: #cddbd6;
   --field-border: #698388;
 
-  /* Ink */
+  /* Tinta: as cores do texto */
   --ink: #0f3440;
   --ink-2: #45656b;
 
-  /* Brand: mint carries the action and the datum in focus */
+  /* Marca: o menta marca as ações e o dado em destaque */
   --mint: #a7e5d6;
   --mint-hover: #c4f0e4;
   --mint-wash: #ddf3ec;
@@ -40,20 +41,20 @@
   --error: #a3341f;
   --focus: var(--teal);
 
-  /* Data marks */
+  /* Cores dos dados */
   --bar: #5b8a88;
   --bar-focus: var(--ink);
 
-  /* Figure 1: the two statements behind the front one */
+  /* Figura 1: as duas faturas atrás da fatura da frente */
   --stack-back: #c9dbd4;
   --stack-deep: #8fb3aa;
 
-  /* Depth */
+  /* Profundidade: sombras */
   --shadow-soft: 0 1px 2px rgba(11, 42, 51, 0.05), 0 14px 34px -20px rgba(11, 42, 51, 0.28);
   --shadow-card: 0 1px 2px rgba(11, 42, 51, 0.06), 0 18px 40px -22px rgba(11, 42, 51, 0.32);
   --shadow-float: 0 2px 6px rgba(0, 0, 0, 0.2), 0 30px 60px -24px rgba(0, 0, 0, 0.55);
 
-  /* Shape: blocks hold panels, panels hold screens, screens hold controls, actions are pills */
+  /* Formas: blocos contêm painéis, painéis contêm telas, telas contêm controles; ações são pílulas */
   --radius-block: clamp(24px, 2.6vw, 36px);
   --block-inset: clamp(8px, 1.2vw, 20px);
   --radius-panel: 24px;
@@ -62,7 +63,7 @@
   --radius-small: 8px;
   --radius-pill: 999px;
 
-  /* Type: one family, tight and heavy at the top */
+  /* Tipografia: uma família só, compacta e mais pesada nos títulos */
   --font-sans: "Inter Tight", system-ui, sans-serif;
   --font-mono: ui-monospace, "Cascadia Mono", Consolas, monospace;
   --text-display: clamp(2.25rem, 1.35rem + 2.6vw, 3.625rem);
@@ -73,7 +74,7 @@
   --text-body: 1rem;
   --text-small: 0.875rem;
 
-  /* Space */
+  /* Espaçamentos */
   --space-1: 4px;
   --space-2: 8px;
   --space-3: 12px;
@@ -86,15 +87,15 @@
   --gutter: clamp(16px, 3.4vw, 48px);
   --control-height: 40px;
 
-  /* Motion */
+  /* Movimento */
   --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
   --duration: 180ms;
 }
 
-/* A coarse pointer needs the larger target; a mouse does not */
+/* No toque o alvo precisa ser maior; com mouse, não */
 @media (pointer: coarse) { :root { --control-height: 44px; } }
 
-/* Petrol regions: light ink, mint focus */
+/* Áreas petróleo: texto claro e foco menta */
 .on-night {
   --focus: var(--mint);
   color: var(--on-night);

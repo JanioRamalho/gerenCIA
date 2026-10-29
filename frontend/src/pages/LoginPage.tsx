@@ -1,13 +1,42 @@
-import { useEffect, useRef, useState, type FormEvent } from "react";
+import { useRef, useState, type FormEvent } from "react";
 import { ApiError } from "../auth/api";
 import { useAuth } from "../auth/AuthContext";
-import Brand from "../components/Brand";
+import useRedirectSignedInUser from "../auth/useRedirectSignedInUser";
+import AccountHeader from "../components/AccountHeader";
 import { Field, PasswordInput, fieldDescription } from "../components/FormFields";
+import usePageTitle from "../hooks/usePageTitle";
 
 type Errors = { email?: string; password?: string; form?: string };
 
+/** Confere só se os campos foram preenchidos. Quem confere a senha é a API. */
+function checkFilledFields(email: string, password: string): Errors {
+  const errors: Errors = {};
+  if (!email.trim()) {
+    errors.email = "Informe seu e-mail.";
+  }
+  if (!password) {
+    errors.password = "Informe sua senha.";
+  }
+  return errors;
+}
+
+/**
+ * Transforma o erro do login nas mensagens do formulário. Se a API apontou um
+ * campo, a mensagem aparece embaixo dele; se não, aparece no topo do formulário.
+ */
+function loginErrorsFrom(error: unknown): Errors {
+  // Um erro que não veio da API, como a falta de conexão, ganha uma mensagem genérica.
+  const failure = error instanceof ApiError ? error : new ApiError(0, "Não foi possível entrar agora. Tente de novo.");
+  const { email, password } = failure.fields;
+  if (email || password) {
+    return { email, password };
+  }
+  return { form: failure.message };
+}
+
+/** Página /login: o formulário de entrada. Depois de entrar, a pessoa vai para o painel. */
 export default function LoginPage() {
-  const { status, signIn } = useAuth();
+  const { signIn } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -15,47 +44,44 @@ export default function LoginPage() {
   const [submitting, setSubmitting] = useState(false);
   const alertRef = useRef<HTMLParagraphElement>(null);
 
-  useEffect(() => {
-    document.title = "Entrar | gerenCIA";
-  }, []);
+  usePageTitle("Entrar | gerenCIA");
+  useRedirectSignedInUser();
 
-  // Depois de entrar, ou se a pessoa já chegou logada, o destino é o painel.
-  useEffect(() => {
-    if (status === "authenticated") window.location.replace("/app");
-  }, [status]);
-
-  const submit = async (event: FormEvent<HTMLFormElement>) => {
+  async function submit(event: FormEvent<HTMLFormElement>) {
+    // O formulário não recarrega a página: quem envia os dados é o signIn.
     event.preventDefault();
-    if (submitting) return;
-    const next: Errors = {};
-    if (!email.trim()) next.email = "Informe seu e-mail.";
-    if (!password) next.password = "Informe sua senha.";
-    setErrors(next);
-    if (next.email || next.password) {
-      document.getElementById(next.email ? "login-email" : "login-password")?.focus();
+    if (submitting) {
+      return;
+    }
+
+    const emptyFields = checkFilledFields(email, password);
+    setErrors(emptyFields);
+    if (emptyFields.email) {
+      document.getElementById("login-email")?.focus();
+      return;
+    }
+    if (emptyFields.password) {
+      document.getElementById("login-password")?.focus();
       return;
     }
 
     setSubmitting(true);
     try {
       await signIn({ email, password });
+      // Deu certo: useRedirectSignedInUser leva a pessoa para o painel.
     } catch (error) {
-      const failure = error instanceof ApiError ? error : new ApiError(0, "Não foi possível entrar agora. Tente de novo.");
-      setErrors({ email: failure.fields.email, password: failure.fields.password, form: failure.fields.email || failure.fields.password ? undefined : failure.message });
+      setErrors(loginErrorsFrom(error));
       setSubmitting(false);
+      // Espera o aviso aparecer na tela e leva o foco até ele, para o leitor de tela anunciar.
       requestAnimationFrame(() => alertRef.current?.focus());
     }
-  };
+  }
 
   return <div className="access-shell on-night">
     <a className="skip-link" href="#main-content">Pular para o conteúdo</a>
-    <header className="site-header on-night"><div className="page-container header-inner"><Brand /><nav className="account-nav" aria-label="Navegação de conta"><a className="text-link" href="/register">Criar conta</a><a className="text-link" href="/">Voltar ao início</a></nav></div></header>
+    <AccountHeader switchHref="/register" switchLabel="Criar conta" />
     <main className="access-main page-container" id="main-content" tabIndex={-1}>
-      <div className="access-copy">
-        <h1>Entre na sua conta.</h1>
-        <p className="lead">Use o e-mail e a senha do cadastro. O envio de faturas ainda está em desenvolvimento; a demonstração com dados fictícios continua aberta a todos.</p>
-        <div className="action-row"><a className="secondary-button" href="/#demo">Explorar a demonstração</a></div>
-      </div>
+      <LoginIntro />
       <section className="access-form form-block" aria-labelledby="login-title">
         <h2 id="login-title">Entrar</h2>
         <form onSubmit={submit} noValidate>
@@ -71,14 +97,25 @@ export default function LoginPage() {
           <Field id="login-password" label="Senha" error={errors.password}>
             <PasswordInput
               id="login-password" name="password" value={password} onChange={(event) => setPassword(event.target.value)}
-              autoComplete="current-password" visible={showPassword} onToggle={() => setShowPassword((value) => !value)}
+              autoComplete="current-password" visible={showPassword} onToggle={() => setShowPassword(!showPassword)}
               invalid={!!errors.password} describedBy={fieldDescription("login-password", { error: errors.password })}
             />
           </Field>
-          <button className="primary-button is-night form-submit" type="submit" disabled={submitting}>{submitting ? "Entrando…" : "Entrar"}</button>
+          <button className="primary-button is-night form-submit" type="submit" disabled={submitting}>
+            {submitting ? "Entrando…" : "Entrar"}
+          </button>
         </form>
         <p className="form-switch">Ainda não tem conta? <a className="text-link" href="/register">Criar conta</a></p>
       </section>
     </main>
+  </div>;
+}
+
+/** O texto ao lado do formulário. */
+function LoginIntro() {
+  return <div className="access-copy">
+    <h1>Entre na sua conta.</h1>
+    <p className="lead">Use o e-mail e a senha do cadastro. O envio de faturas ainda está em desenvolvimento; a demonstração com dados fictícios continua aberta a todos.</p>
+    <div className="action-row"><a className="secondary-button" href="/#demo">Explorar a demonstração</a></div>
   </div>;
 }

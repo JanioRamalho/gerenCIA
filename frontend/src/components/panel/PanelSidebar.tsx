@@ -1,5 +1,5 @@
-import { useEffect, useRef, useState, type FocusEvent } from "react";
 import type { User } from "../../auth/api";
+import useMobileMenu from "../../hooks/useMobileMenu";
 import Brand from "../Brand";
 
 /** Uma seção do menu. `href: null` quer dizer que a seção ainda não foi construída. */
@@ -32,33 +32,8 @@ type PanelSidebarProps = {
  * fica atrás do botão de menu.
  */
 export default function PanelSidebar({ currentPath, user, signingOut, signOutFailed, onSignOut }: PanelSidebarProps) {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuButton = useRef<HTMLButtonElement>(null);
-
-  // A tecla Esc fecha o menu aberto e devolve o foco ao botão de menu.
-  useEffect(() => {
-    function closeOnEscape(event: KeyboardEvent) {
-      if (event.key === "Escape" && menuOpen) {
-        setMenuOpen(false);
-        menuButton.current?.focus();
-      }
-    }
-    document.addEventListener("keydown", closeOnEscape);
-    return () => document.removeEventListener("keydown", closeOnEscape);
-  }, [menuOpen]);
-
-  function toggleMenu() {
-    setMenuOpen(!menuOpen);
-  }
-
-  // Quando o foco sai da barra (por exemplo, com Tab ou clicando no conteúdo),
-  // o menu do celular fecha, como no cabeçalho do site.
-  function closeMenuWhenFocusLeaves(event: FocusEvent<HTMLElement>) {
-    const focusStayedInside = event.currentTarget.contains(event.relatedTarget);
-    if (!focusStayedInside) {
-      setMenuOpen(false);
-    }
-  }
+  // O mesmo menu do cabeçalho do site: fecha com Esc e quando o foco sai da barra.
+  const { menuOpen, menuButton, toggleMenu, closeMenuWhenFocusLeaves } = useMobileMenu();
 
   let bodyClass = "panel-sidebar-body";
   if (menuOpen) {

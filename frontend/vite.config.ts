@@ -1,8 +1,9 @@
 import { defineConfig, loadEnv } from 'vite'
 import react from '@vitejs/plugin-react'
 
-// The browser talks to /api on its own origin, so the session cookie stays first-party.
-// In development Vite forwards those requests to the FastAPI server (GERENCIA_API_URL overrides it).
+// O navegador chama /api no próprio endereço do site, então o cookie de sessão
+// fica no mesmo domínio. Em desenvolvimento, o Vite repassa essas chamadas para
+// a API FastAPI; GERENCIA_API_URL troca o endereço dela.
 export default defineConfig(({ mode }) => {
   const env = loadEnv(mode, '.', '')
   return {

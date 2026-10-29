@@ -1,4 +1,5 @@
 import type { User } from "../../auth/api";
+import BarsMark from "../BarsMark";
 import { formatDate } from "./formatDate";
 
 /** Uma etapa da lista "Próximos passos". */
@@ -45,7 +46,7 @@ export default function PanelHome({ user }: PanelHomeProps) {
     <header className="panel-welcome">
       <h1>Olá, {firstName}.</h1>
       <p className="lead">Seu painel ainda está vazio. Ele se preenche com os extratos e as faturas que você enviar, e o envio de arquivos é o próximo recurso a ficar pronto.</p>
-      <svg className="panel-welcome-mark" viewBox="0 0 30 29" aria-hidden="true"><path d="M2 27h6l3-11H5L2 27Zm10 0h6l5-20h-6l-5 20Zm10 0h6l6-27h-6l-6 27Z" /></svg>
+      <BarsMark className="panel-welcome-mark" />
     </header>
 
     <div className="panel-grid">

@@ -1,24 +1,25 @@
-import { lazy, Suspense, useEffect, useRef, useState } from "react";
-import Brand from "../components/Brand";
+import { lazy, Suspense } from "react";
+import BarsMark from "../components/BarsMark";
 import CitedFigure from "../components/CitedFigure";
 import GroundChart from "../components/GroundChart";
 import Icon from "../components/Icon";
 import ReadingsFigure from "../components/ReadingsFigure";
 import SourceTable from "../components/SourceTable";
-import { useAuth } from "../auth/AuthContext";
+import SiteFooter from "../components/site/SiteFooter";
+import SiteHeader from "../components/site/SiteHeader";
+import useRedirectSignedInUser from "../auth/useRedirectSignedInUser";
 import useDemoExperience from "../hooks/useDemoExperience";
-import { categories, demo, formatPercentage, money, monthKeys, monthlyDelta, monthRows, type DemoPreset } from "../components/dashboard/demoModel";
+import usePageTitle from "../hooks/usePageTitle";
+import {
+  categories, demo, formatMoneyDifference, formatPercentage, money, monthKeys, monthlyDelta, monthRows,
+  type DemoPreset, type DemoState,
+} from "../components/dashboard/demoModel";
 
+// lazy carrega a demonstração (e o Recharts, que é grande) só depois do resto
+// da página, para a primeira tela abrir mais rápido.
 const ConnectedDashboard = lazy(() => import("../components/dashboard/ConnectedDashboard"));
 
-const contents = [
-  { href: "#problema", label: "Problema" },
-  { href: "#como-funciona", label: "Como funciona" },
-  { href: "#demo", label: "Demonstração" },
-  { href: "#perguntas", label: "Perguntas" },
-];
-
-// Every number on the page comes from the same fictitious data the figures use.
+// Todos os números da página vêm dos mesmos dados fictícios das figuras.
 const quarterTotal = monthRows.reduce((sum, row) => sum + row.total, 0);
 const entryCount = monthKeys.reduce((sum, key) => sum + demo[key].transactions.length, 0);
 const august = monthlyDelta("ago")!;
@@ -29,168 +30,199 @@ const stats = [
   { icon: "tags", label: "Categorias", value: String(categories.length), text: "Categorias com cor fixa, as mesmas em todas as figuras e na demonstração." },
 ] as const;
 
-const BarsMark = ({ className }: { className: string }) => <svg className={className} viewBox="0 0 30 29" aria-hidden="true"><path d="M2 27h6l3-11H5L2 27Zm10 0h6l5-20h-6l-5 20Zm10 0h6l6-27h-6l-6 27Z" /></svg>;
+const workflowSteps = [
+  { title: "Envie a fatura", text: "Arquivos CSV ou XLSX com data, descrição e valor de cada compra.", available: false },
+  { title: "Revise descrições e categorias", text: "Estabelecimentos padronizados e categorias que podem ser corrigidas e salvas como regra.", available: false },
+  { title: "Leia por período, categoria e lançamento", text: "Compare meses, veja a parte de cada categoria e chegue aos lançamentos de cada total.", available: true },
+];
 
+const questions = [
+  {
+    question: "Os números são de uma conta real?",
+    answer: "Não. Períodos, totais e lançamentos são fictícios, criados para a demonstração. Ainda assim, cada total é a soma exata dos lançamentos do período, como numa fatura de verdade.",
+  },
+  {
+    question: "Posso importar minha fatura agora?",
+    answer: "Ainda não. A importação de CSV e XLSX está em desenvolvimento. Você já pode criar uma conta, e a demonstração funciona sem cadastro e sem enviar dados.",
+  },
+  {
+    question: "Como as figuras se conectam à demonstração?",
+    answer: "Cada recorte da Figura 2 abre o período, o gráfico ou a categoria correspondente na Figura 3. O endereço da página guarda o recorte, e ele pode ser compartilhado.",
+  },
+];
+
+type OpenPreset = (preset: DemoPreset) => void;
+
+/**
+ * Página inicial, para visitantes: apresenta o gerenCIA com figuras feitas de
+ * dados fictícios e termina na demonstração interativa.
+ */
 export default function ExperiencePage() {
-  const [menuOpen, setMenuOpen] = useState(false);
-  const menuButton = useRef<HTMLButtonElement>(null);
   const { state, update } = useDemoExperience();
-  const { status } = useAuth();
-  const [current, setCurrent] = useState<string | null>(null);
-
-  useEffect(() => {
-    document.title = "gerenCIA — entenda o caminho do seu dinheiro";
-  }, []);
-
+  usePageTitle("gerenCIA — entenda o caminho do seu dinheiro");
   // A página inicial é só para visitantes: quem já está logado vai para o painel.
-  useEffect(() => {
-    if (status === "authenticated") window.location.replace("/app");
-  }, [status]);
-  useEffect(() => {
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && menuOpen) { setMenuOpen(false); menuButton.current?.focus(); }
-    };
-    document.addEventListener("keydown", onKey);
-    return () => document.removeEventListener("keydown", onKey);
-  }, [menuOpen]);
+  useRedirectSignedInUser();
 
-  // The header marks the section that crosses the middle of the screen.
-  useEffect(() => {
-    const sections = contents.map((item) => document.querySelector(item.href)).filter((node): node is Element => !!node);
-    const observer = new IntersectionObserver((records) => {
-      records.forEach((record) => { if (record.isIntersecting) setCurrent(`#${record.target.id}`); });
-    }, { rootMargin: "-45% 0px -50% 0px" });
-    sections.forEach((section) => observer.observe(section));
-    return () => observer.disconnect();
-  }, []);
-
-  const openPreset = (preset: DemoPreset) => update({ period: preset.period ?? "ago", category: preset.category ?? null, chart: preset.chart ?? "bar" }, preset.focus);
-  const closeMenu = () => setMenuOpen(false);
+  // Os links das figuras abrem um recorte da demonstração. O que o recorte não
+  // define volta ao padrão: agosto, todas as categorias e gráfico de barras.
+  function openPreset(preset: DemoPreset) {
+    update({ period: preset.period ?? "ago", category: preset.category ?? null, chart: preset.chart ?? "bar" }, preset.focus);
+  }
 
   return <div className="experience-shell"><a className="skip-link" href="#main-content">Pular para o conteúdo</a>
-    <header className="site-header on-night" onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) closeMenu(); }}>
-      <div className="page-container header-inner">
-        <Brand />
-        <button ref={menuButton} className="menu-toggle" type="button" aria-label={menuOpen ? "Fechar menu" : "Abrir menu"} aria-expanded={menuOpen} aria-controls="site-navigation" onClick={() => setMenuOpen((value) => !value)}><span /><span /></button>
-        <nav id="site-navigation" className={menuOpen ? "site-nav is-open" : "site-nav"} aria-label="Navegação principal">
-          <ol>{contents.map((item) => <li key={item.href}><a href={item.href} onClick={closeMenu} aria-current={current === item.href ? "location" : undefined}>{item.label}</a></li>)}</ol>
-          {/* Quem está logado já está a caminho do painel, então só visitantes veem estes links. */}
-          <div className="nav-account" data-state={status}>
-            {status !== "authenticated" && <><a className="nav-signin" href="/login">Entrar</a><a className="header-pill" href="/register">Cadastrar</a></>}
-          </div>
-        </nav>
-      </div>
-    </header>
-
+    <SiteHeader />
     <main id="main-content" tabIndex={-1}>
-      <section className="hero on-night" id="visao-geral" aria-labelledby="hero-title">
-        <div className="page-container hero-inner">
-          <div className="hero-copy">
-            <h1 id="hero-title">Sua fatura diz mais que o total.</h1>
-            <p className="lead">O gerenCIA está sendo construído para transformar faturas de cartão em CSV ou XLSX numa leitura por mês e por categoria, em que cada total leva aos lançamentos que o formam.</p>
-            <div className="action-row"><a className="primary-button" href="#demo">Explorar a demonstração</a><a className="secondary-button" href="#como-funciona">Como funciona</a></div>
-          </div>
-          <div className="hero-stage">
-            <div className="float-card is-left"><p>Saídas no trimestre</p><strong>{money(quarterTotal)}</strong><span>{entryCount} lançamentos</span></div>
-            <div className="float-card is-right"><p>Agosto em relação a julho</p><strong>{money(august.amount).replace("-", "−")}</strong><span>{formatPercentage(Math.abs(august.percentage) / 100)} a menos</span></div>
-            <CitedFigure number="1" onOpenPreset={openPreset} />
-          </div>
-        </div>
-      </section>
-
-      <section className="band has-glow" id="numeros" aria-labelledby="numbers-title">
-        <GroundChart />
-        <div className="page-container">
-          <div className="section-head is-center">
-            <h2 id="numbers-title" className="section-title">Uma demonstração que fecha a conta.</h2>
-            <p className="section-intro">Os números abaixo vêm dos dados fictícios usados em todas as figuras. A importação de faturas está em desenvolvimento.</p>
-          </div>
-          <ul className="stat-cards">{stats.map((stat, index) => <li key={stat.label} className={index === 1 ? "is-featured" : undefined}>
-            <span className="stat-label"><i><Icon name={stat.icon} size={18} /></i>{stat.label}</span>
-            <strong>{stat.value}</strong>
-            <p>{stat.text}</p>
-          </li>)}</ul>
-        </div>
-      </section>
-
-      <section className="band" id="problema" aria-labelledby="problema-title">
-        <div className="band-sheet"><div className="page-container split">
-          <div className="split-media"><SourceTable /></div>
-          <div className="split-copy">
-            <h2 id="problema-title" className="section-title">O total da fatura não explica o mês.</h2>
-            <p className="section-intro">A fatura do cartão informa quanto pagar, mas não mostra para onde foi o dinheiro.</p>
-            <ul className="feature-list">
-              <li><span className="chip"><Icon name="rows" /></span><div><h3>Linhas sem contexto</h3><p>As compras chegam como dezenas de linhas com descrições abreviadas, sem categoria e sem comparação com os meses anteriores.</p></div></li>
-              <li><span className="chip"><Icon name="columns" /></span><div><h3>Leitura organizada</h3><p>O gerenCIA foi projetado para ler essas linhas, identificar o estabelecimento, atribuir uma categoria e organizar os valores por período. A <a className="xref" href="#tabela-1">Tabela 1</a> mostra o mesmo lançamento antes e depois.</p></div></li>
-            </ul>
-          </div>
-        </div></div>
-      </section>
-
-      <section className="band has-glow is-mirrored" id="como-funciona" aria-labelledby="workflow-title">
-        <div className="page-container">
-          <div className="section-head is-center">
-            <h2 id="workflow-title" className="section-title">Do arquivo à leitura por categoria.</h2>
-            <p className="section-intro">O percurso tem três etapas. As duas primeiras dependem da importação, que está em desenvolvimento; a terceira já funciona na demonstração, como mostra a <a className="xref" href="#figura-2">Figura 2</a>.</p>
-          </div>
-          <ol className="procedure">
-            <li><span className="step-no">1</span><h3>Envie a fatura</h3><p>Arquivos CSV ou XLSX com data, descrição e valor de cada compra.</p><p className="status-line"><i className="status-mark" aria-hidden="true" />Em desenvolvimento</p></li>
-            <li><span className="step-no">2</span><h3>Revise descrições e categorias</h3><p>Estabelecimentos padronizados e categorias que podem ser corrigidas e salvas como regra.</p><p className="status-line"><i className="status-mark" aria-hidden="true" />Em desenvolvimento</p></li>
-            <li><span className="step-no">3</span><h3>Leia por período, categoria e lançamento</h3><p>Compare meses, veja a parte de cada categoria e chegue aos lançamentos de cada total.</p><p className="status-line"><i className="status-mark is-available" aria-hidden="true" />Disponível na demonstração</p></li>
-          </ol>
-          <ReadingsFigure onOpenPreset={openPreset} />
-        </div>
-      </section>
-
-      <section className="band" id="demo" aria-labelledby="demo-title">
-        <div className="band-night on-night"><div className="page-container">
-          <div className="section-head is-split">
-            <h2 id="demo-title" className="section-title">Explore a demonstração.</h2>
-            <p className="section-intro">Escolha um período, alterne entre barras e rosca e selecione uma categoria para ver os lançamentos dela. A soma dos lançamentos confere com cada total, e o endereço da página guarda o recorte escolhido.</p>
-          </div>
-          <Suspense fallback={<div className="dashboard-loading" role="status">Preparando a demonstração…</div>}><ConnectedDashboard state={state} onChange={update} /></Suspense>
-        </div></div>
-      </section>
-
-      <section className="band has-glow" id="perguntas" aria-labelledby="questions-title">
-        <div className="page-container">
-          <div className="section-head is-center">
-            <h2 id="questions-title" className="section-title">Perguntas frequentes.</h2>
-            <p className="section-intro">O que a demonstração mostra e o que ainda está em desenvolvimento.</p>
-          </div>
-          <div className="question-list">
-            <details><summary>Os números são de uma conta real?</summary><p>Não. Períodos, totais e lançamentos são fictícios, criados para a demonstração. Ainda assim, cada total é a soma exata dos lançamentos do período, como numa fatura de verdade.</p></details>
-            <details><summary>Posso importar minha fatura agora?</summary><p>Ainda não. A importação de CSV e XLSX está em desenvolvimento. Você já pode criar uma conta, e a demonstração funciona sem cadastro e sem enviar dados.</p></details>
-            <details><summary>Como as figuras se conectam à demonstração?</summary><p>Cada recorte da Figura 2 abre o período, o gráfico ou a categoria correspondente na Figura 3. O endereço da página guarda o recorte, e ele pode ser compartilhado.</p></details>
-          </div>
-        </div>
-      </section>
-
-      <section className="closing" aria-labelledby="closing-title">
-        <div className="closing-panel">
-          <BarsMark className="closing-mark is-left" />
-          <BarsMark className="closing-mark is-right" />
-          <h2 id="closing-title">Veja de onde vem cada total.</h2>
-          <p>A demonstração funciona sem cadastro e sem enviar dados.</p>
-          <div className="action-row"><a className="primary-button is-night" href="#demo">Explorar a demonstração</a><a className="secondary-button" href="/register">Criar conta</a></div>
-        </div>
-      </section>
+      <HeroSection onOpenPreset={openPreset} />
+      <NumbersSection />
+      <ProblemSection />
+      <WorkflowSection onOpenPreset={openPreset} />
+      <DemoSection state={state} onChange={update} />
+      <QuestionsSection />
+      <ClosingSection />
     </main>
-
-    <footer className="site-footer on-night">
-      <div className="page-container footer-grid">
-        <div className="footer-brand"><Brand /><p>Organização financeira para o dia a dia. Projeto acadêmico em desenvolvimento.</p></div>
-        <nav className="footer-links" aria-label="Rodapé">
-          <div><h2>Seções</h2><ul>{contents.map((item) => <li key={item.href}><a href={item.href}>{item.label}</a></li>)}</ul></div>
-          <div><h2>Páginas</h2><ul><li><a href="#visao-geral">Voltar ao início</a></li><li><a href="/register">Criar conta</a></li><li><a href="/login">Entrar</a></li></ul></div>
-        </nav>
-        <dl className="footer-facts">
-          <div><dt>Dados</dt><dd>Fictícios, junho a agosto de 2026</dd></div>
-          <div><dt>Em desenvolvimento</dt><dd>Importação de faturas</dd></div>
-        </dl>
-        <p className="footer-legal">© {new Date().getFullYear()} gerenCIA</p>
-      </div>
-      <div className="footer-wordmark" aria-hidden="true" />
-    </footer>
+    <SiteFooter />
   </div>;
+}
+
+/** Abertura: a promessa do produto, os dois cartões de números e a Figura 1. */
+function HeroSection({ onOpenPreset }: { onOpenPreset: OpenPreset }) {
+  return <section className="hero on-night" id="visao-geral" aria-labelledby="hero-title">
+    <div className="page-container hero-inner">
+      <div className="hero-copy">
+        <h1 id="hero-title">Sua fatura diz mais que o total.</h1>
+        <p className="lead">O gerenCIA está sendo construído para transformar faturas de cartão em CSV ou XLSX numa leitura por mês e por categoria, em que cada total leva aos lançamentos que o formam.</p>
+        <div className="action-row">
+          <a className="primary-button" href="#demo">Explorar a demonstração</a>
+          <a className="secondary-button" href="#como-funciona">Como funciona</a>
+        </div>
+      </div>
+      <div className="hero-stage">
+        {/* Os dois cartões flutuam ao lado da Figura 1. */}
+        <div className="float-card is-left">
+          <p>Saídas no trimestre</p>
+          <strong>{money(quarterTotal)}</strong>
+          <span>{entryCount} lançamentos</span>
+        </div>
+        <div className="float-card is-right">
+          <p>Agosto em relação a julho</p>
+          <strong>{formatMoneyDifference(august.amount)}</strong>
+          <span>{formatPercentage(Math.abs(august.change))} a menos</span>
+        </div>
+        <CitedFigure number="1" onOpenPreset={onOpenPreset} />
+      </div>
+    </div>
+  </section>;
+}
+
+/** Os três números da demonstração: faturas, lançamentos e categorias. */
+function NumbersSection() {
+  return <section className="band has-glow" id="numeros" aria-labelledby="numbers-title">
+    <GroundChart />
+    <div className="page-container">
+      <div className="section-head is-center">
+        <h2 id="numbers-title" className="section-title">Uma demonstração que fecha a conta.</h2>
+        <p className="section-intro">Os números abaixo vêm dos dados fictícios usados em todas as figuras. A importação de faturas está em desenvolvimento.</p>
+      </div>
+      <ul className="stat-cards">
+        {stats.map((stat, index) => <li key={stat.label} className={index === 1 ? "is-featured" : undefined}>
+          <span className="stat-label"><i><Icon name={stat.icon} size={18} /></i>{stat.label}</span>
+          <strong>{stat.value}</strong>
+          <p>{stat.text}</p>
+        </li>)}
+      </ul>
+    </div>
+  </section>;
+}
+
+/** O problema: a fatura informa quanto pagar, mas não para onde foi o dinheiro. */
+function ProblemSection() {
+  return <section className="band" id="problema" aria-labelledby="problema-title">
+    <div className="band-sheet"><div className="page-container split">
+      <div className="split-media"><SourceTable /></div>
+      <div className="split-copy">
+        <h2 id="problema-title" className="section-title">O total da fatura não explica o mês.</h2>
+        <p className="section-intro">A fatura do cartão informa quanto pagar, mas não mostra para onde foi o dinheiro.</p>
+        <ul className="feature-list">
+          <li>
+            <span className="chip"><Icon name="rows" /></span>
+            <div><h3>Linhas sem contexto</h3><p>As compras chegam como dezenas de linhas com descrições abreviadas, sem categoria e sem comparação com os meses anteriores.</p></div>
+          </li>
+          <li>
+            <span className="chip"><Icon name="columns" /></span>
+            <div><h3>Leitura organizada</h3><p>O gerenCIA foi projetado para ler essas linhas, identificar o estabelecimento, atribuir uma categoria e organizar os valores por período. A <a className="xref" href="#tabela-1">Tabela 1</a> mostra o mesmo lançamento antes e depois.</p></div>
+          </li>
+        </ul>
+      </div>
+    </div></div>
+  </section>;
+}
+
+/** Como funciona: as três etapas, cada uma com a sua situação, e a Figura 2. */
+function WorkflowSection({ onOpenPreset }: { onOpenPreset: OpenPreset }) {
+  return <section className="band has-glow is-mirrored" id="como-funciona" aria-labelledby="workflow-title">
+    <div className="page-container">
+      <div className="section-head is-center">
+        <h2 id="workflow-title" className="section-title">Do arquivo à leitura por categoria.</h2>
+        <p className="section-intro">O percurso tem três etapas. As duas primeiras dependem da importação, que está em desenvolvimento; a terceira já funciona na demonstração, como mostra a <a className="xref" href="#figura-2">Figura 2</a>.</p>
+      </div>
+      <ol className="procedure">
+        {workflowSteps.map((step, index) => <li key={step.title}>
+          <span className="step-no">{index + 1}</span>
+          <h3>{step.title}</h3>
+          <p>{step.text}</p>
+          {step.available
+            ? <p className="status-line"><i className="status-mark is-available" aria-hidden="true" />Disponível na demonstração</p>
+            : <p className="status-line"><i className="status-mark" aria-hidden="true" />Em desenvolvimento</p>}
+        </li>)}
+      </ol>
+      <ReadingsFigure onOpenPreset={onOpenPreset} />
+    </div>
+  </section>;
+}
+
+/** A demonstração interativa (Figura 3), carregada depois do resto da página. */
+function DemoSection({ state, onChange }: { state: DemoState; onChange: (patch: Partial<DemoState>) => void }) {
+  return <section className="band" id="demo" aria-labelledby="demo-title">
+    <div className="band-night on-night"><div className="page-container">
+      <div className="section-head is-split">
+        <h2 id="demo-title" className="section-title">Explore a demonstração.</h2>
+        <p className="section-intro">Escolha um período, alterne entre barras e rosca e selecione uma categoria para ver os lançamentos dela. A soma dos lançamentos confere com cada total, e o endereço da página guarda o recorte escolhido.</p>
+      </div>
+      {/* Suspense mostra o aviso enquanto o código da demonstração chega. */}
+      <Suspense fallback={<div className="dashboard-loading" role="status">Preparando a demonstração…</div>}>
+        <ConnectedDashboard state={state} onChange={onChange} />
+      </Suspense>
+    </div></div>
+  </section>;
+}
+
+/** Perguntas frequentes, que abrem e fecham sem JavaScript (details e summary). */
+function QuestionsSection() {
+  return <section className="band has-glow" id="perguntas" aria-labelledby="questions-title">
+    <div className="page-container">
+      <div className="section-head is-center">
+        <h2 id="questions-title" className="section-title">Perguntas frequentes.</h2>
+        <p className="section-intro">O que a demonstração mostra e o que ainda está em desenvolvimento.</p>
+      </div>
+      <div className="question-list">
+        {questions.map((item) => <details key={item.question}><summary>{item.question}</summary><p>{item.answer}</p></details>)}
+      </div>
+    </div>
+  </section>;
+}
+
+/** Fechamento: o convite final, com o símbolo das barras dos dois lados. */
+function ClosingSection() {
+  return <section className="closing" aria-labelledby="closing-title">
+    <div className="closing-panel">
+      <BarsMark className="closing-mark is-left" />
+      <BarsMark className="closing-mark is-right" />
+      <h2 id="closing-title">Veja de onde vem cada total.</h2>
+      <p>A demonstração funciona sem cadastro e sem enviar dados.</p>
+      <div className="action-row">
+        <a className="primary-button is-night" href="#demo">Explorar a demonstração</a>
+        <a className="secondary-button" href="/register">Criar conta</a>
+      </div>
+    </div>
+  </section>;
 }

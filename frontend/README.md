@@ -17,12 +17,17 @@ A página inicial está em `/`. A rota `/register` cria a conta e `/login` abre 
 
 A página é uma vitrine do produto: abertura em petróleo com a Figura 1, blocos arredondados que alternam branco, petróleo e menta sobre um chão sálvia, e figuras e tabelas com legenda e linha "Fonte:".
 
-- `src/pages/ExperiencePage.tsx`: página inicial e sumário de navegação, com o usuário logado no cabeçalho.
+- `src/pages/ExperiencePage.tsx`: página inicial para visitantes, dividida em uma função por seção. Quem já está logado vai para `/app`.
 - `src/pages/RegistrationPage.tsx`: cadastro, com validação local e os erros por campo que a API devolve.
 - `src/pages/LoginPage.tsx`: entrada com e-mail e senha.
+- `src/pages/PanelPage.tsx` e `src/components/panel/`: painel do usuário em `/app`, com barra lateral, próximos passos e dados da conta.
 - `src/auth/api.ts` e `src/auth/AuthContext.tsx`: cliente da API e estado da sessão (`useAuth`).
+- `src/components/site/`: cabeçalho e rodapé da página inicial e a lista das seções usada pelos dois.
+- `src/components/AccountHeader.tsx`: cabeçalho das páginas de entrar e de criar conta.
+- `src/components/DemoLink.tsx`: link das figuras que abre um recorte da demonstração na mesma página.
+- `src/auth/useRedirectSignedInUser.ts` e `src/hooks/usePageTitle.ts`: levam quem já está logado para o painel e trocam o título da aba.
 - `src/components/FormFields.tsx`: campo com rótulo, dica e erro, e campo de senha com mostrar e ocultar.
-- `src/components/Brand.tsx`: logo de três barras e nome.
+- `src/components/Brand.tsx` e `src/components/BarsMark.tsx`: logo com o nome e o símbolo das três barras, também usado como enfeite.
 - `src/components/CitedFigure.tsx`: Figura 1. Pilha de faturas com uma aba por mês. Cada total por categoria tem uma nota com os maiores lançamentos e a soma de todos.
 - `src/components/SourceTable.tsx`: Tabela 1, a mesma compra como linha do arquivo CSV e como lançamento organizado.
 - `src/components/GroundChart.tsx`: gastos diários do trimestre, desenhados bem apagados no fundo da seção de números.
@@ -30,9 +35,10 @@ A página é uma vitrine do produto: abertura em petróleo com a Figura 1, bloco
 - `src/components/ReadingsFigure.tsx`: Figura 2, três leituras (2a, 2b, 2c) que abrem o recorte correspondente da demonstração.
 - `src/components/dashboard/demoData.ts`: registros fictícios originais, incluindo a descrição bruta de cada lançamento.
 - `src/components/dashboard/demoModel.ts`: totais, percentuais, variações e textos derivados em um só lugar.
-- `src/components/dashboard/ConnectedDashboard.tsx`: Figura 3, com gráficos Recharts por categoria, filtros e tabela de lançamentos.
+- `src/components/dashboard/ConnectedDashboard.tsx`: Figura 3, que junta os blocos da demonstração: `MetricStrip.tsx` (números do topo), `CategoryBlock.tsx` e `CategoryChart.tsx` (gráfico Recharts e lista das categorias) e `TransactionsBlock.tsx` (tabela de lançamentos).
 - `src/hooks/useDemoExperience.ts`: estado do período, categoria e gráfico refletido na URL.
-- `src/styles/tokens.css`, `base.css`, `site.css`, `figures.css` e `dashboard.css`: tokens, componentes base, página, figuras e demonstração.
+- `src/hooks/useMobileMenu.ts`: menu das telas estreitas, que fecha com Esc e quando o foco sai dele; usado no cabeçalho e no painel.
+- `src/styles/tokens.css`, `base.css`, `site.css`, `figures.css`, `dashboard.css` e `panel.css`: tokens, componentes base, página, figuras, demonstração e painel.
 
 A fonte Inter Tight é servida localmente em `public/fonts/`, com a licença OFL ao lado. A dashboard é carregada em módulo separado. As animações (a entrada da abertura e o desdobrar da nota da Figura 1) respeitam a preferência por movimento reduzido.
 
@@ -58,6 +64,6 @@ python scripts/frontend/check_dashboard.py
 
 Os scripts usam Playwright e axe para conferir as notas da Figura 1, os recortes da Figura 2, filtros, URL, menu móvel, armazenamento bloqueado, acessibilidade e larguras de 320, 390, 768 e 1440 px. Capturas ficam em `.impeccable/review/` na raiz do repositório.
 
-## Integração futura
+## Integração com a API
 
-A interface consumirá a API quando autenticação e importação forem disponibilizadas. Cálculos financeiros e autorização dos dados reais pertencem ao backend.
+Cadastro, login, saída e o painel já usam a API de verdade, com a sessão num cookie que o JavaScript não lê. A importação de faturas ainda não existe, então a análise financeira continua usando os dados de demonstração. Quando os dados reais chegarem, os cálculos financeiros e a autorização ficarão no backend.

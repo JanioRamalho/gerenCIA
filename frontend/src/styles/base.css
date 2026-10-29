@@ -46,7 +46,7 @@ main:focus { outline: none; }
 .page-container { width: min(1240px, 100% - 2 * var(--gutter)); margin-inline: auto; }
 @media (min-width: 1800px) { .page-container { width: min(1320px, 100% - 2 * var(--gutter)); } }
 
-/* Running text */
+/* Texto corrido */
 .lead {
   max-width: 38em;
   font-size: clamp(1rem, 0.95rem + 0.25vw, 1.125rem);
@@ -56,7 +56,7 @@ main:focus { outline: none; }
 }
 .on-night .lead { color: var(--on-night-lead); }
 
-/* Actions: pills, the primary one in mint */
+/* Ações: botões em pílula; o principal é menta */
 .action-row { display: flex; flex-wrap: wrap; align-items: center; gap: var(--space-4); }
 .primary-button, .secondary-button {
   display: inline-flex; align-items: center; justify-content: center; gap: var(--space-2);
@@ -72,7 +72,7 @@ main:focus { outline: none; }
 .secondary-button:hover { border-color: var(--ink-2); }
 .on-night .secondary-button { border-color: rgba(238, 245, 242, 0.22); background: var(--night-raised); color: var(--on-night); }
 .on-night .secondary-button:hover { border-color: var(--on-night-2); background: var(--night-hover); }
-/* On a mint field the primary action turns petrol */
+/* Sobre um campo menta, o botão principal fica petróleo */
 .primary-button.is-night { border-color: var(--night); background: var(--night); color: var(--on-night); }
 .primary-button.is-night:hover { border-color: var(--night-raised); background: var(--night-raised); }
 
@@ -100,7 +100,7 @@ main:focus { outline: none; }
 .xref { font-weight: 600; color: var(--ink); text-decoration: underline; text-decoration-color: var(--teal); text-decoration-thickness: 1px; text-underline-offset: 0.2em; }
 .xref:hover { text-decoration-thickness: 2px; }
 
-/* Segmented control: a pill whose pressed option fills in petrol */
+/* Botões agrupados: uma pílula em que a opção escolhida fica petróleo */
 .segmented { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--paper); }
 .segmented button {
   min-height: 36px; padding: 0 var(--space-4);
@@ -112,7 +112,7 @@ main:focus { outline: none; }
 .segmented button[aria-pressed="true"] { background: var(--ink); color: var(--paper); }
 .segmented button:focus-visible { outline-offset: 2px; }
 
-/* Icon chips: a mint disc carrying a drawn icon */
+/* Ícones em disco: um círculo menta com o ícone desenhado */
 .chip {
   display: grid; place-items: center; flex: none;
   width: 40px; height: 40px; border-radius: 50%;
@@ -120,14 +120,14 @@ main:focus { outline: none; }
   color: var(--ink);
 }
 
-/* Figures and tables share one caption and source grammar */
+/* Figuras e tabelas usam o mesmo estilo de legenda e de linha "Fonte:" */
 .figure-caption { font-size: 0.875rem; line-height: 1.4; color: var(--ink-2); text-wrap: balance; }
 .figure-caption b { font-weight: 650; color: var(--ink); margin-right: 0.4em; }
 .figure-source { margin-top: var(--space-3); font-size: var(--text-small); line-height: 1.45; color: var(--ink-2); }
 .category-key { display: inline-flex; align-items: center; gap: var(--space-2); }
 .category-key i, .category-dot { display: inline-block; width: 10px; height: 10px; flex: none; border-radius: 3px; }
 
-/* Availability is drawn by mark: a filled disc is available, a ring is planned */
+/* Situação de um recurso: disco cheio é disponível, anel vazio é previsto */
 .status-line { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-small); font-weight: 500; color: var(--ink-2); }
 .status-mark {
   display: inline-block; width: 10px; height: 10px; flex: none;

@@ -2,7 +2,8 @@ import type { ReactNode } from "react";
 
 export type IconName = "calendar" | "receipt" | "tags" | "rows" | "columns";
 
-// One drawn set: 24px grid, 1.75 stroke, round ends.
+// Todos os ícones seguem o mesmo desenho: grade de 24px, traço de 1,75 e
+// pontas arredondadas. A cor vem do texto ao redor (currentColor).
 const shapes: Record<IconName, ReactNode> = {
   calendar: <><rect x="4" y="5" width="16" height="15" rx="2.5" /><path d="M4 10h16M9 3v4M15 3v4" /></>,
   receipt: <><path d="M6.5 3.5h11v17l-2.75-1.75L12 20.5l-2.75-1.75L6.5 20.5v-17Z" /><path d="M9.5 8.5h5M9.5 12h5M9.5 15.5h3" /></>,

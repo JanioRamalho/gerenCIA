@@ -16,7 +16,8 @@ export type Transaction = {
   amount: number;
 };
 
-// Fixed order: the donut and every legend follow it, so a category keeps its color.
+// Ordem fixa: a rosca e todas as legendas seguem esta ordem, então cada
+// categoria tem sempre a mesma cor.
 export const categories: { name: Category; color: string }[] = [
   { name: "Alimentação", color: "#D4652C" },
   { name: "Transporte", color: "#00907B" },
@@ -216,6 +217,8 @@ export const demo: Record<
 };
 
 export const monthKeys: MonthKey[] = ["jun", "jul", "ago"];
+
+/** Formata um valor em reais, por exemplo "R$ 1.248,40". */
 export const money = (value: number) =>
   new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
     value,

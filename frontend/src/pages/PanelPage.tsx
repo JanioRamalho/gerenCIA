@@ -3,6 +3,7 @@ import { useAuth } from "../auth/AuthContext";
 import AccountSection from "../components/panel/AccountSection";
 import PanelHome from "../components/panel/PanelHome";
 import PanelSidebar from "../components/panel/PanelSidebar";
+import usePageTitle from "../hooks/usePageTitle";
 
 const HOME_PATH = "/app";
 const ACCOUNT_PATH = "/app/account";
@@ -25,14 +26,11 @@ export default function PanelPage({ path }: PanelPageProps) {
 
   const isAccountPage = path === ACCOUNT_PATH;
 
-  // Título da aba do navegador.
-  useEffect(() => {
-    if (isAccountPage) {
-      document.title = "Conta | gerenCIA";
-    } else {
-      document.title = "Painel | gerenCIA";
-    }
-  }, [isAccountPage]);
+  let pageTitle = "Painel | gerenCIA";
+  if (isAccountPage) {
+    pageTitle = "Conta | gerenCIA";
+  }
+  usePageTitle(pageTitle);
 
   // Quem não está logado não vê o painel: vai para o login. Durante a saída,
   // quem decide o destino é a função signOutAndLeave, por isso o "signingOut".

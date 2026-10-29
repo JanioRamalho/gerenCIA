@@ -1,4 +1,4 @@
-/* Figure 3: the interactive demonstration, a white screen on the mint stage */
+/* Figura 3: a demonstração interativa, uma tela branca sobre o fundo menta */
 .analytics-workspace {
   min-width: 0; padding: clamp(16px, 2.2vw, 32px);
   border-radius: var(--radius-card); background: var(--paper); color: var(--ink); box-shadow: var(--shadow-card);
@@ -23,7 +23,7 @@
 .period-toolbar button:hover { border-color: var(--ink-2); }
 .period-toolbar button[aria-pressed="true"] { border-color: var(--ink); background: var(--ink); color: var(--paper); }
 
-/* Period summary: four measures, each on its own pale card */
+/* Resumo do período: quatro números, cada um no seu cartão claro */
 .metric-strip { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-3); }
 .metric-strip > div { display: grid; align-content: start; gap: var(--space-2); padding: var(--space-4); border-radius: var(--radius-card); background: var(--panel); }
 .metric-strip > .metric-main { background: var(--mint-wash); }
@@ -37,7 +37,7 @@
 .delta-bars i { display: block; height: 8px; border-radius: 0 4px 4px 0; background: var(--bar); }
 .delta-bars .is-current i { background: var(--ink); }
 
-/* Analysis blocks */
+/* Blocos de análise */
 .analysis-block { padding-block: var(--space-6) var(--space-5); border-bottom: 1px solid var(--line); scroll-margin-top: var(--space-5); }
 .block-heading { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-start; gap: var(--space-3); margin-bottom: var(--space-4); }
 .block-heading h3 { font-size: var(--text-subtitle); font-weight: 600; line-height: 1.25; letter-spacing: -0.02em; }
@@ -82,7 +82,7 @@
 .category-options small { justify-self: end; font-size: var(--text-small); color: var(--ink-2); }
 .clear-category { margin-top: var(--space-2); font-size: var(--text-small); }
 
-/* Entries table: the sum of every listed entry closes on the total */
+/* Tabela de lançamentos: a soma de todos fecha com o total */
 .transaction-table { width: 100%; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 .transaction-table th, .transaction-table td { padding: 10px var(--space-4) 10px 0; text-align: left; vertical-align: top; }
 .transaction-table th:last-child, .transaction-table td:last-child { padding-right: 0; text-align: right; white-space: nowrap; }
