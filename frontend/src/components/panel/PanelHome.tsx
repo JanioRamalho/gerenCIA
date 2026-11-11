@@ -5,6 +5,7 @@ import { formatDate } from "./formatDate";
 type Step = {
   title: string;
   text: string;
+  status: string;
 };
 
 // As etapas que vão preencher o painel, na ordem em que o projeto as constrói.
@@ -13,18 +14,22 @@ const STEPS: Step[] = [
   {
     title: "Envie um extrato ou uma fatura",
     text: "Arquivos CSV ou XLSX do Nubank. De outros bancos, pela planilha-modelo do gerenCIA.",
+    status: "Disponível",
   },
   {
     title: "Veja para onde foi o dinheiro",
     text: "Gastos por mês e por categoria, com a média, a mediana e as maiores despesas de cada período.",
+    status: "Aparece depois do primeiro envio",
   },
   {
     title: "Defina limites por categoria",
     text: "Um teto mensal opcional para cada categoria, com aviso no painel ao chegar a 80% e ao passar de 100%.",
+    status: "Em breve",
   },
   {
     title: "Receba o diagnóstico do mês",
     text: "Um resumo em linguagem simples, gerado por IA a partir das suas análises, com sugestões de onde economizar.",
+    status: "Em breve",
   },
 ];
 
@@ -44,7 +49,8 @@ export default function PanelHome({ user }: PanelHomeProps) {
   return <div className="panel-page">
     <header className="panel-welcome">
       <h1>Olá, {firstName}.</h1>
-      <p className="lead">Seu painel ainda está vazio. Ele se preenche com os extratos e as faturas que você enviar, e o envio de arquivos é o próximo recurso a ficar pronto.</p>
+      <p className="lead">Seu painel ainda está vazio. Ele se preenche com os extratos e as faturas que você enviar.</p>
+      <a className="primary-button is-night" href="/app/files">Enviar um arquivo</a>
       <svg className="panel-welcome-mark" viewBox="0 0 30 29" aria-hidden="true"><path d="M2 27h6l3-11H5L2 27Zm10 0h6l5-20h-6l-5 20Zm10 0h6l6-27h-6l-6 27Z" /></svg>
     </header>
 
@@ -64,17 +70,11 @@ export default function PanelHome({ user }: PanelHomeProps) {
 type StepItemProps = {
   step: Step;
   number: number;
-  isNext: boolean; // a etapa que vem logo a seguir ganha destaque
+  isNext: boolean; // a etapa a fazer agora ganha destaque
 };
 
 /** Uma etapa: o número, o título, a explicação e a situação. */
 function StepItem({ step, number, isNext }: StepItemProps) {
-  // Nenhuma etapa funciona ainda. A primeira é a que está sendo construída agora.
-  let status = "Em breve";
-  if (isNext) {
-    status = "Em desenvolvimento";
-  }
-
   // O número fica escondido dos leitores de tela porque a lista <ol> já é numerada.
   return <li className={isNext ? "is-next" : undefined}>
     <span className="panel-step-no" aria-hidden="true">{number}</span>
@@ -82,7 +82,7 @@ function StepItem({ step, number, isNext }: StepItemProps) {
       <h3>{step.title}</h3>
       <p>{step.text}</p>
     </div>
-    <p className="status-line"><i className="status-mark" aria-hidden="true" />{status}</p>
+    <p className="status-line"><i className="status-mark" aria-hidden="true" />{step.status}</p>
   </li>;
 }
 

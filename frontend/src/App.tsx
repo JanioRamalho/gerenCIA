@@ -1,3 +1,4 @@
+import AnalysisTestPage from "./pages/AnalysisTestPage";
 import ExperiencePage from "./pages/ExperiencePage";
 import LoginPage from "./pages/LoginPage";
 import PanelPage from "./pages/PanelPage";
@@ -13,6 +14,9 @@ export default function App() {
   // Tira a barra do final, para "/app/" e "/app" abrirem a mesma página.
   const path = window.location.pathname.replace(/\/$/, "");
 
+  if (path === "/teste-analise") {
+    return <AnalysisTestPage />;
+  }
   if (path === "/login") {
     return <LoginPage />;
   }

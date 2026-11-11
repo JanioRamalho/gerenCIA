@@ -1,0 +1,61 @@
+/* Página de teste da análise (/teste-analise). Usa os tokens do site. */
+.at-page { min-height: 100vh; background: var(--ground); color: var(--ink); font-family: var(--font-sans); }
+.at-header {
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-4);
+  padding: var(--space-4) var(--gutter); background: var(--night); color: var(--on-night);
+}
+.at-header .brand { color: var(--on-night-title); }
+.at-badge {
+  padding: 2px 12px; border: 1px solid var(--night-line); border-radius: var(--radius-pill);
+  font-size: var(--text-small); color: var(--on-night-lead);
+}
+.at-main { display: grid; gap: var(--space-5); width: min(1100px, 100%); margin: 0 auto; padding: var(--space-6) var(--gutter) var(--space-8); }
+.at-card {
+  min-width: 0; padding: var(--space-5); background: var(--paper);
+  border-radius: var(--radius-card); box-shadow: var(--shadow-soft);
+}
+.at-card h1 { margin: 0 0 var(--space-2); font-size: var(--text-heading); line-height: 1.1; }
+.at-card h2 { margin: 0 0 var(--space-3); font-size: var(--text-title); }
+.at-card h3 { margin: var(--space-5) 0 var(--space-1); font-size: var(--text-body); }
+.at-lead { margin: 0 0 var(--space-4); color: var(--ink-2); max-width: 68ch; }
+.at-hint { margin: 0 0 var(--space-3); color: var(--ink-2); font-size: var(--text-small); }
+.at-empty { margin: 0; padding: var(--space-3) var(--space-4); background: var(--panel); border-radius: var(--radius-control); color: var(--ink-2); }
+
+.at-form { display: flex; flex-wrap: wrap; align-items: end; gap: var(--space-4); }
+.at-file { display: grid; gap: var(--space-2); font-weight: 600; }
+.at-file input {
+  min-height: var(--control-height); padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--field-border); border-radius: var(--radius-control);
+  background: var(--paper); font: inherit; font-weight: 400; max-width: 100%;
+}
+.at-button {
+  min-height: var(--control-height); padding: 0 var(--space-5); border: 0; border-radius: var(--radius-pill);
+  background: var(--mint); color: var(--ink); font: inherit; font-weight: 600; cursor: pointer;
+  transition: background-color var(--duration) ease;
+}
+.at-button:hover:not(:disabled) { background: var(--mint-hover); }
+.at-button:disabled { opacity: 0.55; cursor: not-allowed; }
+.at-button:focus-visible, .at-file input:focus-visible, .at-details summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
+.at-status { min-height: 1.4em; margin-top: var(--space-3); color: var(--ink-2); font-size: var(--text-small); }
+.at-error { margin: var(--space-3) 0 0; padding: var(--space-3) var(--space-4); border-radius: var(--radius-control); background: #fbe9e5; color: var(--error); font-weight: 600; }
+
+.at-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: var(--space-3); margin: 0; }
+.at-stats > div { padding: var(--space-3) var(--space-4); background: var(--panel); border-radius: var(--radius-control); }
+.at-stats dt { font-size: var(--text-small); color: var(--ink-2); }
+.at-stats dd { margin: 2px 0 0; font-size: var(--text-subtitle); font-weight: 700; }
+.at-stats.is-big dd { font-size: var(--text-title); }
+.at-notes { margin: var(--space-4) 0 0; padding-left: var(--space-5); color: var(--ink-2); }
+.at-details { margin-top: var(--space-4); }
+.at-details summary { cursor: pointer; font-weight: 600; }
+
+.at-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 420px), 1fr)); gap: var(--space-5); }
+.at-chart { height: 240px; }
+.at-shares { display: grid; gap: 2px; margin: var(--space-4) 0 0; padding: 0; list-style: none; font-size: var(--text-small); }
+.at-shares li { display: flex; justify-content: space-between; gap: var(--space-3); padding: 6px 0; border-top: 1px solid var(--line); }
+.at-shares li span:last-child { color: var(--ink-2); }
+
+.at-scroll { overflow-x: auto; }
+.at-card table { width: 100%; border-collapse: collapse; font-size: var(--text-small); }
+.at-card th, .at-card td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
+.at-card th { color: var(--ink-2); font-weight: 600; white-space: nowrap; }
+.at-card td:last-child, .at-card th:last-child { font-variant-numeric: tabular-nums; }
