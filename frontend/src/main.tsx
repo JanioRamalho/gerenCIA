@@ -8,6 +8,8 @@ import "./styles/site.css";
 import "./styles/figures.css";
 import "./styles/dashboard.css";
 import "./styles/panel.css";
+import "./styles/analysis-test.css";
+import "./styles/panel-data.css";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
