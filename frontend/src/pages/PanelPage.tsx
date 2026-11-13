@@ -27,7 +27,7 @@ export default function PanelPage({ path }: PanelPageProps) {
   const [signOutFailed, setSignOutFailed] = useState(false);
 
   const isAccountPage = path === ACCOUNT_PATH;
-  const isFilesPage = path === FILES_PATH;
+  const isFilesPage = path === FILES_PATH || path === "/app/uploads";
 
   let pageTitle = "Painel | gerenCIA";
   if (isAccountPage) {
@@ -79,7 +79,7 @@ export default function PanelPage({ path }: PanelPageProps) {
   return <div className="panel-shell">
     <a className="skip-link" href="#panel-content">Pular para o conteúdo</a>
     <PanelSidebar
-      currentPath={path}
+      currentPath={isFilesPage ? FILES_PATH : path}
       user={user}
       signingOut={signingOut}
       signOutFailed={signOutFailed}

@@ -1,0 +1,38 @@
+/* Visão geral de contas que ainda não têm transações para analisar. */
+.panel-overview-header { display: flex; align-items: center; justify-content: space-between; gap: var(--space-5); }
+.panel-overview-header h1 { margin-top: var(--space-2); font-size: 2rem; font-weight: 600; line-height: 1.15; letter-spacing: -0.03em; }
+.panel-greeting, .panel-date { color: var(--ink-2); }
+.panel-date { margin-top: var(--space-2); font-size: var(--text-small); }
+.panel-overview-header > a { flex-shrink: 0; }
+.panel-availability { display: flex; align-items: baseline; gap: var(--space-5); padding-block: var(--space-4); border-block: 1px solid var(--line); }
+.panel-availability .status-line { flex-shrink: 0; color: var(--ink); font-weight: 600; }
+.panel-availability > p { max-width: 70ch; color: var(--ink-2); font-size: var(--text-small); }
+.panel-section { min-width: 0; }
+.panel-section-heading { display: flex; align-items: center; justify-content: space-between; gap: var(--space-4); margin-bottom: var(--space-4); }
+.panel-section-heading h2 { font-size: 1.25rem; font-weight: 600; line-height: 1.2; letter-spacing: -0.025em; }
+.panel-period { display: flex; align-items: center; gap: var(--space-2); font-size: var(--text-small); color: var(--ink-2); }
+.panel-metrics { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: var(--space-4); }
+.panel-metrics .panel-card { padding: var(--space-5); border-radius: var(--radius-card); }
+.panel-metrics dt { color: var(--ink-2); font-size: var(--text-small); font-weight: 500; }
+.panel-metrics dd { margin-top: var(--space-3); font-size: 1.75rem; line-height: 1.2; font-weight: 600; letter-spacing: -0.03em; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.panel-metrics .panel-metric-note { margin-top: var(--space-2); font-size: var(--text-small); font-weight: 400; letter-spacing: normal; color: var(--ink-2); }
+.panel-charts { display: grid; grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); gap: var(--space-5); }
+.panel-chart-card { min-height: 310px; border-radius: var(--radius-card); }
+.panel-chart-empty { display: flex; min-height: 246px; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+.panel-empty-icon { display: grid; place-items: center; width: 56px; height: 56px; margin-bottom: var(--space-5); background: var(--panel); color: var(--teal); border-radius: var(--radius-control); }
+.panel-chart-empty h3 { max-width: 30ch; font-weight: 600; line-height: 1.4; }
+.panel-chart-empty p { max-width: 38ch; margin-top: var(--space-2); font-size: var(--text-small); color: var(--ink-2); }
+.panel-inline-state { display: grid; justify-items: start; gap: var(--space-3); }
+.panel-inline-state h3 { font-size: 1.0625rem; font-weight: 600; }
+.panel-inline-state p { max-width: 65ch; color: var(--ink-2); }
+.panel-recent-files { border-radius: var(--radius-card); }
+.panel-recent-files > .panel-note { margin: 0 0 var(--space-4); }
+.panel-recent-list li { display: flex; align-items: center; gap: var(--space-4); padding-block: var(--space-4); border-top: 1px solid var(--line); }
+.panel-recent-list li > div { min-width: 0; flex: 1; }
+.panel-recent-list h3 { font-weight: 600; overflow-wrap: anywhere; }
+.panel-recent-list p { margin-top: var(--space-1); font-size: var(--text-small); color: var(--ink-2); }
+.panel-file-format { display: grid; place-items: center; width: 48px; height: 48px; flex-shrink: 0; background: var(--panel); border-radius: var(--radius-small); font-size: 0.75rem; font-weight: 600; }
+.panel-recent-list .text-link { flex-shrink: 0; }
+@media (max-width: 1180px) { .panel-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); } .panel-availability { align-items: start; flex-direction: column; gap: var(--space-2); } }
+@media (max-width: 720px) { .panel-charts { grid-template-columns: 1fr; } .panel-overview-header { align-items: start; flex-direction: column; } .panel-section-heading { align-items: start; flex-wrap: wrap; } .panel-chart-card { min-height: 270px; } .panel-chart-empty { min-height: 206px; } }
+@media (max-width: 480px) { .panel-overview-header h1 { font-size: 1.75rem; } .panel-metrics { gap: var(--space-3); } .panel-metrics .panel-card { padding: var(--space-4); } .panel-recent-list li { flex-wrap: wrap; } .panel-recent-list .text-link { margin-left: 64px; } }

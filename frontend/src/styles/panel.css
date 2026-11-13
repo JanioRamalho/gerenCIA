@@ -64,7 +64,7 @@ a.panel-menu-item:hover { background: var(--night-hover); }
     radial-gradient(38% 34% at 100% 0%, var(--ground-glow), transparent 72%),
     radial-gradient(34% 30% at 0% 100%, rgba(167, 229, 214, 0.35), transparent 72%);
 }
-.panel-page { display: grid; gap: var(--space-6); max-width: 1180px; }
+.panel-page { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--space-6); min-width: 0; max-width: 1180px; }
 .panel-page-head { display: grid; gap: var(--space-3); }
 .panel-page-head h1, .panel-message h1, .panel-welcome h1 {
   font-size: 2rem; font-weight: 600; line-height: 1.1; letter-spacing: -0.03em; text-wrap: balance;

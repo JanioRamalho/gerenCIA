@@ -19,22 +19,22 @@ export default function PanelOverview({ user }: PanelOverviewProps) {
   const [reloading, setReloading] = useState(false);
 
   useEffect(() => {
-    let cancelled = false;
+    const controller = new AbortController();
     setReloading(true);
-    getDashboard(month)
+    getDashboard(month, controller.signal)
       .then((result) => {
-        if (cancelled) return;
+        if (controller.signal.aborted) return;
         setData(result);
         setFailed(false);
       })
       .catch((error: unknown) => {
-        if (cancelled || leaveIfSignedOut(error)) return;
+        if (controller.signal.aborted || leaveIfSignedOut(error)) return;
         setFailed(true);
       })
       .finally(() => {
-        if (!cancelled) setReloading(false);
+        if (!controller.signal.aborted) setReloading(false);
       });
-    return () => { cancelled = true; };
+    return () => controller.abort();
   }, [month]);
 
   if (failed && data === null) {

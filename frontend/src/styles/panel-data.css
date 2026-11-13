@@ -8,16 +8,16 @@
 
 /* Envio de arquivo */
 .pd-upload { display: flex; flex-wrap: wrap; align-items: end; gap: var(--space-4); }
-.pd-file { display: grid; gap: var(--space-2); font-weight: 600; }
+.pd-file { display: grid; gap: var(--space-2); min-width: 0; max-width: 100%; font-weight: 600; }
 .pd-file input {
-  min-height: var(--control-height); max-width: 100%; padding: var(--space-2) var(--space-3);
+  min-height: var(--control-height); min-width: 0; width: 100%; max-width: 100%; padding: var(--space-2) var(--space-3);
   border: 1px solid var(--field-border); border-radius: var(--radius-control); background: var(--paper); font: inherit; font-weight: 400;
 }
 .pd-file input:focus-visible, .pd-tabs button:focus-visible, .pd-options button:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; }
 .pd-upload .primary-button:disabled { opacity: 0.55; cursor: not-allowed; }
 
 /* Tabelas */
-.pd-scroll { overflow-x: auto; }
+.pd-scroll { position: relative; max-width: 100%; overflow-x: auto; }
 .pd-table { width: 100%; border-collapse: collapse; font-size: var(--text-small); }
 .pd-table th, .pd-table td { padding: 10px 12px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top; }
 .pd-table th { color: var(--ink-2); font-weight: 600; white-space: nowrap; }
@@ -34,7 +34,7 @@
 .pd-tabs button[aria-pressed="true"] { background: var(--night); border-color: var(--night); color: var(--on-night); font-weight: 600; }
 
 /* Métricas */
-.pd-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: var(--space-3); margin: 0; }
+.pd-metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 190px), 1fr)); gap: var(--space-3); margin: 0; }
 .pd-metrics > div { padding: var(--space-3) var(--space-4); background: var(--panel); border-radius: var(--radius-control); }
 .pd-metrics dt { font-size: var(--text-small); color: var(--ink-2); }
 .pd-metrics dd { margin: 2px 0 0; display: grid; gap: 2px; }
@@ -48,7 +48,7 @@
 .pd-chart { height: 240px; }
 .pd-options { display: grid; gap: 2px; margin-top: var(--space-4); }
 .pd-options button {
-  display: grid; grid-template-columns: 1fr auto auto; gap: var(--space-3); align-items: baseline;
+  display: grid; grid-template-columns: minmax(0, 1fr) auto auto; gap: var(--space-3); align-items: baseline;
   min-height: 40px; padding: 6px var(--space-3); border: 0; border-radius: var(--radius-control);
   background: transparent; color: var(--ink); font: inherit; text-align: left; cursor: pointer;
 }

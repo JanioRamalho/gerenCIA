@@ -27,9 +27,12 @@ const generic = "Não foi possível concluir agora. Tente de novo em instantes."
  * erro, lança ApiError com a mensagem da API ou, sem ela, uma mensagem genérica.
  * O parâmetro json, quando existe, vai no corpo como JSON.
  */
-async function request<T>(path: string, init: RequestInit & { json?: unknown } = {}): Promise<T | null> {
+export async function request<T>(path: string, init: RequestInit & { json?: unknown } = {}): Promise<T | null> {
   const { json, ...rest } = init;
   const hasBody = json !== undefined;
+  const headers = new Headers(rest.headers);
+  headers.set("Accept", "application/json");
+  if (hasBody) headers.set("Content-Type", "application/json");
 
   let response: Response;
   try {
@@ -37,8 +40,8 @@ async function request<T>(path: string, init: RequestInit & { json?: unknown } =
       // same-origin envia o cookie de sessão junto com a chamada.
       credentials: "same-origin",
       ...rest,
-      headers: { Accept: "application/json", ...(hasBody ? { "Content-Type": "application/json" } : {}) },
-      body: hasBody ? JSON.stringify(json) : undefined,
+      headers,
+      body: hasBody ? JSON.stringify(json) : rest.body,
     });
   } catch {
     // fetch só falha assim quando não houve resposta nenhuma, como sem internet.

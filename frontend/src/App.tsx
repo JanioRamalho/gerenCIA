@@ -1,8 +1,10 @@
-import AnalysisTestPage from "./pages/AnalysisTestPage";
+import { lazy, Suspense } from "react";
 import ExperiencePage from "./pages/ExperiencePage";
 import LoginPage from "./pages/LoginPage";
-import PanelPage from "./pages/PanelPage";
 import RegistrationPage from "./pages/RegistrationPage";
+
+const PanelPage = lazy(() => import("./pages/PanelPage"));
+const AnalysisTestPage = lazy(() => import("./pages/AnalysisTestPage"));
 
 /**
  * Escolhe a página pelo endereço do navegador.
@@ -15,7 +17,7 @@ export default function App() {
   const path = window.location.pathname.replace(/\/$/, "");
 
   if (path === "/teste-analise") {
-    return <AnalysisTestPage />;
+    return <Suspense fallback={<p role="status">Carregando a prévia…</p>}><AnalysisTestPage /></Suspense>;
   }
   if (path === "/login") {
     return <LoginPage />;
@@ -24,7 +26,7 @@ export default function App() {
     return <RegistrationPage />;
   }
   if (path === "/app" || path.startsWith("/app/")) {
-    return <PanelPage path={path} />;
+    return <Suspense fallback={<p role="status">Carregando o painel…</p>}><PanelPage path={path} /></Suspense>;
   }
   return <ExperiencePage />;
 }

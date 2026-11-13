@@ -1,104 +1,76 @@
+import { useEffect, useState } from "react";
 import type { User } from "../../auth/api";
+import { leaveIfSignedOut, listUploads, type UploadItem } from "../../panel/api";
+import PanelEmptyState from "./PanelEmptyState";
 import { formatDate } from "./formatDate";
 
-/** Uma etapa da lista "Próximos passos". */
-type Step = {
-  title: string;
-  text: string;
-  status: string;
-};
+/** Visão geral enquanto ainda não há transações para analisar. */
+export default function PanelHome({ user }: { user: User }) {
+  const [history, setHistory] = useState<UploadItem[] | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [failed, setFailed] = useState(false);
+  const [revision, setRevision] = useState(0);
 
-// As etapas que vão preencher o painel, na ordem em que o projeto as constrói.
-// A primeira é a próxima a ficar pronta.
-const STEPS: Step[] = [
-  {
-    title: "Envie um extrato ou uma fatura",
-    text: "Arquivos CSV ou XLSX do Nubank. De outros bancos, pela planilha-modelo do gerenCIA.",
-    status: "Disponível",
-  },
-  {
-    title: "Veja para onde foi o dinheiro",
-    text: "Gastos por mês e por categoria, com a média, a mediana e as maiores despesas de cada período.",
-    status: "Aparece depois do primeiro envio",
-  },
-  {
-    title: "Defina limites por categoria",
-    text: "Um teto mensal opcional para cada categoria, com aviso no painel ao chegar a 80% e ao passar de 100%.",
-    status: "Em breve",
-  },
-  {
-    title: "Receba o diagnóstico do mês",
-    text: "Um resumo em linguagem simples, gerado por IA a partir das suas análises, com sugestões de onde economizar.",
-    status: "Em breve",
-  },
-];
+  useEffect(() => {
+    const controller = new AbortController();
+    setLoading(true);
+    setFailed(false);
+    listUploads(controller.signal).then((data) => {
+      if (!controller.signal.aborted) setHistory(data);
+    }).catch((error: unknown) => {
+      if (!controller.signal.aborted && !leaveIfSignedOut(error)) setFailed(true);
+    }).finally(() => {
+      if (!controller.signal.aborted) setLoading(false);
+    });
+    return () => controller.abort();
+  }, [revision]);
 
-type PanelHomeProps = {
-  user: User;
-};
+  const today = new Intl.DateTimeFormat("pt-BR", {
+    day: "numeric", month: "long", year: "numeric", timeZone: "America/Sao_Paulo",
+  }).format(new Date());
 
-/**
- * Início do painel enquanto a pessoa ainda não enviou nenhum arquivo: as boas-
- * vindas, as etapas que vão preencher o painel e um resumo da conta.
- */
-export default function PanelHome({ user }: PanelHomeProps) {
-  const firstName = user.name.split(" ")[0];
-
-  // As boas-vindas ficam num bloco de menta, como o painel de fechamento da
-  // página inicial, com o símbolo das três barras grande e esmaecido.
-  return <div className="panel-page">
-    <header className="panel-welcome">
-      <h1>Olá, {firstName}.</h1>
-      <p className="lead">Seu painel ainda está vazio. Ele se preenche com os extratos e as faturas que você enviar.</p>
-      <a className="primary-button is-night" href="/app/files">Enviar um arquivo</a>
-      <svg className="panel-welcome-mark" viewBox="0 0 30 29" aria-hidden="true"><path d="M2 27h6l3-11H5L2 27Zm10 0h6l5-20h-6l-5 20Zm10 0h6l6-27h-6l-6 27Z" /></svg>
+  return <div className="panel-page overview-page">
+    <header className="panel-overview-header">
+      <div>
+        <p className="panel-greeting">Olá, {user.name.split(" ")[0]}.</p>
+        <h1>Seu painel financeiro</h1>
+        <p className="panel-date">{today}</p>
+      </div>
+      <a className="primary-button is-night" href="/app/files">Enviar arquivo</a>
     </header>
 
-    <div className="panel-grid">
-      <section className="panel-card panel-steps" aria-labelledby="steps-title">
-        <h2 id="steps-title">Próximos passos</h2>
-        <ol>
-          {STEPS.map((step, index) => <StepItem key={step.title} step={step} number={index + 1} isNext={index === 0} />)}
-        </ol>
-      </section>
-
-      <AccountSummary user={user} />
+    <div className="panel-availability">
+      <span className="status-line"><i className="status-mark" aria-hidden="true" />Aguardando seu primeiro arquivo</span>
+      <p>Envie um extrato ou uma fatura para acompanhar os indicadores e os gráficos da sua conta.</p>
     </div>
+
+    <PanelEmptyState />
+
+    <section className="panel-section" aria-labelledby="recent-files-title" aria-busy={loading}>
+      <div className="panel-section-heading">
+        <h2 id="recent-files-title">Arquivos recentes</h2>
+        <a className="text-link" href="/app/files">Ver todos os arquivos</a>
+      </div>
+      <div className="panel-card panel-recent-files">
+        {loading ? <p className="panel-note" role="status">Consultando seus arquivos…</p>
+          : failed ? <div className="panel-inline-state">
+            <p role="alert">Não foi possível consultar os arquivos. Tente novamente.</p>
+            <button className="secondary-button" onClick={() => setRevision((value) => value + 1)}>Tentar novamente</button>
+          </div>
+          : !history?.length ? <div className="panel-inline-state">
+            <h3>Comece pelo seu primeiro arquivo.</h3>
+            <p>Envie um extrato ou uma fatura em CSV ou XLSX. Você também pode experimentar com um arquivo fictício.</p>
+            <a className="text-link" href="/app/files">Escolher um arquivo</a>
+          </div>
+          : <>
+            <p className="panel-note">{history.length} {history.length === 1 ? "arquivo na sua conta" : "arquivos na sua conta"}. Confira os envios mais recentes abaixo.</p>
+            <ol className="panel-recent-list">{history.slice(0, 3).map((file) => <li key={file.id}>
+              <span className="panel-file-format">{file.original_filename.split(".").pop()?.toUpperCase()}</span>
+              <div><h3>{file.original_filename}</h3><p>Enviado em {formatDate(file.created_at)}</p></div>
+              <a className="text-link" href="/app/files">Ver histórico<span className="sr-only"> de {file.original_filename}</span></a>
+            </li>)}</ol>
+          </>}
+      </div>
+    </section>
   </div>;
-}
-
-type StepItemProps = {
-  step: Step;
-  number: number;
-  isNext: boolean; // a etapa a fazer agora ganha destaque
-};
-
-/** Uma etapa: o número, o título, a explicação e a situação. */
-function StepItem({ step, number, isNext }: StepItemProps) {
-  // O número fica escondido dos leitores de tela porque a lista <ol> já é numerada.
-  return <li className={isNext ? "is-next" : undefined}>
-    <span className="panel-step-no" aria-hidden="true">{number}</span>
-    <div>
-      <h3>{step.title}</h3>
-      <p>{step.text}</p>
-    </div>
-    <p className="status-line"><i className="status-mark" aria-hidden="true" />{step.status}</p>
-  </li>;
-}
-
-/**
- * Cartão lateral com fatos da conta que a barra lateral não mostra e uma nota
- * sobre a privacidade dos dados. O nome e o e-mail já estão no pé da barra.
- */
-function AccountSummary({ user }: { user: User }) {
-  // Este início só aparece enquanto não há arquivos; por isso "nenhum ainda".
-  return <section className="panel-card panel-account-card" aria-labelledby="account-summary-title">
-    <h2 id="account-summary-title">Sua conta</h2>
-    <dl className="panel-facts">
-      <div><dt>Conta criada em</dt><dd>{formatDate(user.created_at)}</dd></div>
-      <div><dt>Arquivos enviados</dt><dd>Nenhum ainda</dd></div>
-    </dl>
-    <p className="panel-note">Nenhum outro usuário tem acesso aos seus dados. A senha fica guardada só como um código irreversível.</p>
-    <a className="text-link" href="/app/account">Ver dados da conta</a>
-  </section>;
 }
