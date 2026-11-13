@@ -12,7 +12,7 @@ type MenuItem = {
 // link, com a marca "em breve", para a pessoa saber o que vem por aí.
 const MENU_ITEMS: MenuItem[] = [
   { label: "Painel", href: "/app" },
-  { label: "Arquivos", href: null },
+  { label: "Arquivos", href: "/app/files" },
   { label: "Transações", href: null },
   { label: "Limites", href: null },
   { label: "Conta", href: "/app/account" },

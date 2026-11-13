@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../auth/AuthContext";
 import AccountSection from "../components/panel/AccountSection";
-import PanelHome from "../components/panel/PanelHome";
+import FilesSection from "../components/panel/FilesSection";
+import PanelOverview from "../components/panel/PanelOverview";
 import PanelSidebar from "../components/panel/PanelSidebar";
 import usePageTitle from "../hooks/usePageTitle";
 
 const HOME_PATH = "/app";
+const FILES_PATH = "/app/files";
 const ACCOUNT_PATH = "/app/account";
 
 type PanelPageProps = {
@@ -16,8 +18,8 @@ type PanelPageProps = {
  * Painel do usuário: a área de quem está logado.
  *
  * Confere a sessão, manda quem não está logado para o /login e mostra a seção
- * pedida pelo endereço: o início do painel (/app) ou os dados da conta
- * (/app/account).
+ * pedida pelo endereço: o início do painel (/app), os arquivos (/app/files) ou
+ * os dados da conta (/app/account).
  */
 export default function PanelPage({ path }: PanelPageProps) {
   const { status, user, signOut } = useAuth();
@@ -25,10 +27,13 @@ export default function PanelPage({ path }: PanelPageProps) {
   const [signOutFailed, setSignOutFailed] = useState(false);
 
   const isAccountPage = path === ACCOUNT_PATH;
+  const isFilesPage = path === FILES_PATH;
 
   let pageTitle = "Painel | gerenCIA";
   if (isAccountPage) {
     pageTitle = "Conta | gerenCIA";
+  } else if (isFilesPage) {
+    pageTitle = "Arquivos | gerenCIA";
   }
   usePageTitle(pageTitle);
 
@@ -63,8 +68,10 @@ export default function PanelPage({ path }: PanelPageProps) {
     content = <p className="sr-only" role="status">Carregando seu painel…</p>;
   } else if (isAccountPage) {
     content = <AccountSection user={user} />;
+  } else if (isFilesPage) {
+    content = <FilesSection />;
   } else if (path === HOME_PATH) {
-    content = <PanelHome user={user} />;
+    content = <PanelOverview user={user} />;
   } else {
     content = <PageNotFound />;
   }
