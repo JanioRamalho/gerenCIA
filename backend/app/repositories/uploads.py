@@ -14,11 +14,6 @@ from sqlalchemy.orm import Session
 
 from app.models import Category, QualityCheck, RejectedRow, Transaction, Upload
 
-# O planejamento prevê descartar o arquivo original; a coluna storage_path
-# ainda é obrigatória no esquema atual, então guardamos este aviso nela.
-ARQUIVO_DESCARTADO = "descartado"
-
-
 def get_by_sha256(db: Session, *, user_id: UUID, sha256: str) -> Upload | None:
     """Procura um arquivo já enviado pelo mesmo usuário com o mesmo conteúdo."""
     statement = select(Upload).where(Upload.user_id == user_id, Upload.sha256 == sha256)
@@ -49,7 +44,7 @@ def create(
         file_extension=file_extension,
         file_size_bytes=file_size_bytes,
         sha256=sha256,
-        storage_path=ARQUIVO_DESCARTADO,
+        storage_path=None,
         status="completed",
         processing_started_at=started_at,
         processing_finished_at=finished_at,

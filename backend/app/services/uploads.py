@@ -23,6 +23,11 @@ from app.repositories import uploads as uploads_repo
 from app.schemas.uploads import UploadResponse
 
 FUSO_BRASIL = ZoneInfo("America/Sao_Paulo")
+FORMATOS_LEGADOS = {
+    "nubank_invoice": "fatura_nubank",
+    "nubank_statement": "extrato_nubank",
+    "gerencia_template": "planilha_modelo",
+}
 
 
 class ArquivoJaEnviado(Exception):
@@ -54,20 +59,22 @@ def _resumo(upload: Upload, check: QualityCheck | None) -> UploadResponse:
     """Junta o upload e o relatório de qualidade no formato da resposta."""
     detalhes = check.details if check else {}
     totais = check.monetary_totals if check else {}
+    # Preserva a leitura dos registros importados antes da integração com a main.
+    formato = detalhes.get("formato") or FORMATOS_LEGADOS.get(upload.recognized_format)
     return UploadResponse(
         id=upload.id,
         code=upload.code,
         original_filename=upload.original_filename,
         created_at=upload.created_at,
-        formato=detalhes.get("formato"),
-        periodo_inicio=detalhes.get("periodo_inicio"),
-        periodo_fim=detalhes.get("periodo_fim"),
+        formato=formato,
+        periodo_inicio=detalhes.get("periodo_inicio") or upload.period_start,
+        periodo_fim=detalhes.get("periodo_fim") or upload.period_end,
         linhas_validas=check.valid_rows if check else 0,
         linhas_rejeitadas=check.rejected_rows if check else 0,
         linhas_duplicadas=check.duplicate_rows if check else 0,
         percentual=float(check.quality_percentage) if check and check.quality_percentage is not None else None,
-        total_saidas=float(totais.get("saidas", 0)),
-        total_entradas=float(totais.get("entradas", 0)),
+        total_saidas=float(totais.get("saidas", totais.get("outgoing", 0))),
+        total_entradas=float(totais.get("entradas", totais.get("income", 0))),
     )
 
 
