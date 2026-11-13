@@ -1,6 +1,6 @@
 """Modelos do SQLAlchemy: uma classe para cada tabela do PostgreSQL.
 
-As tabelas são criadas pelo scripts/init.sql; estas classes só descrevem como
+As tabelas são criadas pelas migrações Alembic; estas classes descrevem como
 o Python as enxerga. Mapped[tipo] diz o tipo do campo no Python, e
 mapped_column diz como ele é no banco. __table_args__ repete as regras do
 banco (CHECK, UNIQUE, índices) para que o modelo e o banco contem a mesma
@@ -18,6 +18,7 @@ from uuid import UUID, uuid4
 from sqlalchemy import (
     BigInteger,
     Boolean,
+    CHAR,
     CheckConstraint,
     Date,
     DateTime,
@@ -27,7 +28,6 @@ from sqlalchemy import (
     Index,
     Integer,
     Numeric,
-    String,
     Text,
     UniqueConstraint,
     Uuid,
@@ -44,7 +44,10 @@ class DisplayCodeMixin:
     """Código curto para mostrar na tela (1, 2, 3...). As relações entre as
     tabelas continuam usando o id UUID, que não revela quantos registros existem."""
 
-    code: Mapped[int] = mapped_column(BigInteger, Identity(always=True), unique=True, nullable=False)
+    code: Mapped[int] = mapped_column(
+        BigInteger, Identity(always=True), unique=True, nullable=False,
+        comment="Código numérico de consulta, único nesta tabela. Os relacionamentos usam o UUID id.",
+    )
 
 
 class User(DisplayCodeMixin, Base):
@@ -77,7 +80,7 @@ class SessionRecord(DisplayCodeMixin, Base):
 
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4, server_default=text("gen_random_uuid()"))
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
-    token_hash: Mapped[str] = mapped_column(String(64), nullable=False, unique=True)
+    token_hash: Mapped[str] = mapped_column(CHAR(64), nullable=False, unique=True)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False)
     revoked_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -90,7 +93,8 @@ class Upload(DisplayCodeMixin, Base):
     __table_args__ = (
         CheckConstraint("length(trim(original_filename)) > 0", name="uploads_filename_not_empty"),
         CheckConstraint("file_extension IN ('csv', 'xlsx')", name="uploads_extension_valid"),
-        CheckConstraint("file_size_bytes > 0 AND file_size_bytes <= 26214400", name="uploads_file_size_valid"),
+        CheckConstraint("file_size_bytes > 0 AND file_size_bytes <= 5242880", name="uploads_file_size_valid"),
+        CheckConstraint("document_type IS NULL OR document_type IN ('bank_statement', 'credit_card_invoice')", name="uploads_document_type_valid"),
         CheckConstraint("sha256 ~ '^[0-9a-fA-F]{64}$'", name="uploads_sha256_valid"),
         CheckConstraint(
             "status IN ('uploaded', 'profiling', 'awaiting_mapping', 'processing', 'completed', 'failed')",
@@ -98,19 +102,24 @@ class Upload(DisplayCodeMixin, Base):
         ),
         UniqueConstraint("id", "user_id", name="uploads_id_user_id_uq"),
         Index("uploads_user_sha256_uq", "user_id", "sha256", unique=True),
-        Index("uploads_user_created_at_idx", "user_id", "created_at"),
+        Index("uploads_user_created_at_idx", "user_id", text("created_at DESC")),
         Index("uploads_user_status_idx", "user_id", "status"),
     )
 
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4, server_default=text("gen_random_uuid()"))
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     original_filename: Mapped[str] = mapped_column(Text, nullable=False)
-    file_extension: Mapped[str] = mapped_column(String, nullable=False)
+    file_extension: Mapped[str] = mapped_column(Text, nullable=False)
     content_type: Mapped[str | None] = mapped_column(Text)
     file_size_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
-    sha256: Mapped[str] = mapped_column(String(64), nullable=False)
-    storage_path: Mapped[str] = mapped_column(Text, nullable=False)
-    status: Mapped[str] = mapped_column(String, nullable=False, server_default=text("'uploaded'"))
+    sha256: Mapped[str] = mapped_column(CHAR(64), nullable=False)
+    # Campos legados ficam preservados; novas importações não guardam o original.
+    storage_path: Mapped[str | None] = mapped_column(Text)
+    document_type: Mapped[str | None] = mapped_column(Text)
+    recognized_format: Mapped[str | None] = mapped_column(Text)
+    period_start: Mapped[date | None] = mapped_column(Date)
+    period_end: Mapped[date | None] = mapped_column(Date)
+    status: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'uploaded'"))
     error_message: Mapped[str | None] = mapped_column(Text)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     processing_started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -159,7 +168,7 @@ class BronzeRow(DisplayCodeMixin, Base):
     row_number: Mapped[int] = mapped_column(Integer, nullable=False)
     sheet_name: Mapped[str | None] = mapped_column(Text)
     raw_data: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
-    row_hash: Mapped[str | None] = mapped_column(String(64))
+    row_hash: Mapped[str | None] = mapped_column(CHAR(64))
     ingested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
@@ -179,7 +188,7 @@ class Category(DisplayCodeMixin, Base):
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4, server_default=text("gen_random_uuid()"))
     user_id: Mapped[UUID | None] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"))
     name: Mapped[str] = mapped_column(Text, nullable=False)
-    color: Mapped[str | None] = mapped_column(String(7))
+    color: Mapped[str | None] = mapped_column(CHAR(7))
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
@@ -192,7 +201,7 @@ class Transaction(DisplayCodeMixin, Base):
         ForeignKeyConstraint(["upload_id", "user_id"], ["uploads.id", "uploads.user_id"], ondelete="CASCADE", name="transactions_upload_user_fk"),
         ForeignKeyConstraint(["bronze_row_id", "upload_id", "user_id"], ["bronze_rows.id", "bronze_rows.upload_id", "bronze_rows.user_id"], ondelete="SET NULL (bronze_row_id)", name="transactions_bronze_row_fk"),
         CheckConstraint("length(trim(description_raw)) > 0", name="transactions_description_not_empty"),
-        CheckConstraint("transaction_type IN ('purchase', 'fee', 'refund', 'payment', 'other')", name="transactions_type_valid"),
+        CheckConstraint("transaction_type IN ('purchase', 'fee', 'refund', 'payment', 'income', 'other')", name="transactions_type_valid"),
         CheckConstraint("category_source IN ('personal_rule', 'bank', 'merchant_rule', 'keyword', 'manual', 'uncategorized')", name="transactions_category_source_valid"),
         CheckConstraint(
             "(installment_current IS NULL AND installment_total IS NULL) OR "
@@ -202,10 +211,11 @@ class Transaction(DisplayCodeMixin, Base):
             name="transactions_installments_valid",
         ),
         CheckConstraint("source_row > 0", name="transactions_source_row_positive"),
-        Index("transactions_user_date_idx", "user_id", "transaction_date"),
-        Index("transactions_user_category_date_idx", "user_id", "category_id", "transaction_date"),
+        Index("transactions_user_date_idx", "user_id", text("transaction_date DESC")),
+        Index("transactions_user_category_date_idx", "user_id", "category_id", text("transaction_date DESC")),
         Index("transactions_user_merchant_idx", "user_id", "merchant"),
         Index("transactions_upload_idx", "upload_id"),
+        Index("transactions_user_bank_id_idx", "user_id", "bank_transaction_id"),
         Index("transactions_bronze_row_uq", "bronze_row_id", unique=True, postgresql_where=text("bronze_row_id IS NOT NULL")),
     )
 
@@ -218,12 +228,13 @@ class Transaction(DisplayCodeMixin, Base):
     description_normalized: Mapped[str | None] = mapped_column(Text)
     merchant: Mapped[str | None] = mapped_column(Text)
     amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
-    transaction_type: Mapped[str] = mapped_column(String, nullable=False, server_default=text("'purchase'"))
+    transaction_type: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'purchase'"))
     category_id: Mapped[UUID | None] = mapped_column(ForeignKey("categories.id", ondelete="SET NULL"))
-    category_source: Mapped[str] = mapped_column(String, nullable=False, server_default=text("'uncategorized'"))
+    category_source: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'uncategorized'"))
     installment_current: Mapped[int | None] = mapped_column(Integer)
     installment_total: Mapped[int | None] = mapped_column(Integer)
     source_row: Mapped[int] = mapped_column(Integer, nullable=False)
+    bank_transaction_id: Mapped[str | None] = mapped_column(Text)
     is_duplicate: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
@@ -242,7 +253,7 @@ class CategoryRule(DisplayCodeMixin, Base):
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4, server_default=text("gen_random_uuid()"))
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     category_id: Mapped[UUID] = mapped_column(ForeignKey("categories.id", ondelete="CASCADE"), nullable=False)
-    match_type: Mapped[str] = mapped_column(String, nullable=False)
+    match_type: Mapped[str] = mapped_column(Text, nullable=False)
     match_value: Mapped[str] = mapped_column(Text, nullable=False)
     priority: Mapped[int] = mapped_column(Integer, nullable=False, server_default=text("100"))
     is_active: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("true"))

@@ -1,0 +1,241 @@
+{
+  "users": {
+    "columns": [
+      "code",
+      "created_at",
+      "email",
+      "id",
+      "name",
+      "password_hash",
+      "updated_at"
+    ],
+    "constraints": [
+      "users_email_not_empty",
+      "users_name_not_empty"
+    ],
+    "indexes": [
+      "users_email_lower_uq"
+    ]
+  },
+  "categories": {
+    "columns": [
+      "code",
+      "color",
+      "created_at",
+      "id",
+      "is_active",
+      "name",
+      "user_id"
+    ],
+    "constraints": [
+      "categories_color_valid",
+      "categories_name_not_empty"
+    ],
+    "indexes": [
+      "categories_system_name_uq",
+      "categories_user_active_idx",
+      "categories_user_name_uq"
+    ]
+  },
+  "sessions": {
+    "columns": [
+      "code",
+      "created_at",
+      "expires_at",
+      "id",
+      "revoked_at",
+      "token_hash",
+      "user_id"
+    ],
+    "constraints": [
+      "sessions_expiry_after_creation"
+    ],
+    "indexes": [
+      "sessions_expires_at_idx",
+      "sessions_user_id_idx"
+    ]
+  },
+  "uploads": {
+    "columns": [
+      "code",
+      "content_type",
+      "created_at",
+      "error_message",
+      "file_extension",
+      "file_size_bytes",
+      "id",
+      "original_filename",
+      "processing_finished_at",
+      "processing_started_at",
+      "sha256",
+      "status",
+      "storage_path",
+      "user_id"
+    ],
+    "constraints": [
+      "uploads_extension_valid",
+      "uploads_file_size_valid",
+      "uploads_filename_not_empty",
+      "uploads_id_user_id_uq",
+      "uploads_sha256_valid",
+      "uploads_status_valid"
+    ],
+    "indexes": [
+      "uploads_user_created_at_idx",
+      "uploads_user_sha256_uq",
+      "uploads_user_status_idx"
+    ]
+  },
+  "bronze_rows": {
+    "columns": [
+      "code",
+      "id",
+      "ingested_at",
+      "raw_data",
+      "row_hash",
+      "row_number",
+      "sheet_name",
+      "upload_id",
+      "user_id"
+    ],
+    "constraints": [
+      "bronze_rows_id_upload_user_uq",
+      "bronze_rows_raw_is_object",
+      "bronze_rows_row_number_positive",
+      "bronze_rows_upload_row_uq",
+      "bronze_rows_upload_user_fk"
+    ],
+    "indexes": [
+      "bronze_rows_user_upload_idx"
+    ]
+  },
+  "category_rules": {
+    "columns": [
+      "category_id",
+      "code",
+      "created_at",
+      "id",
+      "is_active",
+      "match_type",
+      "match_value",
+      "priority",
+      "user_id"
+    ],
+    "constraints": [
+      "category_rules_match_type_valid",
+      "category_rules_match_value_not_empty"
+    ],
+    "indexes": [
+      "category_rules_user_active_priority_idx",
+      "category_rules_user_match_idx"
+    ]
+  },
+  "quality_checks": {
+    "columns": [
+      "attempt_number",
+      "code",
+      "created_at",
+      "details",
+      "duplicate_rows",
+      "id",
+      "monetary_totals",
+      "quality_percentage",
+      "rejected_rows",
+      "total_rows",
+      "upload_id",
+      "user_id",
+      "valid_rows"
+    ],
+    "constraints": [
+      "quality_checks_attempt_positive",
+      "quality_checks_counts_nonnegative",
+      "quality_checks_json_objects",
+      "quality_checks_percentage_valid",
+      "quality_checks_rows_reconcile",
+      "quality_checks_upload_attempt_uq",
+      "quality_checks_upload_user_fk"
+    ],
+    "indexes": [
+      "quality_checks_user_upload_idx"
+    ]
+  },
+  "rejected_rows": {
+    "columns": [
+      "code",
+      "created_at",
+      "error_code",
+      "error_message",
+      "id",
+      "raw_data",
+      "source_row",
+      "upload_id",
+      "user_id"
+    ],
+    "constraints": [
+      "rejected_rows_error_code_not_empty",
+      "rejected_rows_error_message_not_empty",
+      "rejected_rows_one_error_per_code_uq",
+      "rejected_rows_raw_is_object",
+      "rejected_rows_source_row_positive",
+      "rejected_rows_upload_user_fk"
+    ],
+    "indexes": [
+      "rejected_rows_user_upload_idx"
+    ]
+  },
+  "upload_mappings": {
+    "columns": [
+      "code",
+      "confirmed_at",
+      "created_at",
+      "id",
+      "mapping",
+      "upload_id",
+      "user_id"
+    ],
+    "constraints": [
+      "upload_mappings_is_object",
+      "upload_mappings_one_per_upload",
+      "upload_mappings_upload_user_fk"
+    ],
+    "indexes": []
+  },
+  "transactions": {
+    "columns": [
+      "amount",
+      "bronze_row_id",
+      "category_id",
+      "category_source",
+      "code",
+      "created_at",
+      "description_normalized",
+      "description_raw",
+      "id",
+      "installment_current",
+      "installment_total",
+      "is_duplicate",
+      "merchant",
+      "source_row",
+      "transaction_date",
+      "transaction_type",
+      "upload_id",
+      "user_id"
+    ],
+    "constraints": [
+      "transactions_bronze_row_fk",
+      "transactions_category_source_valid",
+      "transactions_description_not_empty",
+      "transactions_installments_valid",
+      "transactions_source_row_positive",
+      "transactions_type_valid",
+      "transactions_upload_user_fk"
+    ],
+    "indexes": [
+      "transactions_bronze_row_uq",
+      "transactions_upload_idx",
+      "transactions_user_category_date_idx",
+      "transactions_user_date_idx",
+      "transactions_user_merchant_idx"
+    ]
+  }
+}

@@ -1,13 +1,96 @@
 # Banco PostgreSQL do gerenCIA
 
-O esquema está em `scripts/init.sql`. Ele cria as 10 tabelas, índices,
-relacionamentos, proteções de categorias e as 11 categorias globais do
-planejamento. Todas as tabelas também recebem um código numérico curto.
-O banco `gerencia_db` precisa existir antes da execução.
-Os comandos abaixo são instruções de instalação; os testes não os executam
-contra o servidor instalado no computador.
+O esquema é versionado pelo Alembic, a partir do `alembic.ini` na raiz.
+`0001_baseline` preserva o esquema histórico e as categorias iniciais;
+`0002_upload_history` prepara os metadados da importação. As tabelas antigas
+foram preservadas, sem apagar dados nesta etapa.
 
-## Instalação nova
+Em 12/11/2026, o banco `neondb` da branch `main` no Neon foi adotado e
+atualizado para `0002_upload_history`, preservando as contagens das 10 tabelas
+existentes. A comparação com os modelos não encontrou alterações pendentes.
+Uma nova conexão confirmou a revisão; as rotas de saúde do banco e categorias
+da API local responderam 200. O `.env` local passou a apontar para esse Neon.
+Isso não publica o código novo do site na Vercel.
+
+## Conexão para migrações
+
+`DATABASE_URL` é a conexão da aplicação. Para criar e alterar tabelas, o
+Alembic precisa de uma conexão com o proprietário das tabelas e permissão
+de criação no esquema `public`. Se a conexão da API não tem essas permissões,
+acrescente no `.env`, mantendo `DATABASE_URL` como está:
+
+```dotenv
+MIGRATION_DATABASE_URL=postgresql+psycopg://OWNER:SENHA@localhost:5432/gerencia_db
+```
+
+Troque `OWNER`, `SENHA`, servidor, porta e banco pelos valores corretos. Em
+um PostgreSQL local instalado com o usuário padrão, o proprietário costuma
+ser `postgres`: use a senha desse usuário no servidor, não a senha de
+desbloqueio do pgAdmin. Caracteres reservados da senha precisam de codificação
+de URL. Nunca compartilhe a conexão nem coloque credenciais no Git.
+
+As duas conexões devem apontar para o mesmo banco. Na hospedagem, prefira a
+conexão direta do proprietário para executar migrações. A API continua usando
+suas permissões normais. Sem `MIGRATION_DATABASE_URL`, o Alembic usa
+`DATABASE_URL`. Migrações são executadas manualmente, não ao iniciar a API.
+
+## Adotar o banco existente
+
+Não execute `init.sql` nem use `stamp` sozinho para pular a conferência.
+A partir da raiz do projeto:
+
+```powershell
+# Apenas conferir a estrutura, sem alterações.
+.\.venv\Scripts\python.exe scripts/adopt_alembic.py
+
+# Conferir, registrar a base histórica e aplicar as atualizações.
+.\.venv\Scripts\python.exe scripts/adopt_alembic.py --apply
+
+# Verificar a revisão aplicada e a revisão mais recente disponível.
+.\.venv\Scripts\python.exe -m alembic current
+.\.venv\Scripts\python.exe -m alembic heads
+```
+
+Depois da adoção, `current` e `heads` devem mostrar `0002_upload_history`.
+O script preserva registros e UUIDs, valida a estrutura antes da adoção e
+executa o registro e a atualização na mesma transação. Se o banco já estiver
+versionado, aplica somente as revisões pendentes. Falhas de permissão exigem
+corrigir a conexão de migração; não ampliar as permissões da API.
+
+## Banco novo com Alembic
+
+Crie um banco vazio no PostgreSQL 18, configure as conexões e execute:
+
+```powershell
+.\.venv\Scripts\python.exe -m alembic upgrade head
+.\.venv\Scripts\python.exe -m alembic current
+```
+
+O Alembic cria as 10 tabelas da aplicação, as proteções, as 11 categorias
+globais e sua tabela de controle `alembic_version`. Não execute `init.sql`
+antes ou depois desse comando no mesmo banco.
+
+O comando antigo `python scripts/instalar_banco.py` também delega ao Alembic.
+Ele não instala mais um esquema paralelo sem registrar a versão.
+
+## Próximas alterações de esquema
+
+```powershell
+.\.venv\Scripts\python.exe -m alembic revision --autogenerate -m "descricao_da_alteracao"
+# Revise o arquivo gerado antes de aplicar.
+.\.venv\Scripts\python.exe -m alembic upgrade head
+.\.venv\Scripts\python.exe -m alembic check
+```
+
+O autogenerate compara os modelos com o banco, mas as regras de triggers e
+as migrações de dados precisam de revisão manual. Não edite revisões já
+aplicadas: crie uma nova. A reversão da base é bloqueada para evitar apagar
+o esquema; a revisão de upload também bloqueia reversão com dados novos.
+
+## Referência: instalação SQL anterior ao Alembic
+
+Os comandos históricos abaixo ficam documentados para bancos antigos. O
+fluxo atual de instalação e atualização é o Alembic, explicado acima.
 
 Use PostgreSQL 18 e execute a partir da raiz do repositório no PowerShell.
 O exemplo usa o administrador `postgres` para instalar o esquema; as
@@ -52,8 +135,8 @@ vínculos com categorias de outro usuário, a atualização falha e é revertida
 Revise esses registros e execute novamente; nenhum registro é removido ou
 alterado silenciosamente.
 
-Os arquivos em `scripts/migrations/` são atualizações SQL manuais. A adoção
-de Alembic permanece uma etapa prevista na arquitetura.
+Os arquivos em `scripts/migrations/` são atualizações SQL históricas. Bancos
+antigos precisam dessas proteções antes de serem adotados pelo Alembic.
 
 Se a correção de integridade já estiver instalada, execute apenas `002_display_codes.sql`.
 A instalação nova por `init.sql` já inclui ambas as alterações; não execute
@@ -110,7 +193,7 @@ transações abertas no pgAdmin antes de executar novamente.
 
 Os modelos SQLAlchemy mapeiam o esquema instalado por esses scripts.
 `Base.metadata.create_all()` sozinho não instala os triggers nem a carga
-inicial. Use o instalador SQL para criar o esquema completo.
+inicial. Use o Alembic para criar e atualizar o esquema completo.
 
 ## Testes isolados
 

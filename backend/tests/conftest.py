@@ -201,6 +201,11 @@ def auth_database(postgres_cluster):
     postgres_cluster.sql(f"CREATE DATABASE {name};")
     db = TestDatabase(postgres_cluster.binaries, postgres_cluster.port, name)
     db.script(PROJECT_ROOT / "scripts/init.sql")
+    from alembic import command
+    from app.db.migrations import migration_config
+    config = migration_config(url=f"postgresql+psycopg://postgres@127.0.0.1:{db.port}/{db.name}")
+    command.stamp(config, "0001_baseline")
+    command.upgrade(config, "head")
     return db
 
 
