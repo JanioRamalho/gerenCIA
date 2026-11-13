@@ -5,6 +5,17 @@ Leitura rápida: docs/arquitetura.md apresenta o mapa visual e o estado atual.
 Este documento descreve a arquitetura alvo e os requisitos da primeira versão;
 a presença de uma funcionalidade no plano não significa que já foi implementada.
 
+Recorte aprovado em 12/11/2026: preparar o painel e a tela de arquivos para
+receber os dados, aproveitar a integração de upload existente e concluir a
+configuração do Alembic. Análises, ampliação do tratamento e testes unitários
+não entram nesta execução. Os requisitos e testes das etapas de dados abaixo
+continuam planejados para depois. O estado implementado está em arquitetura.md.
+
+Atualização da revisão de 12/11/2026: o PR #2 acrescentou upload, análise e
+dashboard à main. Esta branch preserva essa versão, conclui o Alembic e
+compatibiliza a preparação visual. Não desenvolve novas análises nem aplica
+o protótipo de janela de envio ao produto. Consulte revisao-alteracoes.md.
+
 ============================================================
 1. VISÃO GERAL
 ============================================================
@@ -328,8 +339,9 @@ Tipos de transação:
 - income: entrada no extrato, como salário, Pix ou transferência recebida;
 - other: movimentação que não se encaixa nos tipos anteriores.
 
-O tipo income ainda não existe na restrição transactions_type_valid do
-banco e será incluído na Etapa 3.
+O tipo income já é aceito pela restrição transactions_type_valid a partir
+da revisão Alembic 0002_upload_history. Isso não substitui a implementação
+das regras de classificação previstas nesta seção.
 
 Regras:
 - valores monetários usarão Decimal;

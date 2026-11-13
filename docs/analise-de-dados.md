@@ -6,6 +6,13 @@ gastos da pessoa. Este documento explica os três eixos de análise do projeto e
 mostra onde cada um é aplicado. Os requisitos detalhados estão no
 [planejamento](planejamento-gerencia.txt).
 
+Este documento descreve o objetivo completo. A segunda versão da `main` já
+implementa parte da leitura, qualidade e análise em `pipeline/previa.py` e
+`pipeline/analise.py`. As regras de identificadores bancários, reconciliação,
+relatório detalhado e medidas ainda não implementadas continuam requisitos;
+não devem ser confundidas com recursos concluídos. Veja a
+[revisão de alterações](revisao-alteracoes.md).
+
 | Eixo | Pergunta que responde | Etapas |
 |---|---|---|
 | [Transformação dos dados](#1-transformação-dos-dados) | Como um arquivo bruto vira dado confiável? | 3 |

@@ -18,7 +18,7 @@ O gerenCIA pretende transformar extratos bancários e faturas de cartão, em CSV
 
 ## Positioning
 
-O percurso planejado liga o arquivo de origem à revisão dos dados e à análise financeira. Na versão atual, uma demonstração pública permite experimentar parte da análise antes da integração com contas e arquivos reais.
+O percurso liga o arquivo de origem à revisão dos dados e à análise financeira. A demonstração pública usa dados fictícios; o painel pessoal consulta as transações da conta.
 
 ## Operating Context
 
@@ -27,9 +27,9 @@ O frontend é uma aplicação React, TypeScript e Vite. Os gráficos interativos
 ## Capabilities and Constraints
 
 - A página pública e os gráficos demonstrativos funcionam sem cadastro.
-- Cadastro e login funcionam: a conta é criada com nome, e-mail e senha, e a sessão fica num cookie do navegador. Importação de extratos e faturas e análise de dados pessoais ainda estão em desenvolvimento, e a conta ainda não guarda nenhum arquivo.
+- Cadastro, login, envio e histórico estão conectados à API. A sessão fica num cookie do navegador. O painel pessoal usa estados vazios sem transações e mantém os indicadores e gráficos analíticos da segunda versão da `main` quando há dados. O protótipo com janela de envio continua separado e não foi aplicado às telas do produto.
 - Cada total por categoria é a soma exata dos lançamentos fictícios do período, e a demonstração mostra essa conciliação.
-- Cálculos financeiros e regras de autorização dos dados reais pertencerão ao backend.
+- Cálculos financeiros e regras de autorização dos dados reais pertencem ao backend.
 - Planejado: limites mensais opcionais por categoria. Ao chegar a 80% e ao passar de 100% do limite no mês corrente, um aviso aparece no sino de notificações do painel, uma vez por faixa, categoria e mês.
 
 ## Brand Commitments

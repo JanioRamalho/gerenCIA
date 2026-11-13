@@ -2,7 +2,10 @@
 
 A aplicação FastAPI tem as rotas GET /api/health, GET /api/health/database,
 GET /api/categories e as de autenticação abaixo. Há conexão PostgreSQL e
-modelos SQLAlchemy; o processamento de extratos e faturas ainda será implementado.
+modelos SQLAlchemy. O upload recebe CSV e XLSX como corpo bruto da requisição
+em `POST /api/uploads?nome=arquivo.csv`, e oferece histórico e exclusão.
+`GET /api/dashboard` mantém as análises integradas na segunda versão da `main`.
+O banco deve estar na revisão `0002_upload_history`.
 Consulte o README principal para o comando de inicialização da API.
 
 ## Autenticação
@@ -39,9 +42,13 @@ regra de negócio, só a consulta.
 
 ## Banco e verificações
 
-O esquema completo é instalado por `scripts/init.sql`, com 10 tabelas,
-proteções de integridade e categorias globais iniciais. A configuração e a
-atualização de bancos existentes estão no [guia do banco](../docs/database-setup.md).
+O esquema é versionado pelo Alembic. A revisão `0001_baseline` preserva o
+SQL histórico, com 10 tabelas, proteções de integridade e categorias iniciais;
+`0002_upload_history` acrescenta os metadados necessários à importação.
+Use `scripts/adopt_alembic.py` para adotar bancos existentes sem recriá-los.
+`MIGRATION_DATABASE_URL` permite executar migrações com o proprietário das
+tabelas, mantendo `DATABASE_URL` com as permissões da API. A configuração e a
+atualização estão no [guia do banco](../docs/database-setup.md).
 
 Todas as tabelas têm um `code` numérico automático para consulta e mantêm
 `id` UUID como chave primária. O endpoint de categorias retorna os dois campos.

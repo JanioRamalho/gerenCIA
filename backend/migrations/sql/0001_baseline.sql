@@ -777,5 +777,3 @@ INSERT INTO public.categories (name) VALUES
     ('Viagens'),
     ('Outros')
 ON CONFLICT (lower(name)) WHERE user_id IS NULL DO NOTHING;
-
-

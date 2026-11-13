@@ -20,7 +20,12 @@ A página é uma vitrine do produto: abertura em petróleo com a Figura 1, bloco
 - `src/pages/ExperiencePage.tsx`: página inicial para visitantes, dividida em uma função por seção. Quem já está logado vai para `/app`.
 - `src/pages/RegistrationPage.tsx`: cadastro, com validação local e os erros por campo que a API devolve.
 - `src/pages/LoginPage.tsx`: entrada com e-mail e senha.
-- `src/pages/PanelPage.tsx` e `src/components/panel/`: painel do usuário em `/app`, com barra lateral, próximos passos e dados da conta.
+- `src/pages/PanelPage.tsx` e `src/components/panel/`: painel em `/app`, arquivos e dados da conta, com barra lateral responsiva.
+- `src/components/panel/PanelOverview.tsx`: consulta `/api/dashboard` e escolhe entre a visão vazia e o painel com dados da própria conta.
+- `src/components/panel/PanelDashboard.tsx`: dashboard analítico da segunda versão da `main`, com meses, categorias, lançamentos e recorrências.
+- `src/components/panel/PanelHome.tsx` e `PanelEmptyState.tsx`: saudação, indicadores e gráficos vazios enquanto não há transações; arquivos recentes vêm da API.
+- `src/components/panel/FilesSection.tsx`: envio, histórico e exclusão em `/app/files`. `/app/uploads` é um endereço alternativo para a mesma tela.
+- `src/panel/api.ts`: contratos e chamadas de arquivos e dashboard; reutiliza o cliente HTTP de `src/auth/api.ts`.
 - `src/auth/api.ts` e `src/auth/AuthContext.tsx`: cliente da API e estado da sessão (`useAuth`).
 - `src/components/site/`: cabeçalho e rodapé da página inicial e a lista das seções usada pelos dois.
 - `src/components/AccountHeader.tsx`: cabeçalho das páginas de entrar e de criar conta.
@@ -38,9 +43,9 @@ A página é uma vitrine do produto: abertura em petróleo com a Figura 1, bloco
 - `src/components/dashboard/ConnectedDashboard.tsx`: Figura 3, que junta os blocos da demonstração: `MetricStrip.tsx` (números do topo), `CategoryBlock.tsx` e `CategoryChart.tsx` (gráfico Recharts e lista das categorias) e `TransactionsBlock.tsx` (tabela de lançamentos).
 - `src/hooks/useDemoExperience.ts`: estado do período, categoria e gráfico refletido na URL.
 - `src/hooks/useMobileMenu.ts`: menu das telas estreitas, que fecha com Esc e quando o foco sai dele; usado no cabeçalho e no painel.
-- `src/styles/tokens.css`, `base.css`, `site.css`, `figures.css`, `dashboard.css` e `panel.css`: tokens, componentes base, página, figuras, demonstração e painel.
+- `src/styles/`: tokens, componentes base, página pública, figuras, demonstração e painel. `overview.css` atende à visão vazia; `panel-data.css` ao painel com dados e à tela de arquivos.
 
-A fonte Inter Tight é servida localmente em `public/fonts/`, com a licença OFL ao lado. A dashboard é carregada em módulo separado. As animações (a entrada da abertura e o desdobrar da nota da Figura 1) respeitam a preferência por movimento reduzido.
+A fonte Inter Tight é servida localmente em `public/fonts/`, com a licença OFL ao lado. O painel e a prévia de análise são carregados sob demanda, sem antecipar seus gráficos na página pública. As animações respeitam a preferência por movimento reduzido.
 
 ## Estado compartilhável
 
@@ -66,4 +71,16 @@ Os scripts usam Playwright e axe para conferir as notas da Figura 1, os recortes
 
 ## Integração com a API
 
-Cadastro, login, saída e o painel já usam a API de verdade, com a sessão num cookie que o JavaScript não lê. A importação de faturas ainda não existe, então a análise financeira continua usando os dados de demonstração. Quando os dados reais chegarem, os cálculos financeiros e a autorização ficarão no backend.
+Cadastro, login, saída, envio e histórico de arquivos usam a API de verdade,
+com a sessão num cookie que o JavaScript não lê. O banco precisa estar na
+revisão Alembic `0002_upload_history` para usar arquivos. O painel pessoal não
+usa os dados fictícios da página pública: sem transações, mostra estados vazios;
+com transações, mantém o dashboard analítico da segunda versão da `main`.
+`DashboardData` descreve a resposta de `/api/dashboard`. Cálculos e autorização
+continuam no backend. O upload mantém o contrato da `main`: corpo bruto do
+arquivo e nome na URL, sem multipart.
+
+Nesta etapa de preparação, a validação é por compilação e conferência da
+interface e integração em banco temporário. Não foram escritos ou executados
+testes unitários, nem desenvolvidas novas análises. O protótipo de janela de
+envio continua em `.impeccable/prototypes/`, fora do produto e do Git.

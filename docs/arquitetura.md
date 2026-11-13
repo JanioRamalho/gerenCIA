@@ -109,29 +109,39 @@ ambiente da hospedagem, nunca no frontend.
 | Parte | Estado atual |
 |---|---|
 | PostgreSQL e SQLAlchemy | Conexão funcionando, 10 tabelas mapeadas e 11 categorias globais ativas |
-| API | Saúde da aplicação, saúde do banco, consulta de categorias e autenticação (`/api/auth/register`, `login`, `logout` e `me`) |
-| Frontend | Demonstração fictícia para visitantes; cadastro e login reais, com sessão por cookie; painel em `/app` com barra lateral, próximos passos e dados da conta |
-| Testes do banco | Suíte de integridade e códigos numéricos; 97 casos aprovados na revisão |
+| API | Saúde, categorias, autenticação, upload, histórico e exclusão em `/api/uploads`; análise em `/api/dashboard`, preservada do PR #2 da main |
+| Frontend | Demonstração pública; autenticação real; painel vazio sem transações e dashboard com dados da conta; arquivos em `/app/files` (alias `/app/uploads`) e conta |
+| Testes do banco | Suíte de integridade e códigos numéricos existente; não reexecutada nesta revisão. Validação atual por build e integração em PostgreSQL temporário, sem testes unitários |
 | Camadas do backend | Autenticação usa serviço e repositórios; a rota de categorias usa o repositório `repositories/categories.py`, sem serviço, porque ainda não tem regra de negócio |
-| Funcionalidades financeiras | Upload e histórico, leitura e limpeza, análises, limites, notificações e diagnóstico com IA ainda pendentes |
-| Hospedagem | Ainda não publicada; prevista em plano gratuito a partir da etapa de upload |
+| Funcionalidades financeiras | Leitura, limpeza e dashboard da segunda versão da main preservados. Esta revisão não desenvolveu novas análises. Limites, notificações, IA e partes do tratamento e da qualidade seguem pendentes; ver revisao-alteracoes.md |
+| Hospedagem | Site informado em `https://gerencia-liart.vercel.app`; alterações locais precisam de nova publicação para aparecer nesse endereço |
 | Fora da primeira versão | Conversa com a IA, previsão de cobranças com calendário, mapeador genérico, arquivo original guardado, e-mails pelo Resend e limite semanal (seção 18 do planejamento) |
-| Ferramentas previstas | Alembic e Docker Compose ainda pendentes; limite de tentativas de login ainda pendente |
+| Migrações | Alembic configurado e adoção aplicada no Neon em 12/11/2026, na revisão `0002_upload_history`. Contagens dos registros preservadas nas 10 tabelas; comparação com os modelos sem alterações pendentes |
+| Ferramentas previstas | Docker Compose e limite de tentativas de login ainda pendentes |
 
-O próximo passo da fundação é concluir Alembic e Docker Compose. Funções
-independentes de tratamento, como a conversão monetária, podem ser estudadas e
-testadas em paralelo, sem depender do banco.
+Escopo da preparação aprovada em 12/11/2026: concluir as telas de painel e
+arquivos, preparar os componentes para receber resultados e concluir a
+configuração do Alembic. Não inclui escrever ou executar testes unitários,
+criar análises, ampliar o tratamento, desenvolver Limites ou IA. As regras de
+testes do planejamento continuam valendo para a etapa de dados posterior.
+
+Na revisão seguinte, a `main` remota estava em `d741130` (PR #2, segunda
+versão). Ela foi integrada apenas à branch `feat/alembic-upload-historico`,
+preservando os fluxos existentes. A implementação alternativa de upload foi
+retirada para não manter dois contratos incompatíveis. O novo protótipo de
+janela de envio permanece separado e não foi aplicado ao produto.
 
 O esquema atual ainda tem peças do desenho anterior: a tabela `bronze_rows`, a
 coluna `transactions.bronze_row_id`, a tabela `upload_mappings` e as colunas
-`storage_path` e `status` de `uploads`. Elas saem por migração Alembic na
-etapa 2. O esquema também ainda não distingue extrato de fatura em `uploads`,
-não aceita o tipo `income` em `transactions` e não tem as tabelas
-`category_budgets`, `notifications` e `ai_insights`, que entram nas etapas 2,
-3, 6 e 7.
+`storage_path` e `status` de `uploads`. Foram preservadas nesta preparação para
+não remover registros antigos. A revisão `0002_upload_history` acrescenta o
+tipo do documento, formato reconhecido, período e identificador bancário, e
+aceita `income`. As tabelas `category_budgets`, `notifications` e `ai_insights`
+continuam para as respectivas etapas futuras.
 
-As atualizações existentes estão em `scripts/migrations/` e são SQL manuais;
-a adoção de Alembic deverá preservar esse histórico e os dados existentes.
+Os SQL de `scripts/migrations/` foram preservados como histórico. A migração
+inicial tem uma cópia independente do esquema em `backend/migrations/sql/`.
+O [guia do banco](database-setup.md) explica instalação, adoção e atualizações.
 
 ## Documentos de apoio
 
