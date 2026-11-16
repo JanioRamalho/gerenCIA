@@ -2,7 +2,7 @@
 
 Data: 16 de novembro de 2026. Branch de referência: `Janio`, base `5cd9849`.
 
-Estado: **especificação para revisão do usuário**. A proposta funcional e visual foi aprovada na entrevista; este documento registra seu desenho. Não é um plano de execução nem declara os recursos abaixo como implementados.
+Estado: **especificação aprovada pelo usuário em 16/11/2026**, a partir do conteúdo registrado em `56d69a8`. Este documento registra o desenho aprovado. Não é um plano de execução nem declara os recursos abaixo como implementados.
 
 Leitura sugerida: seções 1 e 4 para objetivo e visual; seção 6 para as abas; seções 7 e 12 para as decisões técnicas propostas. As demais seções registram regras e critérios para orientar implementação e revisão.
 
@@ -279,8 +279,8 @@ Uma entrega só é concluída com evidência. A primeira versão inteira exige o
 
 ## 12. Revisão e próximo passo
 
-Pontos técnicos propostos neste documento para revisão, além das escolhas já feitas na entrevista: abrir no mês mais recente; exibir valores líquidos negativos sem percentual enganoso; usar configuração mensal de limite por categoria; não aplicar regra pessoal retroativamente; três tentativas de IA por usuário/dia; avaliar Groq Free como primeira integração.
+Decisões técnicas incluídas na especificação aprovada, além das escolhas feitas na entrevista: abrir no mês mais recente; exibir valores líquidos negativos sem percentual enganoso; usar configuração mensal de limite por categoria; não aplicar regra pessoal retroativamente; três tentativas de IA por usuário/dia; avaliar Groq Free como primeira integração.
 
 Condições externas verificáveis antes de declarar conclusão: conta/cota gratuita e credencial de IA disponíveis no backend, PostgreSQL adequado e destino de hospedagem gratuito com mesma origem. Não se presume que essas condições estejam resolvidas apenas por este documento.
 
-Após a revisão e aprovação desta especificação, preparar o plano escrito com tarefas, dependências, verificações e divisão do trabalho entre os especialistas. A aprovação da proposta ou deste documento não declara o código implementado, migrado, publicado ou enviado ao repositório remoto.
+Com a especificação aprovada, o próximo entregável é o plano escrito com tarefas, dependências, verificações e divisão do trabalho entre os especialistas. A aprovação da proposta ou deste documento não declara o código implementado, migrado, publicado ou enviado ao repositório remoto.
