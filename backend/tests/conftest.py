@@ -126,12 +126,31 @@ def restore_legacy_constraints(db):
         """)
 
 
-@pytest.fixture(scope="session", params=["fresh", "upgrade"])
+def install_with_alembic(db):
+    """Instala apenas no banco descartável recebido, sem ler DATABASE_URL."""
+    from alembic import command
+    from alembic.config import Config
+    from sqlalchemy import create_engine
+
+    engine = create_engine(f"postgresql+psycopg://postgres@127.0.0.1:{db.port}/{db.name}")
+    try:
+        with engine.begin() as connection:
+            config = Config(str(PROJECT_ROOT / "alembic.ini"))
+            config.attributes["connection"] = connection
+            command.upgrade(config, "head")
+    finally:
+        engine.dispose()
+
+
+@pytest.fixture(scope="session", params=["fresh", "upgrade", "alembic"])
 def database(postgres_cluster, request):
     name = "integrity_" + request.param
     postgres_cluster.sql(f"CREATE DATABASE {name};")
     db = TestDatabase(postgres_cluster.binaries, postgres_cluster.port, name)
-    db.script(PROJECT_ROOT / "scripts/init.sql")
+    if request.param == "alembic":
+        install_with_alembic(db)
+    else:
+        db.script(PROJECT_ROOT / "scripts/init.sql")
     if request.param == "upgrade":
         restore_legacy_constraints(db)
         db.sql("DELETE FROM categories;")
@@ -159,7 +178,7 @@ def auth_database(postgres_cluster):
     name = "auth_" + uuid4().hex
     postgres_cluster.sql(f"CREATE DATABASE {name};")
     db = TestDatabase(postgres_cluster.binaries, postgres_cluster.port, name)
-    db.script(PROJECT_ROOT / "scripts/init.sql")
+    install_with_alembic(db)
     return db
 
 

@@ -116,10 +116,12 @@ ambiente da hospedagem, nunca no frontend.
 | Funcionalidades financeiras | Upload e histórico, leitura e limpeza, análises, limites, notificações e diagnóstico com IA ainda pendentes |
 | Hospedagem | Ainda não publicada; prevista em plano gratuito a partir da etapa de upload |
 | Fora da primeira versão | Conversa com a IA, previsão de cobranças com calendário, mapeador genérico, arquivo original guardado, e-mails pelo Resend e limite semanal (seção 18 do planejamento) |
-| Ferramentas previstas | Alembic e Docker Compose ainda pendentes; limite de tentativas de login ainda pendente |
+| Migrações | Alembic configurado, com revisão inicial do esquema atual e adoção validada de bancos existentes; histórico SQL preservado |
+| Ferramentas previstas | Docker Compose e limite de tentativas de login ainda pendentes |
 
 Antes de ampliar os endpoints, adequar a consulta de categorias às camadas
-previstas. Depois, concluir a fundação com Alembic e Docker Compose. Funções
+previstas. O Alembic já controla a evolução do esquema; Docker Compose permanece
+pendente na fundação. Funções
 independentes de tratamento, como a conversão monetária, podem ser estudadas e
 testadas em paralelo, sem depender do banco.
 
@@ -131,8 +133,11 @@ não aceita o tipo `income` em `transactions` e não tem as tabelas
 `category_budgets`, `notifications` e `ai_insights`, que entram nas etapas 2,
 3, 6 e 7.
 
-As atualizações existentes estão em `scripts/migrations/` e são SQL manuais;
-a adoção de Alembic deverá preservar esse histórico e os dados existentes.
+As atualizações legadas em `scripts/migrations/` continuam preservadas.
+`backend/migrations/` contém o ambiente Alembic e a revisão inicial, que reproduz
+o esquema atual sem mudanças financeiras. A adoção de um banco existente confere
+sua estrutura antes de registrar a revisão, preservando dados e códigos. Os
+comandos para instalação, adoção e próximas revisões estão no guia do banco.
 
 ## Documentos de apoio
 

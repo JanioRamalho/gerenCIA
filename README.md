@@ -74,9 +74,16 @@ O comando usa o ambiente virtual .venv da pasta principal, com FastAPI e Uvicorn
 
 ## Banco de dados
 
-O script `scripts/init.sql` cria o esquema e as categorias iniciais em um banco
-PostgreSQL 18 vazio. Ele não cria o banco em si. Consulte o
-[guia de instalação, atualização e testes](docs/database-setup.md).
+O esquema é versionado por Alembic. Em um banco PostgreSQL 18 vazio já criado,
+configure `DATABASE_URL` e execute na raiz:
+
+```powershell
+.\.venv\Scripts\python.exe -m alembic upgrade head
+```
+
+Se o banco já tem as tabelas, siga a adoção validada do
+[guia de instalação, atualização e testes](docs/database-setup.md) antes de
+aplicar migrações. Os scripts SQL anteriores continuam preservados.
 
 ## Como iniciar o frontend
 

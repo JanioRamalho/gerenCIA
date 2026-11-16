@@ -37,9 +37,11 @@ pendente antes de ampliar os endpoints.
 
 ## Banco e verificações
 
-O esquema completo é instalado por `scripts/init.sql`, com 10 tabelas,
-proteções de integridade e categorias globais iniciais. A configuração e a
-atualização de bancos existentes estão no [guia do banco](../docs/database-setup.md).
+O esquema completo é instalado por `alembic upgrade head`, com 10 tabelas da
+aplicação, proteções de integridade e categorias globais iniciais, além da tabela
+`alembic_version`. Execute pela raiz com `.\.venv\Scripts\python.exe -m alembic`.
+A configuração e a adoção de bancos existentes estão no
+[guia do banco](../docs/database-setup.md). Os scripts SQL legados foram preservados.
 
 Todas as tabelas têm um `code` numérico automático para consulta e mantêm
 `id` UUID como chave primária. O endpoint de categorias retorna os dois campos.
@@ -69,7 +71,7 @@ sua.
 - app/services/: casos de uso e regras da aplicação.
 - app/pipeline/: leitura, limpeza, categorização e cálculos das análises.
 - app/ai/: resumo do mês enviado à IA, chamada ao provedor e validação da resposta.
-- migrations/: migrações Alembic.
+- migrations/: ambiente Alembic, revisão inicial fixa e próximas migrações.
 - tests/: testes unitários, integração e fixtures.
 
 ## Regra de dependência

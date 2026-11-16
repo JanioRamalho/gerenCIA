@@ -1,39 +1,91 @@
 # Banco PostgreSQL do gerenCIA
 
-O esquema está em `scripts/init.sql`. Ele cria as 10 tabelas, índices,
-relacionamentos, proteções de categorias e as 11 categorias globais do
-planejamento. Todas as tabelas também recebem um código numérico curto.
-O banco `gerencia_db` precisa existir antes da execução.
-Os comandos abaixo são instruções de instalação; os testes não os executam
-contra o servidor instalado no computador.
+O esquema passa a ser versionado pelo Alembic, configurado em `alembic.ini` e
+`backend/migrations/`. A revisão `0001_current_schema` reproduz o esquema
+atual: 10 tabelas da aplicação, índices, relacionamentos, proteções de categorias,
+códigos numéricos e as 11 categorias globais iniciais. O Alembic acrescenta a
+tabela `alembic_version`, que registra a revisão aplicada.
+
+O banco precisa existir antes da execução. Os comandos usam o `DATABASE_URL`
+do ambiente ou do `.env` da raiz, com a mesma normalização de URL da API.
+Variáveis do ambiente têm prioridade; nenhuma credencial fica no `alembic.ini`.
+Os testes usam exclusivamente PostgreSQL descartável, separado desse endereço.
+
+## Preparar as ferramentas
+
+No PowerShell, na raiz do projeto:
+
+```powershell
+.\.venv\Scripts\python.exe -m pip install -r requirements.txt
+.\.venv\Scripts\python.exe -m alembic history
+```
+
+O histórico deve mostrar `<base> -> 0001_current_schema (head)`.
+Alembic e suas dependências estão nas dependências de desenvolvimento da raiz;
+a API não executa migrações ao iniciar. Execute-as separadamente da hospedagem.
 
 ## Instalação nova
 
-Use PostgreSQL 18 e execute a partir da raiz do repositório no PowerShell.
-O exemplo usa o administrador `postgres` para instalar o esquema; as
-credenciais da aplicação devem ser configuradas separadamente.
+Use PostgreSQL 18 e um banco vazio. Se precisar criá-lo localmente:
 
 ```powershell
 $pgBin = 'C:\Program Files\PostgreSQL\18\bin'
 & "$pgBin\createdb.exe" -h 127.0.0.1 -p 5432 -U postgres gerencia_db
-& "$pgBin\psql.exe" -X -h 127.0.0.1 -p 5432 -U postgres -d gerencia_db -v ON_ERROR_STOP=1 -f scripts/init.sql
 ```
 
-Execute `init.sql` uma vez, em um banco vazio. O script usa uma transação e
-interrompe ao primeiro erro, evitando uma instalação parcial. Os arquivos
-incluídos por `\ir` são resolvidos em relação à pasta do próprio script.
-Preserve `scripts/sql/` ao distribuir o instalador.
-
-Confira o resultado:
+Configure `DATABASE_URL` e instale o esquema:
 
 ```powershell
-& "$pgBin\psql.exe" -X -h 127.0.0.1 -p 5432 -U postgres -d gerencia_db -c '\dt public.*'
-& "$pgBin\psql.exe" -X -h 127.0.0.1 -p 5432 -U postgres -d gerencia_db -c 'SELECT name FROM categories WHERE user_id IS NULL ORDER BY name;'
+.\.venv\Scripts\python.exe -m alembic upgrade head
+.\.venv\Scripts\python.exe -m alembic current
+.\.venv\Scripts\python.exe -m alembic check
 ```
 
-O primeiro comando deve mostrar 10 tabelas; o segundo, 11 categorias.
-No pgAdmin, abra o servidor, `Databases`, `gerencia_db`, `Schemas`, `public`,
-`Tables`. Atualize a árvore se o banco tiver sido criado pelo terminal.
+`current` deve mostrar `0001_current_schema (head)`. `check` compara os modelos
+com o banco e não deve encontrar novas operações. Uma segunda execução de
+`upgrade head` não recria tabelas nem duplica categorias. A revisão inicial usa
+uma cópia SQL fixa, sem comandos exclusivos do psql e sem exigir o proprietário
+`postgres`; as tabelas pertencem à conta que executa a instalação.
+
+Para inspecionar o SQL sem conectar ao banco:
+
+```powershell
+.\.venv\Scripts\python.exe -m alembic upgrade head --sql
+```
+
+Esse comando ainda precisa de uma URL PostgreSQL configurada, mas não abre a
+conexão. No pgAdmin, a instalação nova apresenta 11 tabelas ao contar também
+`alembic_version`, e 11 categorias globais.
+
+## Adotar um banco já instalado
+
+Se o banco já recebeu `scripts/init.sql` atualizado, não execute a criação
+inicial sobre ele. Faça um backup e confira a compatibilidade:
+
+```powershell
+.\.venv\Scripts\python.exe scripts/adotar_alembic.py
+```
+
+Sem argumentos, o script só lê a estrutura e não grava a versão. Ele compara
+colunas, defaults, identidades, restrições, índices, triggers (inclusive se estão
+ativados) e funções de proteção com a assinatura fixa da revisão inicial em
+PostgreSQL 18. Dados, donos das tabelas, permissões e valores atuais das
+sequências não entram nessa comparação. Categorias personalizadas e outras
+tabelas do banco são preservadas.
+
+Se estiver compatível, registre a revisão inicial:
+
+```powershell
+.\.venv\Scripts\python.exe scripts/adotar_alembic.py --stamp
+.\.venv\Scripts\python.exe -m alembic current
+.\.venv\Scripts\python.exe -m alembic upgrade head
+```
+
+`--stamp` repete a validação e só então grava `0001_current_schema` em
+`alembic_version`, na mesma transação. Não recria tabelas, não altera registros
+nem reinicia códigos. Ele registra explicitamente a base, mesmo quando existirem
+migrações futuras. Não use `alembic stamp head` para pular a conferência.
+Se outra revisão já estiver registrada, o script recusa sobrescrevê-la.
 
 ## Banco com a versão antiga
 
@@ -52,12 +104,48 @@ vínculos com categorias de outro usuário, a atualização falha e é revertida
 Revise esses registros e execute novamente; nenhum registro é removido ou
 alterado silenciosamente.
 
-Os arquivos em `scripts/migrations/` são atualizações SQL manuais. A adoção
-de Alembic permanece uma etapa prevista na arquitetura.
+Os arquivos em `scripts/migrations/` continuam sendo o histórico SQL anterior
+ao Alembic. Depois de atualizar o banco antigo, siga a seção de adoção acima.
+Se a conferência apontar outra diferença, revise o esquema indicado antes de
+registrar a base; o script não tenta corrigir diferenças automaticamente.
 
 Se a correção de integridade já estiver instalada, execute apenas `002_display_codes.sql`.
-A instalação nova por `init.sql` já inclui ambas as alterações; não execute
-as atualizações novamente nesse caso.
+A instalação nova pelo Alembic ou por `init.sql` já inclui ambas as alterações;
+não execute as atualizações SQL novamente nesse caso. `scripts/init.sql`, seus
+arquivos em `scripts/sql/` e `scripts/instalar_banco.py` são mantidos para
+compatibilidade e testes do legado. Novas instalações devem usar Alembic.
+
+## Próximas mudanças do esquema
+
+Depois de alterar os modelos SQLAlchemy, gere uma revisão em um banco de
+desenvolvimento já atualizado:
+
+```powershell
+.\.venv\Scripts\python.exe -m alembic revision --autogenerate -m "descricao_da_mudanca"
+```
+
+Revise `upgrade()` e `downgrade()` no arquivo criado em
+`backend/migrations/versions/`, escreva os testes e só então aplique:
+
+```powershell
+.\.venv\Scripts\python.exe -m alembic upgrade head
+.\.venv\Scripts\python.exe -m alembic check
+```
+
+A geração automática é um rascunho: alterações em triggers, funções, regras
+CHECK e dados iniciais precisam ser escritas e revisadas explicitamente.
+Tabelas que não estejam nos modelos são ignoradas na comparação para não
+propor a exclusão de objetos de outros sistemas; ao remover uma tabela do
+gerenCIA, escreva a remoção na revisão. Veja a
+[documentação de autogenerate](https://alembic.sqlalchemy.org/en/latest/autogenerate.html).
+
+A revisão inicial e seus arquivos SQL/assinatura ficam imutáveis. Mudanças
+posteriores entram em novas revisões; não altere a base nem regenere sua
+assinatura para fazer uma incompatibilidade desaparecer.
+
+`downgrade base` é recusado pela revisão inicial, pois apagaria também dados
+anteriores à adoção. Restauração dessa base exige backup. Revisões posteriores
+devem documentar e testar suas próprias reversões.
 
 ## Códigos numéricos e UUIDs
 
@@ -108,9 +196,9 @@ transações abertas no pgAdmin antes de executar novamente.
 - A carga das categorias iniciais pode ser repetida sem duplicá-las. Não
   substitui nomes, cores ou estados de categorias que já existem.
 
-Os modelos SQLAlchemy mapeiam o esquema instalado por esses scripts.
-`Base.metadata.create_all()` sozinho não instala os triggers nem a carga
-inicial. Use o instalador SQL para criar o esquema completo.
+Os modelos SQLAlchemy mapeiam o esquema. `Base.metadata.create_all()` sozinho
+não instala os triggers nem a carga inicial. Use `alembic upgrade head` para
+criar o esquema completo.
 
 ## Testes isolados
 
@@ -121,6 +209,7 @@ No Windows, os processos são iniciados sem janela visível.
 
 ```powershell
 .\.venv\Scripts\python.exe -m pytest -o pythonpath=backend backend/tests/test_database_integrity.py -q
+.\.venv\Scripts\python.exe -m pytest -o pythonpath=backend backend/tests/test_alembic.py -q
 ```
 
 No Windows, a localização padrão dos executáveis é
@@ -135,4 +224,8 @@ Os testes verificam instalação nova, atualização de esquema existente,
 parcelas, exclusões, categorias entre usuários, abas de XLSX, duplicatas de
 CSV, categorias iniciais, geração e unicidade dos códigos numéricos,
 preservação dos registros na atualização e as restrições geradas pelos
-modelos SQLAlchemy.
+modelos SQLAlchemy. A suíte de integridade e de códigos também roda sobre uma
+instalação feita por Alembic, e a autenticação usa esse caminho para preparar
+seu banco. Os testes de migrações verificam instalação nova, adoção com dados,
+preservação de UUIDs/códigos/sequências, recusa de diferenças estruturais,
+SQL offline e comparação com os modelos.

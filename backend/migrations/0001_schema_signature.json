@@ -1,0 +1,65 @@
+{
+  "tables": {
+    "users": {
+      "columns": "5741f33075267e66699a5587181eee7e6369c7452fec8ffdc95dbb678e5f4ea0",
+      "constraints": "c37af7f37273d9fe6606c77ed2debbba5c3384fa5352afc49bdc6fc8544ac791",
+      "indexes": "2aa2fa6e4989c2667fd7995c780ae5f437a36998bf164ac165dd3c9109478403",
+      "triggers": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "sessions": {
+      "columns": "f84a176981bec2355b212da247782fe01371ddf61c711364dc115cb0b095bb16",
+      "constraints": "91a37d096d93395e00542bc97481772ffa4d90ab3f39fe4a6946e74b21383400",
+      "indexes": "d09e8b27d36b2588ac8a053cb91cf581f782f32c220547e05fba00bcae1fe762",
+      "triggers": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "uploads": {
+      "columns": "e07515ec6480b3fca001479c0c16c2b3fd50ef324c66f334d75120c566d7bbe5",
+      "constraints": "1f3eb6ac9f4392583be174a254510a3d1e6b07cb77cb847b2ce1b96cbb3b6e01",
+      "indexes": "94f0e89517692917e6c601c566d3b5d5da858d1bb6b1f725dca3e88cc3c358cc",
+      "triggers": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "upload_mappings": {
+      "columns": "55628bf61c094570f8e0a92860519704141bb5168d2afd0308a4007e11d4bef8",
+      "constraints": "c29d09432707c6ab9a99bb56dc1695701649923bbca535b7226a99033cea0897",
+      "indexes": "616a689b6070ec7ecf4bcd1841e6fd8b42efeeb3fb635d8560479f1ce88b5ed8",
+      "triggers": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "bronze_rows": {
+      "columns": "df021ad3d08e061affe78983b6d6305783fdc4531db0cfe85926be181a296301",
+      "constraints": "ed74c9763d3050afd6c8bca6283d690cb96ff43f8d2afa8e13730020ecc6a72d",
+      "indexes": "78ad2208bb7fe4c39bcd16ae8c399ced20d2e1816e582eed85ed007825bd4156",
+      "triggers": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "categories": {
+      "columns": "dcfca3096b2c80c50ea3f53fb3c23e675c98257581c4ee7cacf9d8e1266a3d13",
+      "constraints": "86b55afd470b2af526189a7f8eafd9cd9a7366d2e73457078b66c647fa77f6d2",
+      "indexes": "70ae5f2d8532d9bd29022aaaf194605280fed691f42223b14cb27d5c6385fa95",
+      "triggers": "07d58fd28a3c872511fbb040cdc828ad680ac49d7b8003e4cd16537721c2d2fc"
+    },
+    "transactions": {
+      "columns": "a88890770ade30b2f861532684c46ab733213edd2efcf2dba6114089cdb81d4a",
+      "constraints": "fa0c60e2b7923462411081a0f333bb725fee308454275f784dda667ad23be1b2",
+      "indexes": "44ccb32cc48cfbd48d063846e36fff70d1140282739d2b066a4ea667d1368a8b",
+      "triggers": "12917f842fcea2cc67ce9c9136f570ed257d1fe0378231e8392c9cebd28f7f53"
+    },
+    "category_rules": {
+      "columns": "6153caa94b046260660c28c048b7ea860855fd00d6262f784c7c4d57126b2a2f",
+      "constraints": "14287c341cbc0cbc889ce6ea5b712183dc187752c7604cc6ab7e001f62561864",
+      "indexes": "b7792c9da923f0233284215648533fcf7baf9757debb35edf1819e474d45875b",
+      "triggers": "7239b8d4daa47a7fb5dd6d14a274f98a4884b203177c8358b28e77b870b7ac64"
+    },
+    "quality_checks": {
+      "columns": "9d6429db38a845808394c8108dd4de61c4e8bc815621b111588ff688b7dabb8d",
+      "constraints": "6c811e999a53434d505d6b3c319f6dea694529619ec5fd151a84219f3fac9147",
+      "indexes": "54668ee3692f576bc8694873d0767dd4c91fb9cb88a294188e7b26d5b8c26b12",
+      "triggers": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    },
+    "rejected_rows": {
+      "columns": "ce7e06fc5bb94bcc39f165c4716b5139115bb545b29527458822fb1b7d583cb4",
+      "constraints": "42326ff76971a11db827ec03a4fb804acb67060a79dbdaeabb9f6cb49a20674b",
+      "indexes": "1acea1e9deddbc7aa144f5224faa437b5870a1e6feb8adcedbccb47e62b587c5",
+      "triggers": "4f53cda18c2baa0c0354bb5f9a3ecbe5ed12ab4d8e11ba873c2f11161202b945"
+    }
+  },
+  "functions": "be73f64dc17af81902ccad987bf4fc387fb5c2e6f2e133d6f6515f0bea981d8b"
+}
