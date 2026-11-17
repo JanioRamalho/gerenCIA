@@ -2,6 +2,8 @@
 
 Data: 16 de novembro de 2026. Branch: `Janio`. Base examinada: `0fc5899`.
 
+**Atualização de 17/11:** a [instrução de escopo sem IA](2026-11-17-escopo-sem-ia.md) prevalece sobre as partes de diagnóstico e integrações deste documento. A entrega atual não inclui IA; hospedagem prevista na Vercel e limite de arquivo ajustado para 4 MB.
+
 Estado: **especificação escrita aprovada pelo usuário em 16/11/2026**, a partir do documento registrado em `72d6488`. A aprovação autoriza preparar o plano de execução; não declara implementação, migração aplicada ou publicação. A entrega tem prazo de **27 de novembro de 2026**; a data da banca não foi informada.
 
 ## 1. Resultado e decisões da entrevista

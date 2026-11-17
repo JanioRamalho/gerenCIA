@@ -4,7 +4,9 @@ Data: 16 de novembro de 2026. Branch: `Janio`.
 
 Base: [interface e simplificação aprovadas](../specs/2026-11-16-refatoracao-geral-v1-design.md), documento aprovado a partir de `72d6488`, e [contratos financeiros e funcionais](../specs/2026-11-16-renovacao-interna-v1-design.md), originalmente aprovados em `56d69a8`. Valem A01–A19 e R01–R07; A03 usa a redação atualizada da nova especificação.
 
-Estado: **plano atualizado para revisão e escolha da execução**. Nenhuma tarefa de produto deste plano foi executada. A aprovação escrita da especificação autorizou preparar esta revisão; não autoriza declarar as tarefas ou seus testes como concluídos.
+Estado: **execução autorizada pelo usuário e iniciada** a partir de `0134cbf`. As caixas sem marcação continuam pendentes de integração e evidência, mesmo quando existir código em preparação.
+
+**Escopo atualizado em 17/11:** [IA fora desta etapa e Vercel como hospedagem](../specs/2026-11-17-escopo-sem-ia.md). P15/P16 e A12/A13 estão adiados; não criar diagnóstico, treino ou predição agora. As dependências e verificações de outras tarefas não aguardam IA. Arquivos têm limite de 4 MB para compatibilidade com a hospedagem.
 
 A skill complementar `writing-plans` continua indisponível: a busca por diretório e conteúdo nos diretórios de skills e cache foi repetida nesta revisão. O plano foi atualizado diretamente a partir das especificações aprovadas, do inventário do código e da revisão dos três especialistas; não se declara aplicação daquela skill.
 
@@ -12,13 +14,13 @@ A skill complementar `writing-plans` continua indisponível: a busca por diretó
 
 Entregar a primeira versão até **27 de novembro de 2026**, com visual **Categorias em destaque**, tema claro petróleo/menta, categorias com cores/ícones, comparação entre dois meses escolhidos, resumo gráfico de recorrências e até cinco lançamentos recentes. Concluir Painel, Arquivos, Transações, Limites e Conta, mantendo a arquitetura e as funções documentadas. Página pública, demonstração, login e cadastro ficam fora do redesenho inicial, com regressões verificadas quando houver mudanças compartilhadas.
 
-Prioridade funcional: consistência financeira → consultas completas → painel/Transações → correções de categoria → limites/avisos → diagnóstico → fechamento e ensaio. O protótipo de P07 começa após P00, sem esperar todo o backend. Arquivos e Conta avançam quando seus contratos estiverem prontos.
+Prioridade funcional: consistência financeira → consultas completas → painel/Transações → correções de categoria → limites/avisos → fechamento e ensaio. O protótipo de P07 começa após P00, sem esperar todo o backend. Arquivos e Conta avançam quando seus contratos estiverem prontos.
 
 | Frente | Tarefas e resultado |
 | --- | --- |
-| Experiência visual | P07–P09, P12–P14 e P16: protótipo revisável, identidade comum e fluxos reais nas cinco abas |
+| Experiência visual | P07–P09 e P12–P14: protótipo revisável, identidade comum e fluxos reais nas cinco abas |
 | Simplificação do código | S01–S04 e P17: transporte/formatação compartilhados, estilos internos isolados, remoções comprovadas e evolução do legado |
-| Sustentação funcional | P00–P06, P10–P11 e P15: dados confiáveis, consultas completas, regras e persistência |
+| Sustentação funcional | P00–P06 e P10–P11: dados confiáveis, consultas completas, regras e persistência |
 | Validação e entrega | P18–P19: execução, regressões, documentação, evidências e ensaio |
 
 Responsabilidades:
@@ -27,7 +29,7 @@ Responsabilidades:
 | --- | --- |
 | Principal/integrador | Contratos públicos, modelos/exportações, Alembic, registro das rotas, clientes/tipos da API, S01/S02/S04, integração e aceites finais |
 | Especialista em dados | Pipeline puro, elegibilidade financeira, estatísticas, calendário, deduplicação pura, fixtures e testes com resultados manuais |
-| Especialista em backend | Serviços/repositórios/rotas de domínio, transações atômicas, autorização, concorrência, limites e IA |
+| Especialista em backend | Serviços/repositórios/rotas de domínio, transações atômicas, autorização, concorrência, limites e avisos |
 | Especialista em interface | Componentes e estilos internos, protótipo, mapa de categorias, gráficos Recharts, S03, acessibilidade e verificações de interface |
 
 São no máximo quatro agentes simultâneos, incluindo o integrador. A frente de simplificação não cria um quinto agente: seus arquivos são distribuídos entre os donos existentes. Nesta revisão, três agentes fizeram leituras independentes de experiência, código e semântica financeira; cada um devolveu ajustes ao plano.
@@ -44,7 +46,7 @@ Antes do primeiro lote, registrar o SHA de partida e confirmar a árvore limpa. 
 
 - Dinheiro novo: `Decimal` no backend e texto decimal no JSON, por exemplo `"90.00"`. Valores absolutos nos itens; natureza explícita determina sua contribuição ao gasto. Totais líquidos podem ser negativos.
 - Indisponibilidade é dado explícito, com valor `null` e motivo, em vez de zero artificial. Percentuais já vêm calculados pelo backend, acompanhados da convenção usada para apresentação.
-- Consultas novas de análise e transações aceitam mês resolvido pelo servidor: `latest`, `all` ou `AAAA-MM`. O painel abre em `latest`; a resposta informa o mês efetivo. Limites e diagnóstico recebem sempre `AAAA-MM` explícito.
+- Consultas novas de análise e transações aceitam mês resolvido pelo servidor: `latest`, `all` ou `AAAA-MM`. O painel abre em `latest`; a resposta informa o mês efetivo. Limites recebem sempre `AAAA-MM` explícito.
 - Comparação livre: mês analisado e referência são dois `AAAA-MM` distintos, com registros do próprio usuário. DTOs transportam ambas as bases, união das categorias, diferenças, percentuais e motivos de indisponibilidade. Diferença = analisado − referência; percentual só quando a referência é positiva. Categoria sem movimento em mês existente pode valer zero; mês sem registros não vira zero. `all` não recebe comparação mensal. A referência inicial usa o calendário anterior quando disponível, ou fica sem seleção.
 - Recorrências: detecção no histórico completo; valores observados no período escolhido e base mensal histórica são campos distintos. Uma transação elegível é contabilizada uma vez, ainda que o serviço seja assinatura pelo nome e recorrência confirmada. Base mensal = gasto no último mês observado do próprio serviço; anualização = base × 12, com mês-base explícito e independente do filtro. Não prever cobranças.
 - Recentes: consulta do servidor devolve até cinco transações do período e usuário, com ordenação estável e identificador; lista completa continua paginada. Não extrair os recentes de uma lista previamente truncada a 300.
@@ -58,9 +60,9 @@ Antes do primeiro lote, registrar o SHA de partida e confirmar a árvore limpa. 
 
 Manter leitores em `pipeline/previa.py` e a orquestração da análise em `pipeline/analise.py`. Extrair somente funções com responsabilidade clara: deduplicação pura, estatísticas ou categorização quando o tamanho/reuso justificar. Não dividir por quantidade de linhas nem criar um framework de processamento.
 
-Consultas financeiras passam a um repositório de transações compartilhado. Serviços de analytics, limites e IA reutilizam a mesma projeção e as mesmas regras; não replicam fórmulas no React ou em SQL independente. A lista paginada e os agregados são consultas distintas sobre os mesmos filtros e elegibilidade.
+Consultas financeiras passam a um repositório de transações compartilhado. Serviços de analytics e limites reutilizam a mesma projeção e as mesmas regras; não replicam fórmulas no React ou em SQL independente. A lista paginada e os agregados são consultas distintas sobre os mesmos filtros e elegibilidade.
 
-Cada mutação que altera gasto ou duplicidade usa a mesma disciplina de bloqueio por usuário na transação do PostgreSQL, evitando dupla contabilização em requisições concorrentes. Não manter transação de banco aberta durante a chamada ao provedor de IA.
+Cada mutação que altera gasto ou duplicidade usa a mesma disciplina de bloqueio por usuário na transação do PostgreSQL, evitando dupla contabilização em requisições concorrentes.
 
 ### 2.3 Migrações e dados históricos
 
@@ -70,8 +72,9 @@ Reservar uma única sequência linear, coordenada pelo principal:
 | --- | --- | --- |
 | `0002_financial_core` | Metadados de upload, `income`, identificador bancário, evidências de origem e suspeitas necessárias | Antes da persistência financeira corrigida |
 | `0003_budgets_notifications` | Limites mensais, notificações e unicidade das faixas | Antes do serviço de limites |
-| `0004_monthly_insights` | Diagnóstico mensal e tentativas/reservas de geração | Antes do serviço de IA |
-| `0005_remove_legacy` | Retirada dos campos e estruturas legadas aprovados, depois de preservar rastreabilidade | Após todos os consumidores deixarem de depender deles |
+| `0004_remove_legacy` | Retirada dos campos e estruturas legadas aprovados, depois de preservar rastreabilidade | Após todos os consumidores deixarem de depender deles |
+
+O rascunho não commitado de `0004_monthly_insights`, testado apenas em bancos descartáveis, foi retirado após a mudança de escopo. Isso não altera a revisão inicial nem uma migração aplicada no banco de uso.
 
 O DDL concreto de cada revisão acompanha seu modelo e teste. Nunca editar `0001_current_schema`, seu SQL congelado ou sua assinatura. Preservar UUIDs, códigos numéricos, relações e dados comprováveis. Informação histórica não recuperável permanece identificada como desconhecida; não converter `other` em `income` apenas por suposição.
 
@@ -90,15 +93,15 @@ Abreviações de caminhos: `pipeline/`, `services/`, `repositories/`, `schemas/`
 **Arquivos:** `backend/tests/conftest.py`, `backend/tests/fixtures/finance/` (**novo**), schemas existentes e contratos definidos neste plano.
 
 - [ ] Confirmar branch/estado, ferramentas disponíveis e resultado inicial da suíte e do build. Registrar falhas preexistentes separadamente.
-- [ ] Confirmar, sem imprimir segredos, presença da configuração necessária à futura IA e disponibilidade do ambiente de apresentação. Não criar conta ou contratar serviço.
+- [ ] Confirmar, sem imprimir segredos, configuração e disponibilidade do ambiente de apresentação na Vercel. Não criar conta ou contratar serviço.
 - [ ] Separar fixtures da baseline e de `head`; reutilizar o cluster PostgreSQL temporário já existente, que ignora o `DATABASE_URL` de uso.
 - [ ] Montar exemplos pequenos: compra 100, tarifa 10, estorno 20, receita 1.000, pagamento 500; quatro despesas 10/20/30/40; categoria negativa; agosto/outubro com lacuna; mais de 300 itens; dois usuários.
 - [ ] Consolidar nomes/campos dos DTOs em schemas e tipos apenas no início da implementação, antes de distribuir arquivos dependentes.
-- [ ] Fixar a identidade da base do diagnóstico como hash de representação canônica dos agregados/limites usados e versão das regras, com dinheiro normalizado. Os serviços anteriores à IA não precisam depender dela; geração, gravação e leitura conferem essa identidade comum.
+- [ ] Registrar a retirada da IA do escopo desta etapa; não criar identidade, persistência ou configuração de diagnóstico sem consumidor atual.
 
 **Concluir quando:** o resultado inicial é conhecido, fixtures têm respostas manuais e os especialistas concordam com o contrato. Commit sugerido: `Prepara contratos e fixtures da renovacao interna`.
 
-Acrescentar a P00 os casos da nova entrevista: agosto com Alimentação 100 e Transporte 50; outubro com Alimentação 80 e Saúde 30; setembro ausente. Outubro versus agosto dá total −40 e percentual de aproximadamente −26,67%; Saúde tem +30 e percentual indisponível, Transporte −50 e −100%. O diagnóstico de outubro continua sem base anterior do calendário. Cobrir mês de receita sem gasto, referência líquida negativa e mês em andamento.
+Acrescentar a P00 os casos da nova entrevista: agosto com Alimentação 100 e Transporte 50; outubro com Alimentação 80 e Saúde 30; setembro ausente. Outubro versus agosto dá total −40 e percentual de aproximadamente −26,67%; Saúde tem +30 e percentual indisponível, Transporte −50 e −100%. Cobrir mês de receita sem gasto, referência líquida negativa e mês em andamento.
 
 Para serviços, usar Netflix 20 em agosto e duas cobranças legítimas distintas de 20 em outubro: histórico 60, outubro/base mensal 40 e anualizado 480, sem dupla contagem pelas classificações. Spotify só em agosto, 15: gasto de outubro sem cobrança observada; base agosto 15 e anualizado 180 não mudam com o filtro. Incluir parcela, duplicata confirmada e estorno sem vínculo, sem associação inventada. Fixar dados conhecidos para validar os cinco recentes e os casos após a posição 300.
 
@@ -278,7 +281,7 @@ Para serviços, usar Netflix 20 em agosto e duas cobranças legítimas distintas
 
 - [ ] Implementar `PATCH /api/transactions/{id}/category` com validação de propriedade/categoria e confirmação pela API.
 - [ ] Permitir salvar regra para importações futuras do estabelecimento normalizado; respeitar a precedência e não recategorizar o histórico.
-- [ ] Ao confirmar a correção, atualizar as consultas afetadas e a identidade dos dados usada por futuro diagnóstico. A mudança e suas consequências no banco são atômicas.
+- [ ] Ao confirmar a correção, atualizar as consultas afetadas. A mudança e suas consequências no banco são atômicas.
 - [ ] Conectar os avaliadores de limite de P11 quando estiverem disponíveis, sem emitir efeitos antes do commit ou criar dependência circular.
 - [ ] Testar categoria de outro usuário, regra prioritária em novo upload, falha de edição e conservação do gasto total após recategorizar.
 
@@ -329,47 +332,20 @@ Para serviços, usar Netflix 20 em agosto e duas cobranças legítimas distintas
 
 ### P14 — Concluir exclusão de conta
 
-**Responsável:** backend + interface. **Depende de:** P07; teste final inclui entidades de P11/P15. **Aceites:** A14, A15, A16.
+**Responsável:** backend + interface. **Depende de:** P07; teste final inclui entidades de P11. **Aceites:** A14, A15, A16.
 
 **Arquivos:** `api/auth.py`, `services/auth.py`, `repositories/users.py`, `AccountSection.tsx`, `auth/api.ts`/contexto quando necessário, testes de autenticação/exclusão.
 
 - [ ] Implementar `DELETE /api/auth/me` com remoção atômica dos dependentes, revogação das sessões e encerramento do cookie.
 - [ ] Apresentar nome/e-mail e confirmação explícita no produto; erro mantém a conta como ativa e permite nova tentativa.
 - [ ] Renovar a composição da Conta com o shell, hierarquia e estados comuns; não limitar a entrega ao endpoint de exclusão.
-- [ ] Testar com dois usuários e, após P15, com uploads/regras/limites/avisos/diagnósticos/tentativas preenchidos. Não excluir dados da outra conta.
+- [ ] Testar com dois usuários com uploads/regras/limites/avisos preenchidos. Não excluir dados da outra conta.
 
 **Concluir quando:** todos os dados próprios saem, sessões antigas deixam de valer e a interface retorna à página pública. Usar V2/V3/V6. Commit: `Conclui exclusao atomica da propria conta`.
 
-### P15 — Implementar diagnóstico, reservas e adaptador de IA
+### P15/P16 — IA adiada por decisão do usuário em 17/11
 
-**Responsável:** backend; dados apoia módulos puros/payload e principal integra revisão `0004`. **Depende de:** P06 para preparar resumo/cliente falso; P10/P11 e `0003` para concluir persistência e eventos. **Aceites:** A12, A13, A15, A17, R02, R06.
-
-**Arquivos:** revisão `0004_monthly_insights`, entidades/exportações; módulos em `backend/app/ai/`, `services/insights.py`, `repositories/insights.py`, `api/insights.py`, `schemas/insights.py`, configuração de ambiente e dependências; `tests/test_insights.py` (**novos**).
-
-- [ ] Persistir um diagnóstico por usuário/mês com payload validado, identificação da base, modelo/versão e data. Acrescentar registro de tentativas/reservas no PostgreSQL; isso não exige fila ou cache externo.
-- [ ] Montar somente agregados permitidos, referências de métricas e maiores valores sem descrições brutas/lista individual. Validar esquema e referências em Pydantic; o modelo não executa SQL.
-- [ ] Usar sempre mês explícito e comparação com o anterior do calendário no payload e hash. A referência livre do Painel não altera diagnóstico salvo; testar outubro versus agosto no Painel com setembro ausente no diagnóstico.
-- [ ] Reservar tentativa diária e uma execução por usuário/mês em transação curta. Contar reservas concorrentes no teto de três; falha comprovadamente pré-envio libera reserva, envio incerto consome.
-- [ ] Usar lease com expiração, identificador da geração e base para rejeitar respostas antigas. Expirar execução não devolve tentativa enviada; mudança da base impede publicar o resultado como atual.
-- [ ] Integrar um adaptador Groq configurável, timeout explícito e retries do SDK desativados. Conferir documentação vigente antes de fixar versão de SDK/modelo. Sem credencial/cota Free confirmada, devolver indisponibilidade; não contratar nem usar fallback pago.
-- [ ] Cobrir com cliente falso: sucesso, resposta inválida/referência inventada, sem despesas, cota diária, concorrência, expiração, timeout, resposta tardia, mudança da base e preservação do último diagnóstico válido. Verificar desatualização após upload, exclusão/promoção de cópia, correção de categoria e alteração/remoção de limite, inclusive na leitura do diagnóstico salvo.
-- [ ] Depois dos testes locais, validar uma geração real com dados fictícios em cota gratuita confirmada, sem imprimir chave ou payload sensível. Registrar apenas evidência suficiente do resultado.
-
-**Concluir quando:** API/estado persistido e limites passam nos testes; A13 exige a geração real gratuita. Ausência de cota fica identificada como bloqueio, sem declarar a v1 completa. Usar V2/V4 e V7. Commit: `Implementa diagnostico mensal com uso gratuito controlado`.
-
-### P16 — Integrar o diagnóstico ao painel
-
-**Responsável:** interface; principal integra DTOs. **Depende de:** P08 e P15. **Aceites:** A12, A13, A16.
-
-**Arquivos:** `components/panel/MonthlyDiagnosis.tsx` (**novo**), detalhes do painel, cliente API e estilos internos.
-
-- [ ] Mostrar diagnóstico salvo, data e contexto; avisar sobre envio dos agregados antes de gerar.
-- [ ] Identificar o mês do diagnóstico e a base anterior do calendário, independentemente dos dois meses em comparação no Painel. Trocar a referência livre não reescreve diagnóstico salvo nem dispara geração.
-- [ ] Oferecer geração/regeneração com prevenção de duplo envio e estado de processamento.
-- [ ] Distinguir ausência de despesas, configuração ausente, cota atingida, erro e diagnóstico desatualizado. Não apagar o último válido em caso de erro.
-- [ ] Apresentar referências e ações de revisão sem números inventados ou promessa de economia.
-
-**Concluir quando:** geração, consulta e falhas ficam claras e o resto do painel permanece utilizável. Usar V3/V6; integração real somente em V7. Commit: `Integra diagnostico mensal ao painel interno`.
+Não executar nesta etapa. Não criar diagnóstico textual, adaptador de provedor, treino, predição, persistência, configuração ou interface de IA. A12/A13 ficam fora dos critérios desta entrega. A decisão substitui o desenho anterior sem bloquear as demais tarefas.
 
 ### S04 — Retirar a página de teste e código comprovadamente substituído
 
@@ -387,9 +363,9 @@ Para serviços, usar Netflix 20 em agosto e duas cobranças legítimas distintas
 
 ### P17 — Retirar estruturas legadas com evolução validada
 
-**Responsável:** principal; revisão de backend. **Depende de:** P03, P06, P10–P16 quanto a código/esquema testados e rastreabilidade preservada; não espera cota ou geração real de IA. **Aceites:** A14, A15, A17.
+**Responsável:** principal; revisão de backend. **Depende de:** P03, P06 e P10–P14 com código/esquema testados e rastreabilidade preservada. **Aceites:** A14, A15, A17.
 
-**Arquivos:** revisão `0005_remove_legacy`, entidades/exportações, repositórios de upload, testes de migração/integridade/códigos e docs do banco.
+**Arquivos:** revisão `0004_remove_legacy`, entidades/exportações, repositórios de upload, testes de migração/integridade/códigos e docs do banco.
 
 - [ ] Inventariar referências a bronze/mapping/storage/status legado. Transferir metadados comprováveis antes da retirada; não apagar informação financeira para simplificar migração.
 - [ ] Validar uma cópia sintética representativa do esquema antigo e interromper a migração com erro explicativo se houver conteúdo que não possa ser preservado conforme o desenho.
@@ -402,9 +378,9 @@ Para serviços, usar Netflix 20 em agosto e duas cobranças legítimas distintas
 
 **Responsável:** principal; backend revisa configuração. **Depende de:** P00 para verificar ferramentas/destino e preparar arquivos; funcionalidades integradas e P17 para validar a versão final. **Aceites:** A18, R06.
 
-**Arquivos:** `Dockerfile`, `compose.yaml`, `.dockerignore` (**novos**), configuração do backend para servir o build React, exemplos de ambiente sem segredos e READMEs.
+**Arquivos:** `vercel.json`, `backend/main.py`, dependências de produção, exemplos de ambiente sem segredos, guia da Vercel e READMEs. Docker não é necessário para o destino confirmado.
 
-- [ ] Preparar build React servido pelo FastAPI e PostgreSQL no Compose, preservando mesma origem e deep links de `/app/...`; não adicionar Nginx.
+- [ ] Revisar os serviços Vite/FastAPI existentes na Vercel e seus rewrites, preservando mesma origem e deep links de `/app/...`. PostgreSQL continua externo à função; não criar armazenamento de arquivos originais.
 - [ ] Separar execução das migrações da inicialização da API. Usar comando explícito no ambiente descartável/local; não rodar upgrade silencioso no startup.
 - [ ] Validar tanto instalação nova quanto evolução de banco com dados. Na disponibilização sobre banco existente, usar uma janela sem escrita: preservar cópia de segurança, aplicar somente migrações já testadas e iniciar a versão correspondente após conferir o esquema. Não expor código que exija revisão ainda não aplicada nem prometer reversão sem perda para a retirada de legados.
 - [ ] Documentar inicialização, persistência, migração, variáveis e verificação de saúde. Confirmar ferramentas do ambiente antes de fornecer o comando operacional definitivo.
@@ -415,19 +391,19 @@ Para serviços, usar Netflix 20 em agosto e duas cobranças legítimas distintas
 
 ### P19 — Verificar a experiência completa, atualizar documentação e ensaiar
 
-**Responsável:** principal com revisão cruzada dos três especialistas. **Depende de:** fluxos locais integrados de P08–P17 e S01–S04 para fechar; percurso pode crescer por lote; publicação/ensaio de P18 e A13 para aceite integral. **Aceites:** A01–A19, com A03 atualizado, e R01–R07.
+**Responsável:** principal com revisão cruzada dos três especialistas. **Depende de:** fluxos locais integrados de P08–P17 e S01–S04 para fechar; percurso pode crescer por lote; publicação/ensaio de P18 para aceite hospedado. **Aceites:** A01–A19, exceto A12/A13 adiados, com A03 atualizado, e R01–R07.
 
 **Arquivos:** `scripts/frontend/check_panel_flow.py` (**novo, seguindo os scripts existentes**), scripts de experiência/autenticação/acessibilidade já presentes, `scripts/frontend/README.md`, READMEs do projeto, `PRODUCT.md`, `DESIGN.md`, docs de arquitetura/análise/banco/planejamento e `docs/roteiro-banca-v1.md` (**novo**).
 
 - [ ] Criar verificação integrada real das abas com fixtures em servidor e banco descartáveis conhecidos. Separar esse percurso dos scripts atuais da demonstração pública; não transformar a demo fictícia em um teste dependente de conta real.
-- [ ] Percorrer cadastro/login → exemplo → qualidade → painel → categoria → transações → correção → limite → aviso/leitura → diagnóstico → exclusões/logout.
+- [ ] Percorrer cadastro/login → exemplo → qualidade → painel → categoria → transações → correção → limite → aviso/leitura → exclusões/logout.
 - [ ] Acrescentar comparação livre com lacuna, troca rápida dos dois meses, URL/recarregar/voltar e investigação do mês correto de cada coluna; conferir base zero/negativa e mês em andamento.
-- [ ] Conferir mapa de categorias, cinco recentes e acesso à lista completa, gráfico/detalhes dos serviços, dupla classificação sem dupla contagem e anualização estável quando muda o filtro. Diagnóstico mantém a base do calendário.
-- [ ] Conferir atualização dos dados após cada mutação: buscar novamente os resultados da API para painel, transações, limites e avisos afetados, sem introduzir cálculo local ou cache global. Diagnóstico conserva data/contexto e sinaliza quando sua base mudou.
+- [ ] Conferir mapa de categorias, cinco recentes e acesso à lista completa, gráfico/detalhes dos serviços, dupla classificação sem dupla contagem e anualização estável quando muda o filtro.
+- [ ] Conferir atualização dos dados após cada mutação: buscar novamente os resultados da API para painel, transações, limites e avisos afetados, sem introduzir cálculo local ou cache global.
 - [ ] Conferir visual em 320/768/1280/1920 px, teclado, foco, movimento reduzido e zoom real de 200%. Zoom real exige conferência do navegador; `device_scale_factor` ou transformação CSS não substituem a verificação.
 - [ ] Executar a suíte completa uma vez após a última integração, o build e os fluxos afetados. Repetir depois disso somente se nova mudança/falha justificar.
 - [ ] Atualizar estados documentais com evidências, alinhar `/app/files`, registrar configuração gratuita e preparar roteiro curto com dados fictícios e números reconciliáveis.
-- [ ] Ensaiar tanto navegação em projetor quanto leitura no celular, inclusive sem IA disponível; esse ensaio alternativo não substitui A13 para declarar conclusão integral.
+- [ ] Ensaiar tanto navegação em projetor quanto leitura no celular, com os exemplos públicos e os resultados reconciliados.
 - [ ] Entregar tabela final A01–A19 e R01–R07 com comando/evidência, resultado e limitação real, distinguindo validado, parcial e bloqueado. Incluir resultados da simplificação e o que foi preservado por ter consumidor legítimo.
 
 **Concluir quando:** os critérios obrigatórios têm evidência, documentação corresponde ao aplicativo e o percurso da banca funciona de ponta a ponta. Commit: `Valida e documenta a primeira versao para apresentacao`.
@@ -443,9 +419,9 @@ Executar comandos abaixo a partir da raiz do projeto, depois da aprovação da e
 | V3 | `npm --prefix frontend run build` e inspeção do fluxo alterado |
 | V4 | Instalação/evolução Alembic e `alembic check` via conexão injetada do banco descartável |
 | V5 | Scripts existentes da experiência pública, demo, acesso e acessibilidade afetados por estilos/estrutura compartilhados |
-| V6 | Novo percurso interno com Playwright/API real em ambiente descartável, sem custo de IA nos testes automatizados |
-| V7 | Validação real controlada do diagnóstico em conta/cota gratuita, após sucesso do cliente falso; repetir somente se falha ou nova mudança justificar |
-| V8 | Smoke test Compose e hospedagem, mesma origem, sessão/upload/persistência |
+| V6 | Novo percurso interno com Playwright/API real em ambiente descartável, sem usar banco de uso |
+| V7 | Adiado: IA excluída desta etapa por decisão explícita do usuário |
+| V8 | Smoke test da hospedagem Vercel, mesma origem, sessão/upload/persistência |
 
 Comando-base da suíte existente:
 
@@ -462,7 +438,7 @@ Foco de dados, depois que os arquivos existirem:
 Exemplo de foco de API:
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest -o pythonpath=backend -o cache_dir=.impeccable/pytest-cache-v1 backend/tests/test_transactions.py backend/tests/test_analytics.py -q
+.\.venv\Scripts\python.exe -m pytest -o pythonpath=backend -o cache_dir=.impeccable/pytest-cache-v1 backend/tests/test_finance_api.py -q
 npm --prefix frontend run build
 ```
 
@@ -472,21 +448,21 @@ Scripts atuais da interface usam `GERENCIA_TEST_URL`, `.audit-tools/` e `.audit-
 
 Capturas e relatórios de execução ficam em `.impeccable/review/`, ignorados pelo Git; manter no repositório somente scripts e relato de evidência sem dados pessoais. Não criar uma nova infraestrutura de testes nem testes unitários de frontend.
 
-Rastreabilidade adicional: R01 é conferido em P07/P08/P09/P12/P14; R02 em P04/P06/P08/P15; R03 em P04/P06/P08; R04 em P05/P06/P08/P09; R05 em S01–S04 e regressões; R06 em P01/P03/P06/P11/P15/P17/P18; R07 em S04/P19. P19 reúne a evidência final, sem substituir a verificação proporcional em cada lote.
+Rastreabilidade adicional: R01 é conferido em P07/P08/P09/P12/P14; R02 em P04/P06/P08; R03 em P04/P06/P08; R04 em P05/P06/P08/P09; R05 em S01–S04 e regressões; R06 em P01/P03/P06/P11/P17/P18; R07 em S04/P19. P19 reúne a evidência final, sem substituir a verificação proporcional em cada lote.
 
 ## 5. Dependências, prazo e tratamento de impedimentos
 
-Linha funcional: **P00 → P01/P02 → P04 → conclusão de P03 → P05 → P06 → P08/P09 → P10 → P11 → P12/P15 → P16 → P17 → P18/P19**. P03 começa pela deduplicação pura/persistência depois de P01/P02, mas conclui a reconciliação usando P04; não há dependência inversa de P04 para P03. S01/S02 partem de P00 e entram antes de P06; não dependem das APIs novas para comprovar preservação dos fluxos existentes.
+Linha funcional: **P00 → P01/P02 → P04 → conclusão de P03 → P05 → P06 → P08/P09 → P10 → P11 → P12–P14 → P17 → P18/P19**. P03 começa pela deduplicação pura/persistência depois de P01/P02, mas conclui a reconciliação usando P04; não há dependência inversa de P04 para P03. S01/S02 partem de P00 e entram antes de P06; não dependem das APIs novas para comprovar preservação dos fluxos existentes.
 
-P07 tem um primeiro protótipo após P00 e uma entrega integrada após P06; S03 acompanha P07/P08 e não impede o primeiro estudo visual. P13 depende de P03/P07; P14 pode ser preparado após P07 e concluído depois das entidades dependentes. Não adiar Arquivos/Conta até o fim se houver uma frente livre. S04 espera a substituição funcional em P03/P08/P09/P13 e não depende de cota real de IA. P18 verifica ferramentas/destino em P00 e prepara execução antes do último lote quando independente.
+P07 tem um primeiro protótipo após P00 e uma entrega integrada após P06; S03 acompanha P07/P08 e não impede o primeiro estudo visual. P13 depende de P03/P07; P14 pode ser preparado após P07 e concluído depois das entidades dependentes. Não adiar Arquivos/Conta até o fim se houver uma frente livre. S04 espera a substituição funcional em P03/P08/P09/P13. P18 verifica ferramentas/destino em P00 e prepara execução antes do último lote quando independente.
 
-A implementação pura e os testes falsos da IA podem avançar depois de P06, antes de limites estarem integrados, com apoio do especialista de dados após P04. Seu aceite completo depende de P11. Sem cota real, o código validado com cliente falso pode ser integrado a P16/P17, e P19 local continua; somente A13 e o aceite integral da v1 aguardam essa verificação externa.
+A entrega atual não depende de IA. Hospedagem e acesso ao projeto Vercel são conferidos separadamente da validação local.
 
 | Janela pretendida | Marco verificável |
 | --- | --- |
 | 16–17/11 | P00, ponto de recuperação, S01/S02 e primeiro protótipo de P07 em paralelo ao núcleo financeiro |
 | 18–20/11 | Núcleo/consultas P01–P06; iniciar integração do Painel/Transações e avançar Arquivos/Conta pelos contratos disponíveis |
-| 21–24/11 | Integrar fluxos restantes, diagnóstico com cliente falso/validação gratuita quando possível, limpeza S04 e candidata completa desejada até 24/11 |
+| 21–24/11 | Integrar fluxos restantes e limpeza S04 e candidata completa desejada até 24/11 |
 | 25–26/11 | Regressão integrada, revisão final de migrações, ambiente de apresentação, correções e ensaio |
 | 27/11 | Entrega da versão e relatório dos aceites efetivamente comprovados |
 
@@ -496,8 +472,7 @@ Reavaliar também ao concluir P12. Se houver risco de prazo, informar tarefas e 
 
 Impedimentos externos conhecidos e sua consequência:
 
-- Sem cota/chave gratuita de IA: concluir cliente falso e interface de indisponibilidade; manter A13 pendente. Não solicitar chave pelo chat nem contratar plano.
-- Sem Docker ou acesso ao destino de hospedagem: deixar configuração/documentação revisáveis e identificar qual teste operacional ainda falta; não declarar A18 validado.
+- Sem acesso ao projeto da Vercel: deixar configuração/documentação revisáveis e identificar qual teste operacional ainda falta; não declarar A18 validado.
 - Dados históricos sem evidência recuperável: preservar registros e explicar a limitação. Interromper apenas a conversão que dependeria de adivinhação, não o restante do trabalho independente.
 
 ## 6. Revisão e escolha da execução

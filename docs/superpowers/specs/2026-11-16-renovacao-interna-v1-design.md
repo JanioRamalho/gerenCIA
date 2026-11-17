@@ -2,6 +2,8 @@
 
 Data: 16 de novembro de 2026. Branch de referência: `Janio`, base `5cd9849`.
 
+**Atualização de 17/11:** a [instrução de escopo sem IA](2026-11-17-escopo-sem-ia.md) adia integralmente IA, diagnóstico, treino e predição desta etapa; registra Vercel como hospedagem e arquivos até 4 MB. As decisões históricas abaixo permanecem documentadas, mas não autorizam implementar os recursos adiados.
+
 Estado: **especificação aprovada pelo usuário em 16/11/2026**, a partir do conteúdo registrado em `56d69a8`. Este documento registra o desenho aprovado. Não é um plano de execução nem declara os recursos abaixo como implementados.
 
 Atualização: a nova entrevista está consolidada na [especificação de interface e simplificação](2026-11-16-refatoracao-geral-v1-design.md), aprovada pelo usuário em 16/11/2026 a partir de `72d6488`. Ela registra prazo de 27/11, cores/ícones de categorias, comparação livre entre dois meses e a nova organização do Painel. Suas alterações explícitas prevalecem; os demais contratos deste documento permanecem como referência.
