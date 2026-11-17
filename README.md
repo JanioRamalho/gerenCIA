@@ -1,98 +1,83 @@
-# Gerencia
+# gerenCIA
 
-Aplicação web de gestão e análise financeira baseada em extratos bancários e
-faturas de cartão, em CSV e XLSX, com o histórico de todos os arquivos enviados.
+Projeto acadêmico de análise financeira a partir de extratos e faturas CSV/XLSX.
+React, TypeScript e Recharts apresentam os dados; FastAPI, pandas e PostgreSQL
+concentram o processamento e as regras financeiras.
 
-O frontend já oferece uma demonstração interativa com dados fictícios. A API
-possui rotas de saúde, verificação do banco e consulta de categorias; os demais recursos serão construídos por etapas, com
-o backend desenvolvido de forma acompanhada e didática.
+A área interna tem cinco abas:
 
-## Arquitetura
+- **Painel:** categorias com cores e ícones, comparação entre dois meses escolhidos,
+  evolução, estatística descritiva, serviços recorrentes e cinco lançamentos recentes.
+- **Arquivos:** envio, exemplos CSV/XLSX, histórico, qualidade, rejeições e exclusão.
+- **Transações:** filtros, paginação, origem e correção de categoria, com regra pessoal opcional.
+- **Limites:** valores mensais por categoria e avisos no mês corrente.
+- **Conta:** dados da sessão e exclusão dos próprios dados com confirmação.
 
-React e Recharts formam a interface; FastAPI concentra os casos de uso,
-o processamento dos arquivos e o acesso ao PostgreSQL.
+O site público mantém sua demonstração fictícia. As análises internas usam os
+arquivos da pessoa autenticada. IA, treinamento e predição estão fora desta etapa
+por decisão do usuário em 17/11/2026.
 
-Comece pelo [mapa da arquitetura com diagramas Mermaid](docs/arquitetura.md).
-Ele mostra as responsabilidades, o caminho de um arquivo e o estado atual.
-O [planejamento completo](docs/planejamento-gerencia.txt) detalha os requisitos.
+## Executar localmente
 
-## Análise de dados
-
-A análise de dados é o eixo central do projeto. O documento
-[análise de dados](docs/analise-de-dados.md) explica como o gerenCIA
-transforma os arquivos com pandas, mede a limpeza e a qualidade dos dados e
-calcula a estatística descritiva dos gastos, e onde cada conceito aparece no
-código. Um diagnóstico mensal com IA explica essas análises em linguagem
-simples e sugere onde economizar.
-
-## Qualidade de software
-
-Toda função de leitura, limpeza, análise e regra de negócio tem testes
-unitários com pytest, entregues no mesmo pull request da função. Os fluxos
-críticos têm testes de integração com um PostgreSQL temporário, e a interface
-tem verificações com Playwright em `scripts/frontend/`.
-
-## Diretórios
-
-- backend/: API, domínio financeiro, pipeline, persistência e testes.
-- frontend/: aplicação React, funcionalidades, componentes e testes.
-- docs/: planejamento do produto e da arquitetura.
-- scripts/: tarefas auxiliares de desenvolvimento.
-
-## Ordem prevista
-
-1. Fundação: backend, banco e autenticação.
-2. Upload e histórico de arquivos.
-3. Leitura, limpeza, categorização e qualidade.
-4. Análises e estatística descritiva.
-5. Dashboards React e Recharts.
-6. Limites por categoria e notificações no painel.
-7. Diagnóstico do mês com IA.
-8. Consolidação, testes e empacotamento.
-
-A banca será na primeira semana de dezembro de 2026; o cronograma semanal está
-na seção 14 do [planejamento](docs/planejamento-gerencia.txt). A previsão de
-cobranças com calendário, o mapeador genérico, a conversa com a IA, os e-mails
-pelo Resend e o limite semanal ficaram para depois da primeira versão (seção
-18). O mapa da
-arquitetura distingue as funcionalidades existentes das etapas previstas.
-
-Cada etapa é desenvolvida em uma branch própria e mesclada na `main` por pull
-request.
-
-## Como iniciar a API
-
-No PowerShell, a partir da pasta principal do projeto, execute sempre que quiser usar a API localmente:
-
-~~~powershell
-.\.venv\Scripts\python.exe -m uvicorn app.api.main:app --app-dir backend --reload
-~~~
-
-Deixe o terminal aberto enquanto usa a API. Acesse http://127.0.0.1:8000/api/health para verificar a resposta {"status":"ok"} ou http://127.0.0.1:8000/docs para abrir a documentação automática. Para parar o servidor, pressione Ctrl+C.
-
-O comando usa o ambiente virtual .venv da pasta principal, com FastAPI e Uvicorn instalados. A conexão com PostgreSQL exige `DATABASE_URL` no `.env` e o driver `psycopg` no ambiente Python. Com a API no ar, o `npm run dev` do frontend encaminha `/api` para `http://127.0.0.1:8000`; para apontar para outro endereço, defina `GERENCIA_API_URL`. Cadastro e login funcionam de verdade e levam ao painel do usuário, em `/app`; a análise financeira ainda usa dados de demonstração. Para o site funcionar por completo, deixe dois terminais abertos: um com a API e outro com o `npm run dev`.
-
-## Banco de dados
-
-O esquema é versionado por Alembic. Em um banco PostgreSQL 18 vazio já criado,
-configure `DATABASE_URL` e execute na raiz:
+Prepare o ambiente Python com as dependências de `requirements.txt` e copie
+`.env.example` para `.env`, configurando seu PostgreSQL. Não publique credenciais.
+Para banco novo, instale o esquema explicitamente:
 
 ```powershell
 .\.venv\Scripts\python.exe -m alembic upgrade head
 ```
 
-Se o banco já tem as tabelas, siga a adoção validada do
-[guia de instalação, atualização e testes](docs/database-setup.md) antes de
-aplicar migrações. Os scripts SQL anteriores continuam preservados.
+Em banco existente, siga antes o [guia do banco](docs/database-setup.md), com
+cópia de segurança e conferência da revisão. A aplicação não migra o banco no startup.
 
-## Como iniciar o frontend
+Em um terminal:
 
-No terminal, a partir da pasta principal do projeto, execute:
-
-```bash
-cd frontend
-npm install
-npm run dev
+```powershell
+.\.venv\Scripts\python.exe -m uvicorn app.api.main:app --app-dir backend --reload
 ```
 
-Em seguida, abra no navegador o endereço exibido pelo terminal, normalmente `http://localhost:5173`.
+Em outro:
+
+```powershell
+npm --prefix frontend install
+npm --prefix frontend run dev
+```
+
+O Vite encaminha `/api` para `http://127.0.0.1:8000`. Para outra API local, defina
+`GERENCIA_API_URL` antes de iniciar o Vite. Consulte `/api/health`,
+`/api/health/database` e `/docs` na API.
+
+## Importação e exemplos
+
+CSV e XLSX têm limite de **4 MB**. São reconhecidos extrato/fatura Nubank e
+planilha-modelo; nesta última, escolha extrato ou fatura ao enviar.
+Os exemplos estão disponíveis em Arquivos e em `frontend/public/exemplos/`.
+Envie a versão CSV **ou** XLSX de cada exemplo. Identificadores bancários permitem
+reconhecer cópias; operações apenas parecidas continuam contadas e são sinalizadas.
+
+O arquivo original não é armazenado. Permanecem transações, origem, rejeições e
+relatório de qualidade. Receitas e pagamentos de fatura ficam separados do gasto;
+estornos reduzem as saídas. As análises são recalculadas a partir dos dados persistidos.
+
+## Verificar
+
+```powershell
+.\.venv\Scripts\python.exe -m pytest -o pythonpath=backend backend/tests -q
+npm --prefix frontend run build
+```
+
+Os testes de banco criam um PostgreSQL temporário e não usam o banco do `.env`.
+No Windows, o PostgreSQL precisa estar instalado e acessível aos testes.
+Os [scripts Playwright](scripts/frontend/README.md) cobrem interface e acessibilidade;
+os roteiros que criam contas ou alteram dados exigem API e banco descartáveis.
+
+## Documentação e entrega
+
+- [Arquitetura](docs/arquitetura.md), [análise de dados](docs/analise-de-dados.md) e [API](backend/README.md).
+- [Plano aprovado](docs/superpowers/plans/2026-11-16-renovacao-interna-v1.md) e [escopo atualizado sem IA](docs/superpowers/specs/2026-11-17-escopo-sem-ia.md).
+- [Publicação na Vercel](docs/vercel.md): mesma origem para frontend/API e PostgreSQL externo.
+- [Validação local](docs/validacao-renovacao-v1.md) e [roteiro de demonstração](docs/roteiro-banca-v1.md).
+
+O prazo informado é **27/11/2026**. Esta refatoração acontece na branch `Janio`,
+preservando a `main`. Commits permitem recuperar o código; restauração de banco
+depende de backup e das restrições de cada migração.

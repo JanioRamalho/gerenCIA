@@ -1,200 +1,205 @@
 # Análise de dados no gerenCIA
 
-O gerenCIA é, antes de tudo, um projeto de análise de dados. Ele recebe arquivos
-financeiros brutos, trata e valida cada linha e produz medidas que descrevem os
-gastos da pessoa. Este documento explica os três eixos de análise do projeto e
-mostra onde cada um é aplicado. Os requisitos detalhados estão no
-[planejamento](planejamento-gerencia.txt).
+A etapa atual transforma arquivos financeiros em transações persistidas,
+confere sua qualidade e apresenta análises descritivas. Os números vêm do
+backend Python; o React apresenta resultados e encaminha a investigação para
+as transações de origem. A entrega atual não inclui IA nem um modelo preditivo.
 
-| Eixo | Pergunta que responde | Etapas |
-|---|---|---|
-| [Transformação dos dados](#1-transformação-dos-dados) | Como um arquivo bruto vira dado confiável? | 3 |
-| [Limpeza e qualidade de dados](#2-limpeza-e-qualidade-de-dados) | Quanto do dado pode ser usado, e por quê? | 3 |
-| [Estatística descritiva](#3-estatística-descritiva) | O que os gastos mostram? | 4, apresentada na 5 e explicada pela IA na 7 |
+| Eixo | Pergunta | Implementação |
+| --- | --- | --- |
+| Transformação | Como o arquivo vira transação? | `pipeline/previa.py` e `pipeline/analise.py` |
+| Qualidade | Quais linhas puderam ser usadas? | Rejeições, quatro dimensões e reconciliação atômica |
+| Estatística e comparação | Onde e como a pessoa gastou? | `pipeline/analytics.py` e `pipeline/estatisticas.py` |
 
-Todo o tratamento e todos os cálculos são feitos em Python, com pandas, no
-backend. O frontend só apresenta os resultados.
+## 1. Importação e transformação
 
-A primeira versão não usa camadas de engenharia de dados, como a arquitetura
-Medallion. O foco está na transformação, na qualidade e na análise: o arquivo
-é lido, limpo e gravado diretamente como transações, e as análises são
-calculadas a partir delas.
+O envio aceita CSV ou XLSX de até **4 MB**. O limite mantém margem para o corpo
+da requisição na hospedagem. O arquivo é processado em memória; transações,
+rejeições e relatório são gravados juntos. O original não é armazenado pelo
+aplicativo.
 
-## 1 Transformação dos dados
+O CSV aceita UTF-8 e Latin-1, com delimitador identificado pelo cabeçalho.
+A leitura mantém textos antes de converter datas e valores; assim, um
+identificador como `00012` não perde seus zeros por uma conversão numérica.
+A primeira folha do XLSX é lida e seu nome é preservado. Nos dois formatos,
+a origem acompanha a transação: upload, linha e folha quando disponível.
+No CSV, linhas vazias e descrições entre aspas com quebra de linha não alteram
+o número real da origem.
 
-Transformar é levar o arquivo do banco ao formato padronizado que as análises
-usam. O processo acontece em memória, com pandas, durante o envio do arquivo.
+O adaptador reconhece fatura e extrato Nubank pelos cabeçalhos. Na
+planilha-modelo, a pessoa escolhe **Extrato** ou **Fatura** no envio.
 
-```mermaid
-flowchart LR
-    file["Arquivo CSV ou XLSX"] --> read["Leitura: todas as colunas como texto"]
-    read --> adapt["Adaptador: Nubank ou planilha-modelo"]
-    adapt --> clean["Limpeza, validação e categorização"]
-    clean -->|"Linhas válidas"| transactions["transactions"]
-    clean -->|"Linhas inválidas"| rejected["rejected_rows"]
-    clean --> quality["quality_checks"]
-    transactions --> analytics["Análises e estatística, na consulta"]
-```
+| Origem | Convenção de sinais |
+| --- | --- |
+| Planilha-modelo, nos dois tipos de documento | Negativo é saída; positivo é entrada |
+| Extrato Nubank | Negativo é saída; positivo é entrada |
+| Fatura Nubank | Positivo é compra; negativo é pagamento ou estorno |
 
-| Passo | O que faz | Resultado |
-|---|---|---|
-| Leitura | `read_csv` ou `read_excel` com `dtype=str`, detectando codificação e delimitador | O texto exatamente como veio no arquivo |
-| Adaptação | Reconhece o formato pelas colunas e as renomeia para os campos internos | Colunas de data, descrição, valor e as opcionais |
-| Limpeza e validação | Converte datas e valores, padroniza textos, identifica tipo e estabelecimento | Cada linha vira uma transação ou uma rejeição |
-| Categorização | Aplica a ordem de decisão da seção 7 do planejamento | Categoria e origem da categoria |
-| Gravação | Grava transações, rejeições e relatório numa única transação do banco | Ou o arquivo entra inteiro, ou nada entra |
+Acrescentar receitas à planilha não inverte o sentido de uma despesa existente.
+O tipo vem da evidência da origem e da descrição, sem decisão pela maioria
+dos sinais. Natureza explicitamente fornecida na coluna opcional deve ser
+uma das naturezas aceitas.
 
-Princípios do tratamento:
+Cada valor é convertido para centavos inteiros ou `Decimal`. O banco guarda
+`amount` absoluto e `transaction_type` separado:
 
-- **Funções testáveis.** Cada passo é uma função que recebe e devolve dados
-  simples, sem depender do FastAPI nem do banco. Por isso cada uma tem testes
-  unitários com pytest.
-- **Rastreabilidade.** Cada transação e cada rejeição guarda `upload_id` e
-  `source_row`. Qualquer número do dashboard pode ser seguido até a linha do
-  arquivo que o originou.
-- **Sem duplicação.** O reenvio do mesmo arquivo é reconhecido pelo hash, e a
-  mesma transação em extratos sobrepostos, pelo identificador bancário.
-- **Nenhuma linha some.** As reconciliações da seção 2.3 provam que todas as
-  linhas recebidas foram contabilizadas.
+| Natureza | Contribuição ao gasto líquido |
+| --- | --- |
+| `purchase` | Soma a compra |
+| `fee` | Soma a tarifa |
+| `refund` | Subtrai o estorno no mês de seu próprio lançamento |
+| `income` | Receita apresentada separadamente |
+| `payment` | Pagamento de fatura apresentado separadamente |
+| `other` | Natureza sem evidência suficiente; não inventa uma contribuição |
 
-A leitura usa `dtype=str` em todas as colunas. Sem isso, o pandas tentaria
-adivinhar os tipos e poderia, por exemplo, transformar `"1.234"` (mil duzentos
-e trinta e quatro reais) em `1.234` (um vírgula dois), alterando o dado antes
-do tratamento.
+A categorização aplica regra pessoal ao novo envio, categoria válida fornecida
+pela origem, palavras-chave e, por fim, Outros. Uma correção manual altera a
+transação escolhida. Salvar uma regra pessoal é opcional e não recategoriza
+automaticamente o histórico.
 
-### Uma linha do começo ao fim
+Os downloads reais ficam em `frontend/public/exemplos/`. O
+[guia dos exemplos](../scripts/exemplos/README.md) explica os tipos de documento,
+as versões CSV/XLSX e os valores fictícios para conferir a demonstração.
 
-Exemplo ilustrativo, com dados fictícios, no formato da planilha-modelo:
+## 2. Qualidade e duplicidade
 
-```text
-Data;Descrição;Valor
-15/06/2026;Compra no débito - IFD*IFOOD  ;-58,70
-31/02/2026;Pix enviado - Padaria Estrela;-12,00
-```
+Linhas sem descrição, data existente ou valor convertível são rejeitadas com
+número de origem, código e motivo. Linhas de saldo/total não viram transações.
+Saldos e naturezas opcionais inválidos também produzem rejeição. CSV com
+quantidade de colunas inconsistente é recusado, evitando truncamento silencioso.
 
-| Passo | Linha 2 do arquivo | Linha 3 do arquivo |
-|---|---|---|
-| Leitura | `{"Data": "15/06/2026", "Descrição": "Compra no débito - IFD*IFOOD  ", "Valor": "-58,70"}` | `{"Data": "31/02/2026", "Descrição": "Pix enviado - Padaria Estrela", "Valor": "-12,00"}` |
-| Limpeza | Gravada em `transactions`: data `2026-06-15`, estabelecimento `iFood`, valor `58.70`, tipo `purchase`, categoria Alimentação | Rejeitada em `rejected_rows`: código `invalid_date`, "A data 31/02/2026 não existe." |
-| Análises | Entra no total de Alimentação de junho de 2026 e nas medidas da categoria | Não entra; aparece no relatório de qualidade |
+| Dimensão | Evidência |
+| --- | --- |
+| Completude | Linhas com os campos obrigatórios preenchidos |
+| Validade | Linhas aceitas após validação de conteúdo e formato |
+| Unicidade | Duplicatas confirmadas por identificador bancário; suspeitas informadas separadamente |
+| Consistência | Reconciliação de linhas e categorias; transições de saldo quando verificáveis |
 
-O relatório de qualidade desse arquivo registra 2 linhas, 1 válida e 1
-rejeitada.
+O percentual de qualidade é `linhas válidas ÷ linhas lidas × 100`. Um arquivo
+com 194 linhas válidas em 200 tem 97%. O detalhe de Arquivos preserva as quatro
+dimensões e permite baixar as rejeições. Esse relatório descreve o
+processamento original; a análise atual reflete correções posteriores.
 
-## 2 Limpeza e qualidade de dados
-
-### 2.1 Problemas que a limpeza resolve
-
-| Problema | Exemplo | Tratamento |
-|---|---|---|
-| Codificação de caracteres | `Descrição` lido como `DescriÃ§Ã£o` | Detectar a codificação (UTF-8 ou Latin-1) antes de ler |
-| Separador de colunas | `;` em um arquivo, `,` em outro | Detectar o delimitador do CSV |
-| Número no formato brasileiro | `1.234,56` | Converter para `Decimal("1234.56")`, como no [guia de conversão de valores](guia-conversao-valores.md) |
-| Datas em formatos diferentes | `15/06/2026` no CSV, `46188` no Excel | Converter os dois para a mesma data, `2026-06-15` |
-| Espaços e maiúsculas | `"  ifood "` | Remover espaços extras e padronizar a caixa |
-| Prefixos de maquininha | `IFD*IFOOD`, `99APP *CORRIDA` | Regras de estabelecimento: `iFood`, `99` |
-| Linhas que não são transações | `Saldo anterior`, `Total` | Rejeitar com motivo, nunca descartar em silêncio |
-| Campos vazios | Valor em branco | Rejeitar a linha; nunca transformar em zero |
-| Registros repetidos | Mesma transação em extratos sobrepostos | Identificador bancário |
-| Sinais diferentes entre origens | Saída negativa no extrato, compra positiva na fatura | Guardar o valor absoluto e o sentido em `transaction_type` |
-
-**Dados ausentes não são preenchidos.** Em dados financeiros, estimar um valor
-ausente ou trocá-lo por zero mudaria os totais sem que a pessoa soubesse. A
-linha é rejeitada, com motivo, e aparece no relatório de qualidade para
-conferência.
-
-### 2.2 Dimensões de qualidade
-
-Cada processamento mede quatro dimensões e as registra em `quality_checks`.
-
-| Dimensão | Pergunta | Como é medida |
-|---|---|---|
-| Completude | Os campos obrigatórios estão preenchidos? | Percentual de linhas com data, descrição e valor |
-| Validade | Os valores têm formato e conteúdo aceitáveis? | Percentual de datas existentes e valores convertidos com sucesso |
-| Unicidade | Há registros repetidos? | Quantidade de duplicatas pelo identificador bancário |
-| Consistência | Os totais fecham? | Reconciliações da seção 2.3 |
-
-O **percentual de qualidade** de um arquivo é a proporção de linhas válidas:
+As reconciliações incluem:
 
 ```text
-percentual de qualidade = linhas válidas ÷ total de linhas × 100
+linhas lidas = linhas válidas + linhas rejeitadas
+soma dos gastos líquidos por categoria = gasto líquido do conjunto
+saldo pós-lançamento anterior + movimento atual = saldo pós-lançamento atual
 ```
 
-Um extrato com 200 linhas, das quais 194 são válidas, tem 97% de qualidade.
-O relatório mostra também o resultado de cada dimensão e permite baixar as
-linhas rejeitadas com seus motivos.
+A última conferência exige linhas adjacentes, saldos conhecidos e ordem
+observável. O primeiro saldo não é tratado como saldo inicial anterior à
+primeira transação. Ordem descendente, lacunas ou informação insuficiente
+deixam a medida indisponível, com motivo. Falha comprovada de reconciliação
+recusa o envio inteiro.
 
-### 2.3 Reconciliações
+O reenvio com o mesmo hash retorna o upload já existente. Para arquivos
+sobrepostos, a chave de duplicidade é composta por usuário, formato, tipo de
+documento e identificador bancário. A cópia contabilizada é a do upload mais
+antigo; o desempate usa UUID do upload, linha de origem e UUID da transação.
+Mesmo identificador com data, valor ou natureza divergente é conflito e
+cancela o novo envio.
 
-```text
-total de linhas            = linhas válidas + linhas rejeitadas
-soma das categorias        = gasto total do arquivo
-saldo inicial + movimentos = saldo final (quando o extrato traz saldo)
-```
+Sem identificador, igualdade de data, descrição normalizada e valor é apenas
+suspeita. Compras legítimas iguais permanecem nos totais. Ao excluir o upload
+da cópia contabilizada, uma cópia remanescente pode ser promovida.
 
-As duas primeiras são verificadas em todo processamento, e a terceira quando o
-extrato traz saldo. O banco já recusa um registro de qualidade em que a
-primeira não feche. Uma reconciliação que falhe cancela a gravação do arquivo
-inteiro, em vez de publicar números errados.
+## 3. Contrato financeiro e períodos
 
-## 3 Estatística descritiva
+**Gasto líquido = compras + tarifas − estornos**, excluindo somente duplicatas
+confirmadas. Receita e pagamento não reduzem a despesa. Combinar fatura e
+extrato não autoriza calcular um saldo bancário nem associar movimentos entre
+formatos por aproximação.
 
-A estatística descritiva resume um conjunto de valores em poucas medidas. No
-gerenCIA, o conjunto é formado pelas despesas de um período: compras e
-tarifas. Estornos, entradas, pagamentos de fatura e duplicatas ficam fora das
-medidas. Os totais continuam líquidos (compras e tarifas menos estornos), os
-mesmos usados nos limites por categoria.
+Um estorno pode tornar uma categoria ou o total negativo. O sinal é mantido.
+Participação percentual e rosca ficam indisponíveis quando o total não é
+positivo ou quando há categorias negativas incompatíveis com a divisão do
+todo. A maior categoria exige algum gasto líquido positivo.
 
-As medidas são calculadas no momento da consulta, a partir de `transactions`,
-para cada mês, para o período inteiro e para cada categoria.
+As consultas usam o histórico completo do usuário para os cálculos. Lista
+paginada e agregados compartilham os filtros, aplicados antes da paginação.
+Um item após a posição 300 continua pesquisável e contabilizado. O Painel
+mostra até cinco recentes, em ordem estável, e abre a lista em Transações.
 
-| Grupo | Medida | O que mostra | Em pandas |
-|---|---|---|---|
-| Tendência central | Média | Gasto médio por compra | `mean()` |
-| | Mediana | Valor da compra típica, sem a distorção das compras grandes | `median()` |
-| | Moda | Categoria e estabelecimento mais frequentes | `value_counts()` |
-| Dispersão | Mínimo, máximo e amplitude | A menor e a maior compra e a distância entre elas | `min()`, `max()` |
-| | Desvio padrão | Quanto as compras variam em torno da média | `std(ddof=0)` |
-| | Quartis e intervalo interquartil | Os limites dos 25%, 50% e 75% das compras e a faixa central | `quantile([0.25, 0.5, 0.75])` |
-| Distribuição | Frequência por faixa de valor | Quantas compras caem em cada faixa, no histograma | `cut()` com `value_counts()` |
-| Frequência | Contagem e participação por categoria e estabelecimento | Onde a pessoa gasta mais e com mais frequência | `groupby()` com `agg()` |
+O mês é definido pela data da transação. O calendário corrente usa
+`America/Sao_Paulo`. Meses com receita, pagamento ou estorno também são
+disponíveis. Um mês sem registros é lacuna; ele não comprova gasto zero.
+Categoria ausente em mês com registros pode contribuir com zero no conjunto
+importado.
 
-### Decisões de cálculo
+A comparação principal usa dois meses distintos escolhidos pela pessoa:
 
-- **Média e mediana aparecem juntas.** Gastos são assimétricos: poucas compras
-  grandes puxam a média para cima. Nas compras de R$ 10, R$ 12, R$ 15, R$ 18 e
-  R$ 300, a média é R$ 71,00, mas a compra típica, a mediana, é R$ 15,00.
-- **Desvio padrão populacional.** As despesas do mês são todos os dados do
-  período, não uma amostra. Por isso o cálculo usa `ddof=0`. O padrão do
-  pandas é `ddof=1` (amostral), então o parâmetro fica explícito no código.
-- **Quartis** usam o método padrão do pandas (interpolação linear). O método
-  fica registrado no código e nos testes.
-- **Precisão.** Somas, totais, limites e reconciliações usam `Decimal`. Desvio
-  padrão e quartis são calculados em ponto flutuante e arredondados para
-  centavos, porque são medidas descritivas e não entram em reconciliação.
-- **Dados insuficientes.** Com menos de 4 despesas no grupo, desvio padrão e
-  quartis aparecem como "dados insuficientes" em vez de um número enganoso.
+- Diferença em reais = mês analisado − mês de referência.
+- Percentual = diferença ÷ referência somente quando a referência é positiva.
+- Referência zero ou negativa mantém a diferença absoluta e informa que o
+  percentual está indisponível.
+- A lista contém a união das categorias presentes nos dois meses.
+- A referência inicial é o mês anterior do calendário quando disponível.
+  Não se substitui setembro ausente por agosto automaticamente.
+- Agosto e outubro podem ser comparados quando escolhidos explicitamente.
+- Todos os meses é uma visão agregada, sem comparação mensal direta.
 
-### Onde as medidas aparecem
+O backend informa o intervalo observado e se o mês está em andamento.
+Uma redução em mês parcial não é apresentada como economia comprovada.
+Dias sem lançamento podem valer zero nos dados importados; a série mensal
+preserva meses sem registros como lacunas.
 
-- Cards de gasto total, gasto médio, mediana e maior despesa.
-- Histograma da distribuição dos valores das compras.
-- Tabela por categoria com quantidade, total, participação, média, mediana,
-  mínimo e máximo.
-- Ranking de estabelecimentos por frequência e por valor.
-- Resumo enviado ao diagnóstico do mês, em que a IA explica as medidas em
-  linguagem simples. A IA não calcula: os números vêm das funções acima.
+No mês corrente, a série diária e a média cobrem até o dia atual ou o último
+dia observado no arquivo, o que vier depois. Uma data futura já importada
+continua visível e não é apresentada como previsão. Categorias são agrupadas
+pelo UUID quando disponível; nomes iguais não misturam categorias pessoais e
+globais, nem imputam uma transação sem categoria ao limite global de Outros.
 
-As medidas são conferidas por testes com conjuntos pequenos, cujos resultados
-são calculados à mão, como o exemplo da média e da mediana acima.
+## 4. Estatística descritiva e serviços
 
-## 4 Onde cada conceito é aplicado
+Estatísticas de valores usam compras e tarifas elegíveis do período e da
+categoria: não incluem estornos, receitas, pagamentos ou duplicatas confirmadas.
+A média das despesas difere de gasto líquido dividido pela contagem.
 
-| Conceito | Etapa | Código | Tabelas | Como é verificado |
-|---|---|---|---|---|
-| Leitura e adaptação | 3 | `backend/app/pipeline/` | Nenhuma; acontece em memória | Testes unitários com arquivos de exemplo de cada formato |
-| Limpeza e padronização | 3 | `backend/app/pipeline/` | `transactions`, `rejected_rows` | Testes unitários de conversão de valores, datas e textos |
-| Qualidade de dados | 3 | `backend/app/pipeline/` | `quality_checks` | Dimensões calculadas e reconciliações automáticas |
-| Estatística descritiva | 4 | `backend/app/pipeline/` | Calculada a partir de `transactions` | Testes com resultados calculados à mão |
-| Apresentação | 5 | `frontend/src/` | Lidas pela API de analytics | Verificações da interface |
-| Diagnóstico com IA | 7 | `backend/app/ai/` | `ai_insights` | Testes com um cliente falso |
+| Medida | Regra |
+| --- | --- |
+| Quantidade | Número de compras e tarifas elegíveis |
+| Média e mediana | Apresentadas juntas, quando há observações |
+| Modas | Todas as categorias ou estabelecimentos empatados na frequência máxima |
+| Mínimo, máximo e amplitude | Valores das despesas do grupo |
+| Desvio padrão | Populacional, calculado sobre todas as despesas observadas |
+| Quartis e IQR | Interpolação linear; IQR = Q3 − Q1 |
+| Histograma | Faixas de centavos; início inclusivo, fim exclusivo, última faixa com fim inclusivo |
+
+Com menos de quatro despesas, desvio, quartis e IQR são indisponíveis.
+Sem observações, não se inventam medidas de posição ou dispersão. Cálculos
+de valores e interpolação usam centavos e `Decimal`, com arredondamento
+monetário na apresentação. Percentuais são frações identificadas no contrato.
+Novos DTOs serializam dinheiro como texto decimal de duas casas; a fachada
+`/api/dashboard` adapta os campos numéricos legados sem repetir a matemática.
+
+Para `[10, 20, 30, 40]`, média e mediana são R$ 25,00, Q1 é R$ 17,50, Q3 é
+R$ 32,50, IQR é R$ 15,00 e desvio é R$ 11,18. Os testes usam conjuntos pequenos
+com resultados conferidos manualmente.
+
+Recorrência confirmada exige mesmo estabelecimento e valor em todos os meses
+com registros do histórico, com pelo menos dois meses. Parcelas e duplicatas
+confirmadas ficam fora dessa detecção. Um serviço reconhecido pelo nome em
+um só mês é assinatura identificada. Um mesmo serviço pode ter as duas
+classificações; cada transação é contada uma única vez.
+
+O gasto observado no período escolhido é separado da base mensal histórica.
+A base de cada serviço é o gasto do mês mais recente com transações elegíveis
+desse próprio serviço. A anualização é essa base multiplicada por doze, com
+mês-base explícito. Trocar o filtro não anualiza o agregado histórico nem altera
+a base. Lacunas e meses de evidência ficam visíveis. Estorno só é associado
+a serviço com vínculo explícito, nunca pela semelhança de texto ou valor.
+Não há calendário de cobranças futuras.
+
+## 5. Verificação e evolução
+
+Os testes puros cobrem leitura, tipos, centavos, estatísticas, comparação,
+serviços e decisão de duplicidade. Testes com PostgreSQL descartável conferem
+persistência, filtros, autorização e migrações. Os testes dos downloads
+importam os próprios CSV/XLSX servidos pelo frontend.
+
+A revisão `0004_remove_legacy` retira Bronze e mapeamentos do esquema final.
+Ela preserva metadados rastreáveis em `quality_checks.details` e recusa bruto
+ou mapeamento significativo sem conversão validada. Não reconstrói sinais
+históricos perdidos. O procedimento está no [guia do banco](database-setup.md).

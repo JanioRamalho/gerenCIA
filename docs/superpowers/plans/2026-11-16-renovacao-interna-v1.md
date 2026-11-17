@@ -4,7 +4,14 @@ Data: 16 de novembro de 2026. Branch: `Janio`.
 
 Base: [interface e simplificação aprovadas](../specs/2026-11-16-refatoracao-geral-v1-design.md), documento aprovado a partir de `72d6488`, e [contratos financeiros e funcionais](../specs/2026-11-16-renovacao-interna-v1-design.md), originalmente aprovados em `56d69a8`. Valem A01–A19 e R01–R07; A03 usa a redação atualizada da nova especificação.
 
-Estado: **execução autorizada pelo usuário e iniciada** a partir de `0134cbf`. As caixas sem marcação continuam pendentes de integração e evidência, mesmo quando existir código em preparação.
+Estado em 17/11: **execução local integrada e validada**, a partir de `0134cbf`. O [relatório de validação](../../validacao-renovacao-v1.md) é o registro consolidado dos resultados: 295 testes, build, percurso real, acessibilidade e zoom. As listas abaixo conservam os critérios planejados; não representam uma nova solicitação de aprovação ou o estado atualizado de cada verificação.
+
+| Frente | Situação atual |
+| --- | --- |
+| P00–P14, S01–S04 e P17 | Implementação local integrada; evidências e limites descritos no relatório |
+| P15/P16 | Adiados por instrução explícita do usuário, sem IA nesta etapa |
+| P18 | Configuração Vercel revisada; site anterior e banco responderam; publicação e migração da refatoração no ambiente de uso pendentes |
+| P19 | Testes/documentação/ensaio automatizado local concluídos; ensaio humano e validação da nova versão hospedada pendentes |
 
 **Escopo atualizado em 17/11:** [IA fora desta etapa e Vercel como hospedagem](../specs/2026-11-17-escopo-sem-ia.md). P15/P16 e A12/A13 estão adiados; não criar diagnóstico, treino ou predição agora. As dependências e verificações de outras tarefas não aguardam IA. Arquivos têm limite de 4 MB para compatibilidade com a hospedagem.
 

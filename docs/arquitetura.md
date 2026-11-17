@@ -1,148 +1,76 @@
 # Arquitetura do gerenCIA
 
-O gerenCIA transforma extratos bancários e faturas de cartão, em CSV e XLSX, em
-análises financeiras pessoais e guarda o histórico de todos os arquivos enviados. Este
-é o mapa rápido da arquitetura planejada. O [planejamento completo](planejamento-gerencia.txt)
-define os requisitos; a tabela de estado ao final mostra o que já existe.
-
-## Divisão de responsabilidades
-
-O frontend apresenta os dados. O backend autentica o usuário, aplica as regras,
-processa os arquivos e acessa o PostgreSQL. Os blocos dentro do backend são
-módulos da mesma aplicação FastAPI, não serviços separados.
+Uma aplicação React e uma API FastAPI transformam arquivos financeiros em análises
+pessoais. PostgreSQL é a única persistência. A implementação continua adequada a
+um projeto acadêmico: processamento na requisição, sem filas, cache externo ou IA.
 
 ```mermaid
 flowchart LR
-    person["Pessoa"] --> frontend["React e Recharts"]
-    frontend <-->|"HTTP e JSON"| api
-
-    subgraph backend ["Backend FastAPI"]
-        api["API e autenticação"] --> services["Serviços e casos de uso"]
-        services --> repositories["Repositórios e SQLAlchemy"]
-        services --> pipeline["Leitura, limpeza e análises"]
-        services --> ai["Diagnóstico com IA"]
-    end
-
-    repositories <--> database[("PostgreSQL")]
-    ai -->|"Resumo agregado do mês"| provider["Provedor de IA"]
+    person[Pessoa] --> ui[React e Recharts]
+    ui -->|HTTP na mesma origem| api[API e sessão]
+    api --> services[Serviços]
+    services --> pipeline[Leitura e cálculos puros]
+    services --> repositories[Repositórios SQLAlchemy]
+    repositories --> db[(PostgreSQL)]
 ```
 
-| Parte | Onde fica | Responsabilidade |
-|---|---|---|
-| Interface | `frontend/src/` | Páginas, formulários, filtros e gráficos |
-| API e contratos | `backend/app/api/` e `schemas/` | Receber requisições, validar entradas e formatar respostas |
-| Configuração e segurança | `backend/app/core/` | Configuração, sessões, segurança e erros compartilhados |
-| Serviços | `backend/app/services/` | Coordenar os casos de uso e o usuário autorizado |
-| Persistência | `backend/app/repositories/`, `models/` e `db/` | Consultas, modelos e conexão com PostgreSQL |
-| Processamento | `backend/app/pipeline/` | Leitura, limpeza, categorização e cálculos das análises |
-| IA | `backend/app/ai/` | Montar o resumo do mês, chamar o provedor e validar a resposta |
-| Testes | `backend/tests/` e `scripts/frontend/` | Testes unitários e de integração com pytest; verificações da interface com Playwright |
+## Responsabilidades
 
-Crie os módulos futuros quando houver funcionalidade para implementar. A direção
-de dependência é `API → Serviços → Repositórios → Banco`. Serviços também
-coordenam o pipeline e a IA; nenhum dos dois depende do FastAPI. Análises,
-limites e notificações são implementados nos serviços e no pipeline conforme
-necessário, sem adicionar outra aplicação.
+| Camada | Local e responsabilidade |
+| --- | --- |
+| Interface | `frontend/src/`: páginas, formulários, filtros e gráficos |
+| Transporte | `frontend/src/lib/api.ts`: erros e requisições; `panel/api.ts`: contratos financeiros |
+| HTTP | `backend/app/api/` e `schemas/`: sessão, validação, respostas |
+| Casos de uso | `services/`: autorização, transações, limites e avisos |
+| Persistência | `repositories/`, `models/`, `db/`: consultas sempre limitadas pelo usuário |
+| Processamento | `pipeline/`: leitura, limpeza, categorias, duplicatas e estatística |
+| Evolução | `backend/migrations/`: revisões Alembic e preservação de metadados legados |
+| Verificação | `backend/tests/` e `scripts/frontend/`: testes puros, PostgreSQL temporário e Playwright |
 
-## Caminho de um arquivo
+## Caminho do arquivo
 
-Este diagrama representa os dados ao longo do processamento, não as dependências
-entre arquivos Python. Os conceitos de análise de dados aplicados em cada passo
-estão em [análise de dados](analise-de-dados.md). A API e os serviços coordenam o fluxo; os repositórios
-persistem os registros.
+O envio valida formato e tamanho (4 MB), lê com pandas, padroniza datas/valores,
+aplica categorias e confere identificadores bancários. Transações, rejeições e
+qualidade são gravadas atomicamente. O original não é guardado. O histórico mantém
+linha/folha de origem e metadados comprováveis. Conteúdo repetido reaproveita o envio.
 
-```mermaid
-flowchart TD
-    file["Extrato ou fatura em CSV ou XLSX"] --> upload["Validar o arquivo e calcular o hash"]
-    upload --> read["Ler com pandas e reconhecer o formato"]
-    read --> treatment["Limpar, validar e categorizar"]
-    treatment -->|"Linhas válidas"| transactions["Transações padronizadas"]
-    treatment -->|"Linhas inválidas"| rejected["Rejeições e seus motivos"]
-    treatment --> quality["Relatório de qualidade"]
-    transactions --> analytics["Análises e estatística, calculadas na consulta"]
-    analytics --> dashboard["Dashboard apresenta os resultados"]
-    analytics --> limits["Comparar o gasto do mês com os limites"]
-    limits -->|"80% ou 100% do limite"| bell["Notificação no sininho do painel"]
-    analytics --> ai["Diagnóstico do mês com IA"]
-```
+As análises consultam todas as transações elegíveis do usuário. Compras e tarifas
+somam gasto; estornos reduzem; receitas e pagamentos ficam separados. Duplicatas
+confirmadas saem do total, suspeitas continuam contadas. Ao remover um arquivo,
+uma cópia restante pode se tornar canônica na mesma transação.
 
-O arquivo é processado durante a própria requisição de upload e gravado numa
-única transação do banco: ou entram as transações, as rejeições e o relatório
-de qualidade, ou nada entra. O arquivo original não é guardado. As análises são
-calculadas na consulta, a partir das transações, sem tabelas de resultados
-pré-calculados. A primeira versão não usa a arquitetura Medallion nem
-processamento em segundo plano.
+`pipeline/analytics.py` compartilha os cálculos entre as rotas de análise e a
+fachada de compatibilidade. Estatísticas e deduplicação têm módulos próprios;
+`analise.py` coordena o processamento. A lista paginada aplica os mesmos filtros
+aos agregados completos, antes de limitar a página.
 
-## Hospedagem
+## Interface interna
 
-A versão da banca será publicada em planos gratuitos e usada pela turma e pela
-banca. O frontend e a API ficam na mesma origem: em domínios diferentes, o
-navegador não envia o cookie de sessão `SameSite=Lax` nas chamadas à API. A
-primeira publicação acontece já na etapa de upload, para que problemas de
-hospedagem apareçam cedo. A chave do provedor de IA fica nas variáveis de
-ambiente da hospedagem, nunca no frontend.
+O shell autenticado contém Painel, Arquivos, Transações, Limites e Conta. As cores
+petróleo/menta permanecem; categorias ganham cor e ícone próprios. Distribuição do
+gasto ocupa o centro do Painel, comparação fica ao lado e detalhes abaixo. Serviços
+recorrentes usam histórico observado, sem previsão de cobranças.
 
-## Regras para manter o projeto organizado
+Os estilos internos são carregados com a página do painel, isolados do site público.
+Transporte HTTP e formatação são compartilhados. A demonstração pública continua
+fictícia e independente de conta ou arquivos pessoais.
 
-- Rotas HTTP delegam os casos de uso aos serviços; consultas ficam nos repositórios.
-- Valores monetários usam `Decimal` no processamento e coluna numérica no banco.
-- Toda operação financeira usa o usuário obtido da sessão. O frontend não escolhe
-  o dono dos dados. Categorias globais são a exceção pública já implementada.
-- O backend calcula as métricas reais; o frontend as apresenta. A demonstração
-  pública pode calcular exemplos fictícios em `demoModel.ts`, sem dados pessoais.
-- PostgreSQL é a única persistência; o arquivo original não é guardado. Redis,
-  Celery, Kafka e outros serviços continuam fora da primeira versão.
-- A IA recebe somente o resumo agregado do mês e explica as análises; os
-  cálculos continuam no backend.
-- Toda função de leitura, limpeza, análise e regra de negócio tem testes
-  unitários com pytest, entregues no mesmo pull request.
-- Cada etapa tem uma branch própria, mesclada na `main` por pull request.
-- Testes do banco usam um servidor PostgreSQL temporário separado do banco de
-  desenvolvimento. Produção será configurada na implantação.
-- Mantenha os testes de interface em `scripts/frontend/`. Capturas geradas vão
-  para `.impeccable/review/`, ignorada pelo Git.
-- Ao substituir um arquivo, atualize imports, testes e documentação e retire a
-  versão obsoleta. Dependências, caches e builds locais ficam fora do Git.
+## Banco e operação
 
-## Estado atual e próximos ajustes
+Revisões `0002` e `0003` acrescentam metadados financeiros, receitas, limites e
+avisos. `0004` retira estruturas legadas somente após preservar metadados em
+qualidade; conteúdo bruto/mapeamento não vazio sem conversão validada interrompe
+a operação. Revisões e SQL históricos permanecem intactos. Consulte o
+[guia do banco](database-setup.md) antes de atualizar um banco existente.
 
-| Parte | Estado atual |
-|---|---|
-| PostgreSQL e SQLAlchemy | Conexão funcionando, 10 tabelas mapeadas e 11 categorias globais ativas |
-| API | Saúde da aplicação, saúde do banco, consulta de categorias e autenticação (`/api/auth/register`, `login`, `logout` e `me`) |
-| Frontend | Demonstração fictícia para visitantes; cadastro e login reais, com sessão por cookie; painel em `/app` com barra lateral, próximos passos e dados da conta |
-| Testes do banco | Suíte de integridade e códigos numéricos; 97 casos aprovados na revisão |
-| Camadas do backend | Autenticação já usa serviço e repositórios; a rota de categorias ainda consulta diretamente o banco |
-| Funcionalidades financeiras | Upload e histórico, leitura e limpeza, análises, limites, notificações e diagnóstico com IA ainda pendentes |
-| Hospedagem | Ainda não publicada; prevista em plano gratuito a partir da etapa de upload |
-| Fora da primeira versão | Conversa com a IA, previsão de cobranças com calendário, mapeador genérico, arquivo original guardado, e-mails pelo Resend e limite semanal (seção 18 do planejamento) |
-| Migrações | Alembic configurado, com revisão inicial do esquema atual e adoção validada de bancos existentes; histórico SQL preservado |
-| Ferramentas previstas | Docker Compose e limite de tentativas de login ainda pendentes |
+O destino confirmado é a [Vercel](vercel.md). Rewrites mantêm frontend e API na
+mesma origem para o cookie de sessão. PostgreSQL fica em serviço externo e suas
+credenciais somente no backend. Publicação, migração no banco de uso e validação
+hospedada precisam de evidência própria; testes locais não comprovam essas etapas.
 
-Antes de ampliar os endpoints, adequar a consulta de categorias às camadas
-previstas. O Alembic já controla a evolução do esquema; Docker Compose permanece
-pendente na fundação. Funções
-independentes de tratamento, como a conversão monetária, podem ser estudadas e
-testadas em paralelo, sem depender do banco.
+## Documentos
 
-O esquema atual ainda tem peças do desenho anterior: a tabela `bronze_rows`, a
-coluna `transactions.bronze_row_id`, a tabela `upload_mappings` e as colunas
-`storage_path` e `status` de `uploads`. Elas saem por migração Alembic na
-etapa 2. O esquema também ainda não distingue extrato de fatura em `uploads`,
-não aceita o tipo `income` em `transactions` e não tem as tabelas
-`category_budgets`, `notifications` e `ai_insights`, que entram nas etapas 2,
-3, 6 e 7.
-
-As atualizações legadas em `scripts/migrations/` continuam preservadas.
-`backend/migrations/` contém o ambiente Alembic e a revisão inicial, que reproduz
-o esquema atual sem mudanças financeiras. A adoção de um banco existente confere
-sua estrutura antes de registrar a revisão, preservando dados e códigos. Os
-comandos para instalação, adoção e próximas revisões estão no guia do banco.
-
-## Documentos de apoio
-
-- [Análise de dados](analise-de-dados.md): transformação, limpeza e qualidade, estatística descritiva.
-- [Planejamento completo](planejamento-gerencia.txt): requisitos, etapas e critérios de aceite.
-- [Configuração do banco](database-setup.md): instalação, atualizações e testes isolados.
-- [Guia de conversão de valores](guia-conversao-valores.md): primeira atividade de programação acompanhada.
-- [Verificações do frontend](../scripts/frontend/README.md): preparação das ferramentas e comandos atuais.
+- [Análise de dados](analise-de-dados.md): conceitos e semântica financeira.
+- [Plano aprovado](superpowers/plans/2026-11-16-renovacao-interna-v1.md).
+- [Escopo atualizado](superpowers/specs/2026-11-17-escopo-sem-ia.md): IA adiada e Vercel.
+- [Verificações da interface](../scripts/frontend/README.md).

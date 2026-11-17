@@ -747,18 +747,32 @@ Petróleo noturno com os cantos de cima arredondados (24–36px), deixando o ch�
 - **/register:** chão sálvia. À esquerda, o título "Crie sua conta.", o resumo e a lista do previsto num cartão branco de cantos de 16px com sombra suave e marcas em anel; à direita, o formulário num bloco branco de cantos de 24–36px com sombra suave: "Dados da conta" em title, os campos nome, e-mail, senha (com a dica "8 caracteres ou mais") e confirmação, o alerta de formulário quando houver, o envio "Criar conta" em petróleo na largura toda ("Criando conta…" enquanto envia) e "Já tem conta? Entrar".
 - **Comportamento:** depois de entrar ou de criar a conta, a pessoa vai ao painel (/app), e quem já entrou é levado de /login e /register para lá; se a API não responder, o site público segue inteiro e os formulários dizem que não foi possível falar com o servidor.
 
-### Painel (/app)
-A área de quem entrou. É uma superfície de trabalho, não uma segunda vitrine: o mesmo mundo, com densidade e tamanhos fixos de interface. Quem abre /app sem sessão vai para /login.
-- **Barra lateral:** 264px, na altura toda da janela e parada enquanto o conteúdo rola, em petróleo noturno com um brilho de menta profunda a 20% subindo do pé. No alto, o logotipo, que leva a /app. O menu lista Painel, Arquivos, Transações, Limites e Conta, só em texto: linhas de 44px, cantos de 12px, texto noturno em 500 e hover em petróleo de hover. A seção aberta (`aria-current="page"`) ganha fundo em petróleo erguido, título noturno em 600 e o sublinhado menta de 2px do cabeçalho do site. As seções que ainda não existem não são links: ficam em apoio noturno, com a marca "em breve" numa pílula de contorno noturno (13px, 500). No pé, sobre uma linha noturna, o nome de quem entrou em título noturno 600, o e-mail em small de apoio noturno e a pílula branca "Sair"; enquanto a sessão é verificada, o pé guarda o espaço sem aparecer.
-- **Móvel (até 960px):** a barra vira uma barra no topo de 60px, em petróleo liso, com o logotipo e o botão de menu do site. O menu abre por baixo, na largura toda, com linhas de 52px em 17px separadas por linha noturna e o pé da conta no fim. Escape fecha e devolve o foco ao botão; tirar o foco da barra também fecha.
-- **Chão:** a área principal é chão sálvia com duas poças de luz: menta a 55% no alto à direita e a 35% embaixo à esquerda.
-- **Boas-vindas:** no início do painel, um campo de menta com o degradê do painel de fechamento, cantos de bloco e 24–40px de respiro: "Olá, {primeiro nome}." em 32px 600 e uma frase em tinta que diz o estado do painel e o que vem a seguir. Na borda direita, o símbolo de três barras em tinta a 7%, girado 8° e cortado pela borda (até 640px, a 5%, pequeno e no canto de baixo).
-- **Próximos passos:** enquanto não há arquivos, um cartão branco com as quatro etapas que vão preencher o painel, na ordem em que o projeto as constrói. Cada etapa é uma linha de cantos de 16px com o marcador numerado de 44px do procedimento, o título em 17px 600, a explicação em apoio e, à direita, a linha de situação com a marca em anel. Uma linha de 2px liga os marcadores. A etapa seguinte ganha lavagem de menta, o marcador branco com contorno de apoio e a situação "Em desenvolvimento" em tinta 600; as outras dizem "Em breve". Não há botão nem ação falsa.
-- **Cartões de apoio:** à direita, na grade 8/4, cartões brancos de 24px com fatos em lista: rótulo em small 600 de apoio, valor no corpo, réguas de linha entre eles. No início, "Sua conta" (data de criação, arquivos enviados, nota de privacidade e o link "Ver dados da conta"); na página /app/account, "Dados da conta" com os fatos em duas colunas e "Acesso e privacidade" ao lado.
-- **Avisos:** a falha da API e o endereço inexistente aparecem num cartão branco de até 560px, centrado na área principal, com o título em 32px, a explicação em apoio e um único principal em petróleo ("Tentar de novo" ou "Voltar ao painel").
+### Área interna (/app) — direção aprovada em 16/11/2026
+
+**Categorias em destaque.** Tema claro com petróleo na navegação, menta nos destaques,
+superfícies de leitura claras e cores/ícones próprios por categoria. Tokens e estilos
+internos ficam em `panel.css`, `panel-data.css` e `panel/categoryPresentation.ts`.
+
+- Painel: número principal com gasto líquido; distribuição por categoria no centro;
+  comparação de dois meses escolhidos ao lado; evolução, serviços e detalhes abaixo.
+- Valores dos gráficos também aparecem em texto, rótulos e detalhes; cor não é a
+  única indicação. Percentual indisponível tem motivo e não vira zero.
+- Serviços mostram valores observados, mês-base e anualização, com detalhes ao clicar.
+  Os cinco recentes levam à lista paginada em Transações.
+- Transações organiza busca, mês, categoria e filtros adicionais. Correção abre um
+  editor com origem e opção de regra pessoal para envios futuros.
+- Arquivos reúne envio, exemplos CSV/XLSX, qualidade, rejeições e confirmação de exclusão.
+- Limites usa cartões por categoria com valor gasto, teto, progresso e situação textual;
+  o sino mantém avisos e leitura em todas as abas.
+- Conta mostra cadastro, privacidade e exclusão confirmada dos próprios dados.
+- Navegação lateral no desktop, menu compacto no celular, foco visível, Escape nos
+  menus e movimento reduzido. Tabelas podem rolar em sua própria região.
+- Estados vazios explicam a próxima ação. Falha de consulta não apresenta valores
+  antigos como se pertencessem a um filtro novo.
+- IA, treinamento e predição não integram esta etapa (decisão de 17/11/2026).
 
 ### Named Rules
-**A Regra da Prova Verdadeira.** O gerenCIA não tem depoimentos, clientes, preços nem parceiros para mostrar, e as contas já existem mas ainda não guardam faturas (o envio está em desenvolvimento), por isso as seções do Finmax que dependem disso — depoimentos, planos e preços, faixa de logotipos de parceiros, captura de e-mail e maquete de celular — não existem aqui. Todo número exibido, inclusive os dos cartões flutuantes e dos cartões de números, é calculado dos dados fictícios das figuras, e o aviso de dados fictícios fica no selo da Figura 3 e nas linhas "Fonte:".
+**A Regra da Prova Verdadeira.** O gerenCIA não tem depoimentos, clientes, preços nem parceiros para mostrar, e os dados pessoais ficam restritos à área autenticada, por isso as seções do Finmax que dependem disso — depoimentos, planos e preços, faixa de logotipos de parceiros, captura de e-mail e maquete de celular — não existem aqui. Todo número exibido, inclusive os dos cartões flutuantes e dos cartões de números, é calculado dos dados fictícios das figuras, e o aviso de dados fictícios fica no selo da Figura 3 e nas linhas "Fonte:".
 
 **A Regra da Referência Real.** Só há número onde há referência ou sequência de verdade: Figura e Tabela, chamadas de nota, letras dos recortes e etapas do procedimento. Títulos de seção e navegação não levam número; botões e links não levam seta.
 
