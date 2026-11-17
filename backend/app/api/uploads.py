@@ -6,6 +6,9 @@ na URL (?nome=fatura.csv), o que dispensa a biblioteca python-multipart.
 """
 
 from uuid import UUID
+from typing import Literal
+import csv
+import io
 
 from fastapi import APIRouter, Depends, HTTPException, Request, Response
 from sqlalchemy.orm import Session
@@ -24,23 +27,31 @@ router = APIRouter(prefix="/api/uploads", tags=["uploads"])
 @router.post("", response_model=UploadResponse, status_code=201)
 async def enviar(
     request: Request,
+    response: Response,
     nome: str = "arquivo.csv",
+    document_type: Literal["fatura", "extrato"] | None = None,
     user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
     """Lê o arquivo (CSV ou XLSX), grava as transações e devolve o resumo do envio."""
     tamanho_informado = request.headers.get("content-length")
     if tamanho_informado and tamanho_informado.isdigit() and int(tamanho_informado) > MAX_BYTES:
-        raise HTTPException(status_code=413, detail="O arquivo passa de 5 MB.")
+        raise HTTPException(status_code=413, detail="O arquivo passa de 4 MB.")
 
     conteudo = await request.body()
+    if len(conteudo) > MAX_BYTES:
+        raise HTTPException(status_code=413, detail="O arquivo passa de 4 MB.")
     try:
         # O pandas e o banco trabalham de forma síncrona; a thread evita travar o servidor.
-        return await run_in_threadpool(uploads_service.enviar_arquivo, db, user, nome=nome, conteudo=conteudo)
+        result = await run_in_threadpool(uploads_service.enviar_arquivo, db, user, nome=nome, conteudo=conteudo, document_type=document_type)
+        response.headers["Cache-Control"] = "no-store"
+        if result.reused:
+            response.status_code = 200
+        return result
     except ArquivoInvalido as erro:
         raise HTTPException(status_code=422, detail=str(erro)) from erro
-    except uploads_service.ArquivoJaEnviado as erro:
-        raise HTTPException(status_code=409, detail=erro.mensagem) from erro
+    except uploads_service.ConflitoDuplicata as erro:
+        raise HTTPException(status_code=409, detail=f"Identificador bancário conflitante; confira os arquivos anteriores. Transações: {', '.join(map(str, erro.ids))}") from erro
 
 
 @router.get("", response_model=list[UploadResponse])
@@ -48,6 +59,31 @@ def listar(response: Response, user: User = Depends(get_current_user), db: Sessi
     """Histórico de arquivos da pessoa, do mais recente ao mais antigo."""
     response.headers["Cache-Control"] = "no-store"
     return uploads_service.historico(db, user)
+
+
+@router.get("/{upload_id}")
+def detalhe(upload_id: UUID, response: Response, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    result = uploads_service.detalhe(db, user, upload_id)
+    if result is None:
+        raise HTTPException(404, "Arquivo não encontrado.")
+    response.headers["Cache-Control"] = "no-store"
+    return result
+
+
+@router.get("/{upload_id}/rejections.csv")
+def rejeitadas(upload_id: UUID, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    result = uploads_service.detalhe(db, user, upload_id)
+    if result is None:
+        raise HTTPException(404, "Arquivo não encontrado.")
+    output = io.StringIO()
+    writer = csv.writer(output)
+    writer.writerow(["linha", "codigo", "mensagem", "conteudo"])
+    for row in result["rejeitadas"]:
+        # Planilhas não devem interpretar conteúdo importado como fórmula.
+        values = [row["linha"], row["codigo"], row["mensagem"], str(row["conteudo"])]
+        writer.writerow(["'" + v if isinstance(v, str) and v.startswith(("=", "+", "-", "@")) else v for v in values])
+    return Response("\ufeff" + output.getvalue(), media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": 'attachment; filename="rejeicoes.csv"', "Cache-Control": "no-store"})
 
 
 @router.delete("/{upload_id}", status_code=204)

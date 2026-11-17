@@ -100,3 +100,10 @@ def close_session(db: Session, token: str) -> None:
     token_hash = security.hash_session_token(token)
     sessions.revoke(db, token_hash=token_hash, now=now_utc())
     db.commit()
+
+
+def delete_account(db: Session, user: User) -> None:
+    """As chaves estrangeiras removem dependentes na mesma transação."""
+    users.lock(db, user.id)
+    users.delete(db, user)
+    db.commit()

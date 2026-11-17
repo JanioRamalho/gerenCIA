@@ -76,14 +76,10 @@ class Upload(DisplayCodeMixin, Base):
         CheckConstraint("file_extension IN ('csv', 'xlsx')", name="uploads_extension_valid"),
         CheckConstraint("file_size_bytes > 0 AND file_size_bytes <= 26214400", name="uploads_file_size_valid"),
         CheckConstraint("sha256 ~ '^[0-9a-fA-F]{64}$'", name="uploads_sha256_valid"),
-        CheckConstraint(
-            "status IN ('uploaded', 'profiling', 'awaiting_mapping', 'processing', 'completed', 'failed')",
-            name="uploads_status_valid",
-        ),
+        CheckConstraint("document_type IS NULL OR document_type IN ('fatura', 'extrato')", name="uploads_document_type_valid"),
         UniqueConstraint("id", "user_id", name="uploads_id_user_id_uq"),
         Index("uploads_user_sha256_uq", "user_id", "sha256", unique=True),
         Index("uploads_user_created_at_idx", "user_id", text("created_at DESC")),
-        Index("uploads_user_status_idx", "user_id", "status"),
     )
 
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4, server_default=text("gen_random_uuid()"))
@@ -93,52 +89,11 @@ class Upload(DisplayCodeMixin, Base):
     content_type: Mapped[str | None] = mapped_column(Text)
     file_size_bytes: Mapped[int] = mapped_column(BigInteger, nullable=False)
     sha256: Mapped[str] = mapped_column(CHAR(64), nullable=False)
-    storage_path: Mapped[str] = mapped_column(Text, nullable=False)
-    status: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'uploaded'"))
-    error_message: Mapped[str | None] = mapped_column(Text)
+    source_format: Mapped[str | None] = mapped_column(Text)
+    document_type: Mapped[str | None] = mapped_column(Text)
+    period_start: Mapped[date | None] = mapped_column(Date)
+    period_end: Mapped[date | None] = mapped_column(Date)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
-    processing_started_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    processing_finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-
-
-class UploadMapping(DisplayCodeMixin, Base):
-    __tablename__ = "upload_mappings"
-    __table_args__ = (
-        ForeignKeyConstraint(["upload_id", "user_id"], ["uploads.id", "uploads.user_id"], ondelete="CASCADE", name="upload_mappings_upload_user_fk"),
-        UniqueConstraint("upload_id", name="upload_mappings_one_per_upload"),
-        CheckConstraint("jsonb_typeof(mapping) = 'object'", name="upload_mappings_is_object"),
-    )
-
-    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4, server_default=text("gen_random_uuid()"))
-    upload_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
-    user_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
-    mapping: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
-    confirmed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
-    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
-
-
-class BronzeRow(DisplayCodeMixin, Base):
-    __tablename__ = "bronze_rows"
-    __table_args__ = (
-        ForeignKeyConstraint(["upload_id", "user_id"], ["uploads.id", "uploads.user_id"], ondelete="CASCADE", name="bronze_rows_upload_user_fk"),
-        CheckConstraint("row_number > 0", name="bronze_rows_row_number_positive"),
-        CheckConstraint("jsonb_typeof(raw_data) = 'object'", name="bronze_rows_raw_is_object"),
-        UniqueConstraint(
-            "upload_id", "sheet_name", "row_number",
-            name="bronze_rows_upload_row_uq", postgresql_nulls_not_distinct=True,
-        ),
-        UniqueConstraint("id", "upload_id", "user_id", name="bronze_rows_id_upload_user_uq"),
-        Index("bronze_rows_user_upload_idx", "user_id", "upload_id"),
-    )
-
-    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4, server_default=text("gen_random_uuid()"))
-    upload_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
-    user_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
-    row_number: Mapped[int] = mapped_column(Integer, nullable=False)
-    sheet_name: Mapped[str | None] = mapped_column(Text)
-    raw_data: Mapped[dict[str, Any]] = mapped_column(JSONB, nullable=False)
-    row_hash: Mapped[str | None] = mapped_column(CHAR(64))
-    ingested_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
 class Category(DisplayCodeMixin, Base):
@@ -165,9 +120,8 @@ class Transaction(DisplayCodeMixin, Base):
     __tablename__ = "transactions"
     __table_args__ = (
         ForeignKeyConstraint(["upload_id", "user_id"], ["uploads.id", "uploads.user_id"], ondelete="CASCADE", name="transactions_upload_user_fk"),
-        ForeignKeyConstraint(["bronze_row_id", "upload_id", "user_id"], ["bronze_rows.id", "bronze_rows.upload_id", "bronze_rows.user_id"], ondelete="SET NULL (bronze_row_id)", name="transactions_bronze_row_fk"),
         CheckConstraint("length(trim(description_raw)) > 0", name="transactions_description_not_empty"),
-        CheckConstraint("transaction_type IN ('purchase', 'fee', 'refund', 'payment', 'other')", name="transactions_type_valid"),
+        CheckConstraint("transaction_type IN ('purchase', 'fee', 'refund', 'payment', 'income', 'other')", name="transactions_type_valid"),
         CheckConstraint("category_source IN ('personal_rule', 'bank', 'merchant_rule', 'keyword', 'manual', 'uncategorized')", name="transactions_category_source_valid"),
         CheckConstraint(
             "(installment_current IS NULL AND installment_total IS NULL) OR "
@@ -181,13 +135,12 @@ class Transaction(DisplayCodeMixin, Base):
         Index("transactions_user_category_date_idx", "user_id", "category_id", text("transaction_date DESC")),
         Index("transactions_user_merchant_idx", "user_id", "merchant"),
         Index("transactions_upload_idx", "upload_id"),
-        Index("transactions_bronze_row_uq", "bronze_row_id", unique=True, postgresql_where=text("bronze_row_id IS NOT NULL")),
+        Index("transactions_user_bank_id_idx", "user_id", "bank_transaction_id"),
     )
 
     id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4, server_default=text("gen_random_uuid()"))
     user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     upload_id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), nullable=False)
-    bronze_row_id: Mapped[UUID | None] = mapped_column(Uuid(as_uuid=True))
     transaction_date: Mapped[date] = mapped_column(Date, nullable=False)
     description_raw: Mapped[str] = mapped_column(Text, nullable=False)
     description_normalized: Mapped[str | None] = mapped_column(Text)
@@ -199,6 +152,10 @@ class Transaction(DisplayCodeMixin, Base):
     installment_current: Mapped[int | None] = mapped_column(Integer)
     installment_total: Mapped[int | None] = mapped_column(Integer)
     source_row: Mapped[int] = mapped_column(Integer, nullable=False)
+    source_sheet: Mapped[str | None] = mapped_column(Text)
+    bank_transaction_id: Mapped[str | None] = mapped_column(Text)
+    balance: Mapped[Decimal | None] = mapped_column(Numeric(14, 2))
+    is_suspected_duplicate: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
     is_duplicate: Mapped[bool] = mapped_column(Boolean, nullable=False, server_default=text("false"))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 

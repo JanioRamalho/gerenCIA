@@ -126,7 +126,7 @@ def restore_legacy_constraints(db):
         """)
 
 
-def install_with_alembic(db):
+def install_with_alembic(db, revision="head"):
     """Instala apenas no banco descartável recebido, sem ler DATABASE_URL."""
     from alembic import command
     from alembic.config import Config
@@ -137,7 +137,7 @@ def install_with_alembic(db):
         with engine.begin() as connection:
             config = Config(str(PROJECT_ROOT / "alembic.ini"))
             config.attributes["connection"] = connection
-            command.upgrade(config, "head")
+            command.upgrade(config, revision)
     finally:
         engine.dispose()
 
@@ -148,7 +148,7 @@ def database(postgres_cluster, request):
     postgres_cluster.sql(f"CREATE DATABASE {name};")
     db = TestDatabase(postgres_cluster.binaries, postgres_cluster.port, name)
     if request.param == "alembic":
-        install_with_alembic(db)
+        install_with_alembic(db, "0001_current_schema")
     else:
         db.script(PROJECT_ROOT / "scripts/init.sql")
     if request.param == "upgrade":

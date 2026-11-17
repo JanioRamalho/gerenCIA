@@ -1,5 +1,4 @@
 from app.models.entities import (
-    BronzeRow,
     Category,
     CategoryRule,
     QualityCheck,
@@ -7,12 +6,13 @@ from app.models.entities import (
     SessionRecord,
     Transaction,
     Upload,
-    UploadMapping,
     User,
 )
+from app.models.finance import CategoryBudget, Notification
 
 __all__ = [
-    "BronzeRow",
+    "CategoryBudget",
+    "Notification",
     "Category",
     "CategoryRule",
     "QualityCheck",
@@ -20,6 +20,5 @@ __all__ = [
     "SessionRecord",
     "Transaction",
     "Upload",
-    "UploadMapping",
     "User",
 ]

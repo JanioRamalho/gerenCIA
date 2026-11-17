@@ -1,85 +1,60 @@
 # Backend
 
-A aplicação FastAPI tem as rotas GET /api/health, GET /api/health/database,
-GET /api/categories e as de autenticação abaixo. Há conexão PostgreSQL e
-modelos SQLAlchemy; o processamento de extratos e faturas ainda será implementado.
-Consulte o README principal para o comando de inicialização da API.
+API FastAPI com sessão por cookie, processamento síncrono CSV/XLSX e PostgreSQL.
+Consulte o README principal para executar e `docs/database-setup.md` para migrar.
 
-## Autenticação
+## Rotas principais
 
-| Rota | O que faz |
-|---|---|
-| POST /api/auth/register | Cria a conta (nome, e-mail e senha) e já abre a sessão. 409 se o e-mail já existe |
-| POST /api/auth/login | Abre a sessão. 401 com a mesma mensagem para e-mail desconhecido e senha errada |
-| POST /api/auth/logout | Revoga a sessão no banco e apaga o cookie. Sempre responde 204 |
-| GET /api/auth/me | Devolve o usuário da sessão, ou 401 |
+| Rota | Função |
+| --- | --- |
+| `POST /api/auth/register` | Cadastro e abertura da sessão |
+| `POST /api/auth/login`, `logout` | Entrada e encerramento da sessão |
+| `GET /api/auth/me`, `DELETE /api/auth/me` | Conta atual e exclusão dos próprios dados |
+| `GET /api/categories` | Categorias globais e próprias disponíveis |
+| `POST /api/uploads?nome=...&document_type=extrato` | Corpo bruto CSV/XLSX, até 4 MB; tipo obrigatório para planilha-modelo |
+| `GET /api/uploads`, `GET /api/uploads/{id}` | Histórico e qualidade/rejeições |
+| `GET /api/uploads/{id}/rejections.csv` | Rejeições exportáveis |
+| `DELETE /api/uploads/{id}` | Exclusão e reavaliação das cópias restantes |
+| `GET /api/transactions`, `GET /api/transactions/{id}` | Filtros/paginação e origem |
+| `PATCH /api/transactions/{id}/category` | Correção e regra pessoal futura opcional |
+| `GET /api/analytics/summary` | Análise do período e comparação livre |
+| `GET /api/budgets?month=AAAA-MM` | Limites e gasto efetivo por categoria |
+| `PUT /api/budgets/{category_id}`, `DELETE ...` | Definir e desativar limite mensal |
+| `GET /api/notifications`, `POST .../read-all`, `POST .../{id}/read` | Avisos e leitura |
+| `GET /api/health`, `GET /api/health/database` | Saúde da aplicação e banco |
 
-- A senha é guardada só como hash scrypt com sal próprio (`app/core/security.py`);
-  a verificação usa comparação em tempo constante e roda mesmo para e-mail
-  desconhecido, para o tempo de resposta não revelar quem tem conta.
-- A sessão é um token aleatório num cookie `gerencia_session` (`HttpOnly`,
-  `SameSite=Lax`, e `Secure` quando `APP_ENV=production`). O banco guarda só o
-  SHA-256 do token, com validade e data de revogação.
-- O usuário sempre vem da sessão. Para proteger uma rota nova, use a dependência
-  `get_current_user` de `app/api/deps.py`; nenhuma rota recebe `user_id` do cliente.
-- Erros de validação voltam como `{"detail": ..., "fields": {campo: mensagem}}`,
-  em português, para o frontend mostrar junto de cada campo.
-- Configuração opcional no `.env`: `SESSION_TTL_DAYS` (padrão 14) e
-  `SESSION_COOKIE_SECURE` (padrão `true` só em produção).
+O OpenAPI em `/docs` detalha filtros e contratos. Rotas financeiras exigem sessão;
+recursos de outro usuário respondem 404. A consulta de categorias globais é pública.
+`/api/dashboard` permanece como adaptador de compatibilidade.
 
-Ainda não há limite de tentativas de login, e-mail de confirmação nem
-recuperação de senha.
+## Regras
 
-O [mapa da arquitetura](../docs/arquitetura.md) mostra o fluxo completo e as
-responsabilidades de cada módulo. A consulta de categorias ainda é feita
-diretamente pela rota; sua separação em serviço e repositório é o ajuste
-pendente antes de ampliar os endpoints.
+Dinheiro usa Decimal e centavos inteiros nos cálculos. Novos DTOs financeiros
+serializam valores monetários como texto decimal. O frontend formata os valores,
+sem recalcular regras financeiras. Percentuais têm base explícita; ausência de dados
+não vira zero. `month` aceita `latest`, `all` ou `AAAA-MM`; comparação mensal exige
+dois meses distintos e disponíveis. Filtros e agregados precedem a paginação.
 
-## Banco e verificações
+Upload, duplicidade, categoria, limites e avisos usam transações curtas com bloqueio
+por usuário. O reenvio do mesmo conteúdo retorna o arquivo existente (200, `reused`);
+um envio novo retorna 201. IDs bancários conflitantes abortam o envio inteiro.
+Sem ID confirmado, semelhança gera suspeita e não exclui valores automaticamente.
 
-O esquema completo é instalado por `alembic upgrade head`, com 10 tabelas da
-aplicação, proteções de integridade e categorias globais iniciais, além da tabela
-`alembic_version`. Execute pela raiz com `.\.venv\Scripts\python.exe -m alembic`.
-A configuração e a adoção de bancos existentes estão no
-[guia do banco](../docs/database-setup.md). Os scripts SQL legados foram preservados.
+O limite gera aviso ao atingir 80% e ao ultrapassar 100% no mês corrente, uma vez
+por categoria/mês/faixa. A desativação mantém a memória de avisos.
 
-Todas as tabelas têm um `code` numérico automático para consulta e mantêm
-`id` UUID como chave primária. O endpoint de categorias retorna os dois campos.
+## Organização
 
-Os modelos mapeiam esse esquema. `Base.metadata.create_all()` isoladamente
-não instala os triggers que protegem os vínculos com categorias.
+`API → Serviços → Repositórios → Modelos/Banco`; serviços coordenam também o
+pipeline puro. Rotas não contêm pandas, SQL ou fórmulas financeiras. Categorias
+usam serviço e repositório. O pipeline não depende de FastAPI.
 
-Para executar os testes com um PostgreSQL temporário e isolado:
+Sessões usam token aleatório, cookie HttpOnly/SameSite=Lax e hash SHA-256 no banco.
+Senhas usam scrypt com sal. Configure `APP_ENV=production` e cookie Secure em HTTPS.
+Não há recuperação de senha nem limite de tentativas de login nesta versão.
+IA não integra esta etapa.
 
-```powershell
-.\.venv\Scripts\python.exe -m pytest -o pythonpath=backend backend/tests -q
-```
-
-`test_auth.py` testa as rotas de autenticação contra esse mesmo banco
-temporário e nunca usa o `DATABASE_URL` do `.env`. Se o Windows negar acesso à
-pasta temporária do pytest, acrescente `--basetemp` apontando para uma pasta
-sua.
-
-## Responsabilidades previstas
-
-- app/api/: rotas HTTP e dependências de autenticação.
-- app/core/: configuração, segurança, exceções e logging.
-- app/db/: sessão SQLAlchemy, base ORM e acesso ao PostgreSQL.
-- app/models/: modelos persistidos.
-- app/schemas/: contratos Pydantic de entrada e saída.
-- app/repositories/: consultas ao banco sempre limitadas pelo usuário.
-- app/services/: casos de uso e regras da aplicação.
-- app/pipeline/: leitura, limpeza, categorização e cálculos das análises.
-- app/ai/: resumo do mês enviado à IA, chamada ao provedor e validação da resposta.
-- migrations/: ambiente Alembic, revisão inicial fixa e próximas migrações.
-- tests/: testes unitários, integração e fixtures.
-
-## Regra de dependência
-
-    API -> Services -> Repositories -> Models/Database
-                     -> Pipeline
-                     -> AI
-
-Rotas não deverão conter transformações Pandas, consultas SQL diretas ou
-cálculos financeiros. O pipeline e a IA não deverão depender do FastAPI. Toda
-função do pipeline tem testes unitários com pytest.
+Migrações Alembic são explícitas e preservam a baseline histórica. Não use
+`Base.metadata.create_all()` para instalar o esquema: ele não cria os triggers.
+Testes usam PostgreSQL descartável e não leem o banco de uso. Ferramentas de teste
+ficam em `requirements.txt` na raiz; `backend/requirements.txt` contém produção.

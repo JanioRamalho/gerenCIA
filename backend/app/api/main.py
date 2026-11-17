@@ -1,24 +1,28 @@
-from fastapi import Depends, FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException
 from fastapi.exceptions import RequestValidationError
-from sqlalchemy import select, text
+from sqlalchemy import text
 from sqlalchemy.exc import SQLAlchemyError
-from sqlalchemy.orm import Session
 
-from app.api.analysis import router as analysis_router
 from app.api.auth import router as auth_router
 from app.api.dashboard import router as dashboard_router
 from app.api.errors import validation_error_handler
 from app.api.uploads import router as uploads_router
-from app.db.session import engine, get_db
-from app.models import Category
-from app.schemas.categories import CategoryResponse
+from app.api.analytics import router as analytics_router
+from app.api.transactions import router as transactions_router
+from app.api.budgets import router as budgets_router, notification_router
+from app.db.session import engine
+from app.api.categories import router as categories_router
 
 app = FastAPI(title="gerenCIA API")
 app.add_exception_handler(RequestValidationError, validation_error_handler)
 app.include_router(auth_router)
-app.include_router(analysis_router)
 app.include_router(uploads_router)
 app.include_router(dashboard_router)
+app.include_router(analytics_router)
+app.include_router(transactions_router)
+app.include_router(budgets_router)
+app.include_router(notification_router)
+app.include_router(categories_router)
 
 @app.get("/api/health")
 def health():
@@ -37,21 +41,3 @@ def database_health():
         ) from exc
 
     return {"status": "ok", "database": "connected"}
-
-
-@app.get("/api/categories", response_model=list[CategoryResponse])
-def list_system_categories(db: Session = Depends(get_db)):
-    """List active built-in categories; personal categories require auth."""
-    try:
-        statement = (
-            select(Category)
-            .where(Category.user_id.is_(None), Category.is_active.is_(True))
-            .order_by(Category.name)
-        )
-        return list(db.scalars(statement).all())
-    except SQLAlchemyError as exc:
-        raise HTTPException(
-            status_code=503,
-            detail="Não foi possível consultar as categorias.",
-        ) from exc
-

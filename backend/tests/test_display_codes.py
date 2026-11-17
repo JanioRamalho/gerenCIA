@@ -3,7 +3,7 @@ import json
 import pytest
 
 from conftest import PROJECT_ROOT
-from test_database_integrity import SETUP, A, UPLOAD, OWN, BRONZE, transaction, rule
+from test_database_integrity import SETUP, HEAD_SETUP, head_transaction, A, UPLOAD, OWN, BRONZE, transaction, rule
 
 
 TABLES = (
@@ -135,4 +135,16 @@ def test_orm_generates_codes(postgres_cluster):
     Base.metadata.create_all(engine)
     db.sql(";\n".join(statements) + ";")
     db.script(PROJECT_ROOT / "scripts/sql/category_integrity.sql")
-    test_inserts_generate_codes_across_all_tables(db)
+    head_tables = tuple(Base.metadata.tables)
+    related = f"""
+        INSERT INTO sessions(user_id,token_hash,expires_at) VALUES('{A}',repeat('c',64),now()+interval '1 day');
+        INSERT INTO quality_checks(user_id,upload_id,total_rows,valid_rows) VALUES('{A}','{UPLOAD}',1,1);
+        INSERT INTO rejected_rows(user_id,upload_id,source_row,raw_data,error_code,error_message)
+            VALUES('{A}','{UPLOAD}',2,'{{}}','test','Teste');
+        INSERT INTO category_budgets(user_id,category_id,amount) VALUES('{A}','{OWN}',100);
+        INSERT INTO notifications(user_id,category_id,month,threshold,amount,limit_amount)
+            VALUES('{A}','{OWN}','2026-11',80,80,100);
+    """ + head_transaction(category=f"'{OWN}'") + rule(OWN)
+    checks = " UNION ALL ".join(f"SELECT '{table}', count(*)>0 AND bool_and(code>0) AND count(*)=count(DISTINCT code) FROM {table}" for table in head_tables)
+    result = db.sql(HEAD_SETUP + related + checks + "; ROLLBACK;")
+    assert set(result.stdout.strip().splitlines()) == {f"{table}|t" for table in head_tables}

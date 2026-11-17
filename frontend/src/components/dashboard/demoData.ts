@@ -216,7 +216,4 @@ export const demo: Record<
 };
 
 export const monthKeys: MonthKey[] = ["jun", "jul", "ago"];
-export const money = (value: number) =>
-  new Intl.NumberFormat("pt-BR", { style: "currency", currency: "BRL" }).format(
-    value,
-  );
+export { money } from "../../lib/format";

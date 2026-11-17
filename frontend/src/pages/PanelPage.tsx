@@ -4,10 +4,17 @@ import AccountSection from "../components/panel/AccountSection";
 import FilesSection from "../components/panel/FilesSection";
 import PanelOverview from "../components/panel/PanelOverview";
 import PanelSidebar from "../components/panel/PanelSidebar";
+import TransactionsSection from "../components/panel/TransactionsSection";
+import LimitsSection from "../components/panel/LimitsSection";
+import NotificationsMenu from "../components/panel/NotificationsMenu";
+import "../styles/panel.css";
+import "../styles/panel-data.css";
 
 const HOME_PATH = "/app";
 const FILES_PATH = "/app/files";
 const ACCOUNT_PATH = "/app/account";
+const TRANSACTIONS_PATH = "/app/transactions";
+const BUDGETS_PATH = "/app/budgets";
 
 type PanelPageProps = {
   path: string; // endereço atual, por exemplo "/app" ou "/app/account"
@@ -27,6 +34,8 @@ export default function PanelPage({ path }: PanelPageProps) {
 
   const isAccountPage = path === ACCOUNT_PATH;
   const isFilesPage = path === FILES_PATH;
+  const isTransactionsPage = path === TRANSACTIONS_PATH;
+  const isBudgetsPage = path === BUDGETS_PATH;
 
   // Título da aba do navegador.
   useEffect(() => {
@@ -34,10 +43,14 @@ export default function PanelPage({ path }: PanelPageProps) {
       document.title = "Conta | gerenCIA";
     } else if (isFilesPage) {
       document.title = "Arquivos | gerenCIA";
+    } else if (isTransactionsPage) {
+      document.title = "Transações | gerenCIA";
+    } else if (isBudgetsPage) {
+      document.title = "Limites | gerenCIA";
     } else {
       document.title = "Painel | gerenCIA";
     }
-  }, [isAccountPage, isFilesPage]);
+  }, [isAccountPage, isFilesPage, isTransactionsPage, isBudgetsPage]);
 
   // Quem não está logado não vê o painel: vai para o login. Durante a saída,
   // quem decide o destino é a função signOutAndLeave, por isso o "signingOut".
@@ -72,6 +85,10 @@ export default function PanelPage({ path }: PanelPageProps) {
     content = <AccountSection user={user} />;
   } else if (isFilesPage) {
     content = <FilesSection />;
+  } else if (isTransactionsPage) {
+    content = <TransactionsSection />;
+  } else if (isBudgetsPage) {
+    content = <LimitsSection />;
   } else if (path === HOME_PATH) {
     content = <PanelOverview user={user} />;
   } else {
@@ -87,7 +104,10 @@ export default function PanelPage({ path }: PanelPageProps) {
       signOutFailed={signOutFailed}
       onSignOut={signOutAndLeave}
     />
-    <main className="panel-main" id="panel-content" tabIndex={-1}>{content}</main>
+    <main className="panel-main" id="panel-content" tabIndex={-1}>
+      {status === "authenticated" && user ? <div className="gc-global-toolbar"><NotificationsMenu /></div> : null}
+      {content}
+    </main>
   </div>;
 }
 

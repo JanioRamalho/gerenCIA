@@ -11,6 +11,7 @@ import pytest
 from alembic import command
 from alembic.config import Config
 from alembic.runtime.migration import MigrationContext
+from alembic.script import ScriptDirectory
 from alembic.util import CommandError
 from sqlalchemy import create_engine, text
 from sqlalchemy.exc import ProgrammingError
@@ -63,9 +64,8 @@ def test_upgrade_creates_complete_schema_and_has_no_model_drift(migration_engine
     with migration_engine.begin() as connection:
         config = alembic_config(connection)
         command.upgrade(config, "head")
-        validate_baseline(connection)
         assert connection.scalar(text("SELECT count(*) FROM categories WHERE user_id IS NULL")) == 11
-        assert MigrationContext.configure(connection).get_current_heads() == (BASELINE_REVISION,)
+        assert MigrationContext.configure(connection).get_current_heads() == (ScriptDirectory.from_config(config).get_current_head(),)
         command.check(config)
         # Uma segunda atualização não recria tabelas nem duplica categorias.
         command.upgrade(config, "head")
@@ -84,7 +84,7 @@ def test_adoption_preserves_data_codes_and_identity_sequence(migration_database,
         assert connection.scalar(text("SELECT to_regclass('public.alembic_version')")) is None
         adopt_baseline(connection)
         adopt_baseline(connection)  # Repetir a adoção não altera os registros.
-        command.upgrade(alembic_config(connection), "head")
+        command.upgrade(alembic_config(connection), BASELINE_REVISION)
         assert snapshot_data(connection) == before
         assert connection.scalar(text("SELECT last_value FROM users_code_seq")) == sequence
         connection.execute(text("INSERT INTO users (name,email,password_hash) VALUES ('Nova','nova@test.invalid','hash')"))
@@ -184,7 +184,7 @@ def test_adoption_cli_checks_then_stamps_using_explicit_environment(migration_da
 def test_baseline_downgrade_refuses_to_delete_existing_data(migration_engine):
     with migration_engine.begin() as connection:
         config = alembic_config(connection)
-        command.upgrade(config, "head")
+        command.upgrade(config, BASELINE_REVISION)
         with pytest.raises(CommandError, match="apagaria"):
             command.downgrade(config, "base")
         validate_baseline(connection)
@@ -194,13 +194,19 @@ def test_baseline_downgrade_refuses_to_delete_existing_data(migration_engine):
 def test_offline_upgrade_emits_sql_without_a_database(monkeypatch):
     monkeypatch.setenv("DATABASE_URL", "postgresql://offline:secret%25@127.0.0.1:1/unused")
     output = io.StringIO()
-    command.upgrade(alembic_config(output=output), "head", sql=True)
+    command.upgrade(alembic_config(output=output), BASELINE_REVISION, sql=True)
     sql = output.getvalue()
     assert "CREATE TABLE public.users" in sql
     assert "CREATE TRIGGER transactions_category_owner_guard" in sql
     assert "0001_current_schema" in sql
     assert "OWNER TO" not in sql and "\\ir" not in sql
     assert "secret" not in sql
+
+
+def test_legacy_removal_requires_online_data_inspection(monkeypatch):
+    monkeypatch.setenv("DATABASE_URL", "postgresql://offline:secret@127.0.0.1:1/unused")
+    with pytest.raises(CommandError, match="conexão explícita"):
+        command.upgrade(alembic_config(output=io.StringIO()), "head", sql=True)
 
 
 @pytest.mark.parametrize("prefix", ["postgres://", "postgresql://", "postgresql+psycopg://"])

@@ -26,3 +26,12 @@ def create(db: Session, *, name: str, email: str, password_hash: str) -> User:
     # preencheu, como code e created_at.
     db.refresh(user)
     return user
+
+
+def lock(db: Session, user_id):
+    """Serializa mutações financeiras da mesma pessoa até commit/rollback."""
+    return db.scalar(select(User).where(User.id == user_id).with_for_update())
+
+
+def delete(db: Session, user: User) -> None:
+    db.delete(user)

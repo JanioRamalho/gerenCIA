@@ -104,9 +104,7 @@ export function monthlyDelta(period: Period) {
   return { amount: currentTotal - previousTotal, percentage: (currentTotal / previousTotal - 1) * 100 };
 }
 
-export function formatPercentage(value: number, maximumFractionDigits = 0) {
-  return new Intl.NumberFormat("pt-BR", { style: "percent", maximumFractionDigits }).format(value);
-}
+export { percent as formatPercentage } from "../../lib/format";
 
 export { categories, demo, monthKeys, money };
 export type { Category, MonthKey, Period, Transaction };

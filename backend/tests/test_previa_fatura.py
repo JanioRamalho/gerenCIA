@@ -89,7 +89,7 @@ def test_fatura_nubank_exemplo():
 
 
 def test_planilha_modelo_rejeita_com_motivo():
-    resultado = analisar_arquivo((EXEMPLOS / "planilha_modelo_exemplo.csv").read_bytes(), "modelo.csv")
+    resultado = analisar_arquivo((EXEMPLOS / "planilha_modelo_exemplo.csv").read_bytes(), "modelo.csv", "extrato")
     assert resultado["qualidade"] == {
         "linhas_lidas": 7, "linhas_validas": 5, "linhas_rejeitadas": 2, "linhas_duplicadas": 0, "percentual": 71.4,
     }
@@ -105,8 +105,8 @@ def test_um_unico_mes_nao_confirma_recorrencia():
 
 
 def test_csv_latin1_com_ponto_e_virgula_e_cabecalho_de_outro_banco():
-    texto = "Data;Estabelecimento;Valor (R$)\n05/08/2026;PADARIA SÃO JOÃO;12,50\n06/08/2026;FARMÁCIA CENTRAL;30,00"
-    resultado = analisar_arquivo(texto.encode("latin-1"), "banco.csv")
+    texto = "Data;Estabelecimento;Valor (R$)\n05/08/2026;PADARIA SÃO JOÃO;-12,50\n06/08/2026;FARMÁCIA CENTRAL;-30,00"
+    resultado = analisar_arquivo(texto.encode("latin-1"), "banco.csv", "extrato")
     assert resultado["resumo"]["total_saidas"] == 42.50
     assert {c["categoria"] for c in resultado["por_categoria"]} == {"Alimentação", "Saúde"}
 
@@ -115,7 +115,7 @@ def test_xlsx():
     quadro = pd.DataFrame({"Data": ["15/06/2026", "20/06/2026"], "Descrição": ["Netflix", "Uber"], "Valor": ["-55,90", "-20,00"]})
     memoria = io.BytesIO()
     quadro.to_excel(memoria, index=False)
-    resultado = analisar_arquivo(memoria.getvalue(), "modelo.xlsx")
+    resultado = analisar_arquivo(memoria.getvalue(), "modelo.xlsx", "extrato")
     assert resultado["resumo"]["total_saidas"] == 75.90
 
 
@@ -130,9 +130,9 @@ def test_arquivo_invalido(conteudo, nome):
         analisar_arquivo(conteudo, nome)
 
 
-def test_acima_de_5_mb():
-    with pytest.raises(ArquivoInvalido, match="5 MB"):
-        analisar_arquivo(b"x" * (5 * 1024 * 1024 + 1), "grande.csv")
+def test_acima_de_4_mb():
+    with pytest.raises(ArquivoInvalido, match="4 MB"):
+        analisar_arquivo(b"x" * (4 * 1024 * 1024 + 1), "grande.csv")
 
 
 # ---- tipo, parcela, duplicidade e gravação ----------------------------------
@@ -155,7 +155,7 @@ def test_parcela_info(descricao, esperado):
     ("Netflix.Com", True, "fatura", "purchase"),
     ("IOF compra internacional", True, "fatura", "fee"),
     ("Estorno Loja X", False, "fatura", "refund"),
-    ("Salário", False, "extrato", "other"),
+    ("Salário", False, "extrato", "income"),
 ])
 def test_tipo_transacao(descricao, saiu_dinheiro, modo, esperado):
     assert _tipo_transacao(descricao, saiu_dinheiro, modo) == esperado

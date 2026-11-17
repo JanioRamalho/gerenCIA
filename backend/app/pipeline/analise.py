@@ -1,297 +1,140 @@
-"""Do arquivo limpo às medidas do dashboard: tipos, categorias e estatística.
-
-Segunda metade do caminho (a primeira está em previa.py). Tudo aqui trabalha
-com DataFrames do pandas e não depende do FastAPI nem do banco. O mesmo cálculo
-(`calcular_analise`) serve a dois usos:
-
-- a prévia de um arquivo recém-enviado (`analisar_arquivo`);
-- o painel, com as transações já gravadas (`quadro_de_transacoes`).
-
-Os valores circulam em centavos inteiros e só viram reais na saída.
-"""
-
-from __future__ import annotations
-
-import calendar
+"""Normalização das transações e fachada compatível da análise financeira."""
 from dataclasses import dataclass
 from decimal import Decimal
-
 import pandas as pd
-
+from app.pipeline.analytics import TIPOS_DE_GASTO, calcular_analytics, base_elegivel, _ordenar, _item, _opcional, rotulo_mes
 from app.pipeline.previa import (
-    MESES,
-    _categoria_com_origem,
-    _estabelecimento,
-    _parcela_info,
-    _texto_busca,
-    _tipo_transacao,
-    adaptar,
-    ler_arquivo,
-    limpar,
+    ArquivoInvalido, _categoria_com_origem, _estabelecimento, _parcela_info,
+    _texto_busca, _tipo_transacao, adaptar, ler_arquivo, limpar,
 )
 
-TIPOS_DE_GASTO = ("purchase", "fee")  # os únicos tipos que aumentam o gasto
+
+def _tipo_documento(formato, document_type):
+    if formato != "planilha_modelo":
+        return "fatura" if formato == "fatura_nubank" else "extrato"
+    normalizado = {"statement": "extrato", "invoice": "fatura"}.get(document_type, document_type)
+    if normalizado not in ("fatura", "extrato"):
+        raise ArquivoInvalido("Escolha o tipo do documento da planilha-modelo: extrato ou fatura.")
+    return normalizado
 
 
-# --------------------------------------------------------------------------- #
-# 1. Preparar: dar tipo, categoria, parcela e duplicidade a cada linha válida
-# --------------------------------------------------------------------------- #
-
-def _definir_saidas(df: pd.DataFrame, formato: str) -> tuple[pd.Series, str, str]:
-    """Descobre quais linhas são saída de dinheiro, pela convenção de sinais do arquivo.
-
-    Devolve a máscara, a regra aplicada (em texto) e o modo, 'fatura' ou
-    'extrato'. Fatura Nubank: compra positiva; pagamento e estorno negativos.
-    Extrato e planilha-modelo: saída negativa. Em arquivos de outros bancos o
-    sinal pode vir invertido, então vale o sinal da maioria.
-    """
-    negativas = int((df["centavos"] < 0).sum())
-    positivas = int((df["centavos"] > 0).sum())
-
-    if formato == "fatura_nubank":
-        return df["centavos"] > 0, "Fatura Nubank: valores positivos são compras; negativos são pagamentos e estornos.", "fatura"
-    if formato == "extrato_nubank":
-        return df["centavos"] < 0, "Extrato Nubank: valores negativos são saídas.", "extrato"
-    if negativas == 0:
-        return df["centavos"] > 0, "Todos os valores são positivos; tratei como compras de uma fatura.", "fatura"
-    if negativas >= positivas:
-        return df["centavos"] < 0, "Planilha-modelo: valores negativos são saídas e positivos são entradas.", "extrato"
-    return (
-        df["centavos"] > 0,
-        "A maioria dos valores é positiva; tratei como fatura (positivo = compra, negativo = pagamento ou estorno).",
-        "fatura",
-    )
-
-
-def preparar_transacoes(formato: str, validas: pd.DataFrame) -> tuple[pd.DataFrame, str]:
-    """Acrescenta às linhas válidas tudo o que a análise e o banco precisam."""
+def preparar_transacoes(formato, validas, document_type=None):
+    """Sinais vêm do formato, nunca da maioria de valores da planilha."""
+    modo = _tipo_documento(formato, document_type)
     df = validas.copy()
     df["data"] = pd.to_datetime(df["data"])
-    saiu, regra, modo = _definir_saidas(df, formato)
-
+    saida = df["centavos"] > 0 if formato == "fatura_nubank" else df["centavos"] < 0
+    regra = ("Fatura Nubank: positivo é compra, negativo é pagamento ou estorno." if formato == "fatura_nubank"
+             else "Valores negativos são saídas e positivos são entradas; o tipo do documento não inverte o sinal.")
     df["valor_abs"] = df["centavos"].abs()
     df["mes"] = df["data"].dt.strftime("%Y-%m")
     df["estabelecimento"] = df["descricao"].apply(_estabelecimento)
-
     parcelas = [_parcela_info(texto) for texto in df["descricao"]]
-    df["parcela"] = [info is not None for info in parcelas]
-    df["parcela_atual"] = pd.Series([info[0] if info else None for info in parcelas], index=df.index, dtype="object")
-    df["parcela_total"] = pd.Series([info[1] if info else None for info in parcelas], index=df.index, dtype="object")
-
+    df["parcela"] = [p is not None for p in parcelas]
+    df["parcela_atual"] = pd.Series([p[0] if p else None for p in parcelas], index=df.index, dtype="object")
+    df["parcela_total"] = pd.Series([p[1] if p else None for p in parcelas], index=df.index, dtype="object")
     categorias = [_categoria_com_origem(d, c) for d, c in zip(df["descricao"], df["categoria_banco"])]
-    df["categoria"] = [item[0] for item in categorias]
-    df["origem_categoria"] = [item[1] for item in categorias]
-
-    df["tipo"] = [_tipo_transacao(d, bool(s), modo) for d, s in zip(df["descricao"], saiu)]
+    df["categoria"] = [c[0] for c in categorias]
+    df["origem_categoria"] = [c[1] for c in categorias]
+    modo_sinais = "fatura" if formato == "fatura_nubank" else "extrato"
+    df["tipo"] = [_tipo_transacao(d, bool(s), modo_sinais) if int(v) else "other"
+                  for d, s, v in zip(df["descricao"], saida, df["centavos"])]
+    if "natureza" in df:
+        permitidos = {*TIPOS_DE_GASTO, "refund", "payment", "income", "other"}
+        for indice, natureza in df["natureza"].items():
+            if natureza:
+                if natureza not in permitidos:
+                    raise ArquivoInvalido("Natureza desconhecida na planilha-modelo.")
+                df.at[indice, "tipo"] = natureza
     df["eh_gasto"] = df["tipo"].isin(TIPOS_DE_GASTO)
-    # Repetições exatas ficam sinalizadas, mas não são removidas: podem ser compras reais.
+    # A coluna antiga apenas sinaliza suspeitas; não exclui compras legítimas.
     df["duplicada"] = df.duplicated(subset=["data", "descricao", "centavos"], keep="first")
+    df["is_suspected_duplicate"] = df["duplicada"]
+    df["is_duplicate"] = False
+    df["document_type"] = modo
     return df, regra
 
 
-def linhas_para_gravar(df: pd.DataFrame) -> list[dict]:
-    """Converte as transações preparadas nos campos da tabela transactions."""
+def linhas_para_gravar(df):
     linhas = []
-    for item in df.itertuples():
-        linhas.append({
-            "transaction_date": item.data.date(),
-            "description_raw": item.descricao,
-            "description_normalized": _texto_busca(item.descricao).strip() or None,
-            "merchant": item.estabelecimento or None,
-            "amount": (Decimal(int(item.valor_abs)) / 100).quantize(Decimal("0.01")),
-            "transaction_type": item.tipo,
-            "category_name": item.categoria,
-            "category_source": item.origem_categoria,
-            "installment_current": None if pd.isna(item.parcela_atual) else int(item.parcela_atual),
-            "installment_total": None if pd.isna(item.parcela_total) else int(item.parcela_total),
-            "source_row": int(item.linha),
-            "is_duplicate": bool(item.duplicada),
-        })
+    for i in df.to_dict("records"):
+        saldo = i.get("saldo_centavos")
+        linhas.append(dict(transaction_date=i["data"].date(), description_raw=i["descricao"],
+            description_normalized=_texto_busca(i["descricao"]).strip() or None,
+            merchant=i["estabelecimento"] or None, amount=Decimal(int(i["valor_abs"])) / 100,
+            transaction_type=i["tipo"], category_name=i["categoria"], category_source=i["origem_categoria"],
+            installment_current=None if pd.isna(i["parcela_atual"]) else int(i["parcela_atual"]),
+            installment_total=None if pd.isna(i["parcela_total"]) else int(i["parcela_total"]),
+            source_row=int(i["linha"]), source_sheet=_opcional(i.get("source_sheet"), str), bank_transaction_id=_opcional(i.get("bank_transaction_id"), str),
+            balance=None if pd.isna(saldo) else Decimal(int(saldo)) / 100,
+            is_duplicate=bool(i.get("is_duplicate", False)), is_suspected_duplicate=bool(i.get("is_suspected_duplicate", False))))
     return linhas
 
 
-def quadro_de_transacoes(registros: list[dict]) -> pd.DataFrame:
-    """Monta o DataFrame da análise a partir de transações já gravadas no banco.
-
-    Cada registro traz: data, descricao, estabelecimento, categoria, valor
-    (Decimal), tipo, parcela_atual e parcela_total.
-    """
-    colunas = [
-        "data", "mes", "descricao", "estabelecimento", "categoria", "valor_abs",
-        "tipo", "eh_gasto", "parcela", "parcela_atual", "parcela_total",
-    ]
-    if not registros:
-        return pd.DataFrame(columns=colunas)
-
-    df = pd.DataFrame(registros)
+def quadro_de_transacoes(registros):
+    """Preserva metadata e natureza histórica; jamais infere sinais perdidos."""
+    colunas = ["data", "descricao", "estabelecimento", "categoria", "valor", "tipo", "parcela_atual", "parcela_total"]
+    df = pd.DataFrame(registros) if registros else pd.DataFrame(columns=colunas)
     df["data"] = pd.to_datetime(df["data"])
     df["mes"] = df["data"].dt.strftime("%Y-%m")
-    df["valor_abs"] = [int((Decimal(str(valor)) * 100).to_integral_value()) for valor in df["valor"]]
+    df["valor_abs"] = [int(Decimal(str(v)) * 100) for v in df["valor"]]
+    for coluna in ("parcela_atual", "parcela_total"):
+        if coluna not in df:
+            df[coluna] = None
     df["eh_gasto"] = df["tipo"].isin(TIPOS_DE_GASTO)
     df["parcela"] = df["parcela_atual"].notna()
-    return df[colunas]
+    return df
 
 
-# --------------------------------------------------------------------------- #
-# 2. Calcular: totais, categorias, estatística descritiva e recorrência
-# --------------------------------------------------------------------------- #
-
-def _reais(centavos: int | float) -> float:
-    return round(float(centavos) / 100, 2)
+def _lancamento_legado(i):
+    return dict(data=pd.Timestamp(i["data"]).strftime("%d/%m/%Y"), estabelecimento=i["estabelecimento"],
+                descricao=i["descricao"], categoria=i["categoria"], valor=float(i["valor"]), parcela=i["parcela"])
 
 
-def _rotulo_mes(mes: str) -> str:
-    ano, numero = mes.split("-")
-    return f"{MESES[int(numero) - 1]}/{ano}"
+def _analise_vazia():
+    return dict(resumo=None, variacao=None, por_mes=[], meses_com_gastos=0, por_categoria=[],
+                maiores_lancamentos=[], lancamentos=[], recorrentes=[], assinaturas_pelo_nome=[])
 
 
-def _recorrentes(gastos: pd.DataFrame, meses_do_arquivo: list[str]) -> list[dict]:
-    """Mesmo estabelecimento e mesmo valor em todos os meses enviados; parcelas ficam de fora."""
-    if len(meses_do_arquivo) < 2:
-        return []
-    base = gastos[~gastos["parcela"]]
-    resultado = []
-    for (estabelecimento, centavos), grupo in base.groupby(["estabelecimento", "valor_abs"]):
-        meses = sorted(grupo["mes"].unique())
-        if meses != meses_do_arquivo:
-            continue
-        ultimo = grupo.loc[grupo["data"].idxmax()]
-        no_ultimo_mes = int(grupo.loc[grupo["mes"] == meses[-1], "valor_abs"].sum())
-        resultado.append({
-            "estabelecimento": estabelecimento,
-            "valor": _reais(centavos),
-            "dia_mais_recente": int(ultimo["data"].day),
-            "total_por_mes": _reais(no_ultimo_mes),
-            "custo_no_ano": _reais(no_ultimo_mes * 12),
-            "meses": len(meses),
-        })
-    return sorted(resultado, key=lambda item: item["custo_no_ano"], reverse=True)
-
-
-def _assinaturas_pelo_nome(gastos: pd.DataFrame) -> list[dict]:
-    """Serviços de assinatura conhecidos (Netflix, Spotify...), úteis mesmo com um único mês."""
-    base = gastos[(gastos["categoria"] == "Assinaturas") & (~gastos["parcela"])]
-    resultado = []
-    for estabelecimento, grupo in base.groupby("estabelecimento"):
-        ultimo = grupo.loc[grupo["data"].idxmax()]
-        resultado.append({
-            "estabelecimento": estabelecimento,
-            "valor": _reais(ultimo["valor_abs"]),
-            "ultima_cobranca": ultimo["data"].strftime("%d/%m/%Y"),
-            "custo_no_ano": _reais(ultimo["valor_abs"] * 12),
-        })
-    return sorted(resultado, key=lambda item: item["custo_no_ano"], reverse=True)
-
-
-def _lancamento(linha) -> dict:
-    parcela = None
-    if linha.parcela and not pd.isna(linha.parcela_atual):
-        parcela = f"{int(linha.parcela_atual)}/{int(linha.parcela_total)}"
-    return {
-        "data": linha.data.strftime("%d/%m/%Y"),
-        "estabelecimento": linha.estabelecimento,
-        "descricao": linha.descricao,
-        "categoria": linha.categoria,
-        "valor": _reais(linha.valor_abs),
-        "parcela": parcela,
-    }
-
-
-def _analise_vazia() -> dict:
-    return {
-        "resumo": None, "variacao": None, "por_mes": [], "meses_com_gastos": 0, "por_categoria": [],
-        "maiores_lancamentos": [], "lancamentos": [], "recorrentes": [], "assinaturas_pelo_nome": [],
-    }
-
-
-def calcular_analise(df: pd.DataFrame, mes: str | None = None, incluir_lancamentos: bool = False) -> dict:
-    """Calcula as medidas do dashboard.
-
-    `df` precisa ter as colunas de preparar_transacoes ou de quadro_de_transacoes.
-    Com `mes` (por exemplo '2026-08'), o resumo, as categorias e os lançamentos
-    valem só para o mês; o gráfico mensal e a recorrência sempre olham todos os
-    meses, porque só assim dá para comparar e confirmar repetição.
-    """
+def calcular_analise(df, mes=None, incluir_lancamentos=False):
+    """Adapta os nomes/tipos legados; a matemática vem do núcleo compartilhado."""
     if df.empty:
         return _analise_vazia()
-    gastos = df[df["eh_gasto"]]
-    outros = df[~df["eh_gasto"]]
-    meses_do_arquivo = sorted(gastos["mes"].unique())
+    a = calcular_analytics(df, mes=mes or "all")
+    r, e = a["resumo"], a["estatisticas"]
+    resumo = dict(total_saidas=float(r["total_saidas"]),
+        total_entradas=float(Decimal(r["total_entradas"]) + Decimal(r["total_pagamentos"])),
+        quantidade_saidas=r["quantidade_saidas"], media=float(e["media"]) if e["media"] else None,
+        mediana=float(e["mediana"]) if e["mediana"] else None, maior=float(e["maximo"]) if e["maximo"] else None,
+        media_por_dia=float(r["media_por_dia"]) if r["media_por_dia"] is not None else None, dias=r["dias"],
+        periodo_inicio=pd.Timestamp(a["cobertura"]["inicio"]).strftime("%d/%m/%Y") if a["cobertura"]["inicio"] else None,
+        periodo_fim=pd.Timestamp(a["cobertura"]["fim"]).strftime("%d/%m/%Y") if a["cobertura"]["fim"] else None)
+    c = a["comparacao"]
+    variacao = None if c["diferenca"] is None else dict(mes_anterior=c["mes_referencia"], rotulo_anterior=rotulo_mes(c["mes_referencia"]),
+        total_anterior=float(c["total_referencia"]), diferenca=float(c["diferenca"]),
+        percentual=round(c["percentual"], 4) if c["percentual"] is not None else None)
+    periodo = base_elegivel(df)
+    if mes:
+        periodo = periodo[periodo["mes"] == mes]
+    periodo = periodo[periodo["tipo"].isin(TIPOS_DE_GASTO)]
+    recorrentes, assinaturas = [], []
+    for s in a["servicos"]:
+        if "recorrencia_confirmada" in s["classificacoes"]:
+            recorrentes.append(dict(estabelecimento=s["estabelecimento"], valor=float(s["base_mensal"]),
+                dia_mais_recente=int(s["ultima_cobranca"][-2:]), total_por_mes=float(s["base_mensal"]),
+                custo_no_ano=float(s["anualizado"]), meses=len(s["meses_evidencia"])))
+        if "assinatura_identificada" in s["classificacoes"]:
+            assinaturas.append(dict(estabelecimento=s["estabelecimento"], valor=float(s["base_mensal"]),
+                ultima_cobranca=pd.Timestamp(s["ultima_cobranca"]).strftime("%d/%m/%Y"), custo_no_ano=float(s["anualizado"])))
+    return dict(resumo=resumo, variacao=variacao,
+        por_mes=[{**p, "total":float(p["total"]) if p["total"] is not None else None} for p in a["por_mes"]],
+        meses_com_gastos=len(a["meses_disponiveis"]),
+        por_categoria=[dict(categoria=c["categoria"], total=float(c["total"]), quantidade=c["quantidade"], participacao=c["participacao"]) for c in a["por_categoria"]],
+        maiores_lancamentos=[_lancamento_legado(i) for i in a["maiores_lancamentos"]],
+        lancamentos=[_lancamento_legado(_item(i)) for i in _ordenar(periodo).head(300).to_dict("records")] if incluir_lancamentos else [],
+        recorrentes=sorted(recorrentes, key=lambda s:-s["custo_no_ano"]),
+        assinaturas_pelo_nome=sorted(assinaturas, key=lambda s:-s["custo_no_ano"]))
 
-    totais_por_mes = gastos.groupby("mes")["valor_abs"].sum()
-    por_mes = [{"mes": m, "rotulo": _rotulo_mes(m), "total": _reais(total)} for m, total in totais_por_mes.items()]
-
-    periodo = gastos[gastos["mes"] == mes] if mes else gastos
-    periodo_outros = outros[outros["mes"] == mes] if mes else outros
-
-    resumo = None
-    variacao = None
-    por_categoria: list[dict] = []
-    maiores: list[dict] = []
-    lancamentos: list[dict] = []
-
-    if not periodo.empty:
-        if mes:
-            ano, numero = (int(parte) for parte in mes.split("-"))
-            dias = calendar.monthrange(ano, numero)[1]
-        else:
-            dias = (periodo["data"].max() - periodo["data"].min()).days + 1
-        total = int(periodo["valor_abs"].sum())
-        resumo = {
-            "total_saidas": _reais(total),
-            "total_entradas": _reais(periodo_outros["valor_abs"].sum()),
-            "quantidade_saidas": int(len(periodo)),
-            "media": _reais(periodo["valor_abs"].mean()),
-            "mediana": _reais(periodo["valor_abs"].median()),
-            "maior": _reais(periodo["valor_abs"].max()),
-            "media_por_dia": _reais(total / dias),
-            "dias": int(dias),
-            "periodo_inicio": periodo["data"].min().strftime("%d/%m/%Y"),
-            "periodo_fim": periodo["data"].max().strftime("%d/%m/%Y"),
-        }
-
-        if mes and mes in meses_do_arquivo and meses_do_arquivo.index(mes) > 0:
-            anterior = meses_do_arquivo[meses_do_arquivo.index(mes) - 1]
-            total_anterior = int(totais_por_mes[anterior])
-            variacao = {
-                "mes_anterior": anterior,
-                "rotulo_anterior": _rotulo_mes(anterior),
-                "total_anterior": _reais(total_anterior),
-                "diferenca": _reais(total - total_anterior),
-                "percentual": round(total / total_anterior - 1, 4),
-            }
-
-        for categoria, grupo in periodo.groupby("categoria"):
-            soma = int(grupo["valor_abs"].sum())
-            por_categoria.append({
-                "categoria": categoria,
-                "total": _reais(soma),
-                "quantidade": int(len(grupo)),
-                "participacao": round(soma / total, 4),
-            })
-        por_categoria.sort(key=lambda item: item["total"], reverse=True)
-
-        maiores = [_lancamento(linha) for linha in periodo.sort_values("valor_abs", ascending=False).head(10).itertuples()]
-        if incluir_lancamentos:
-            ordenados = periodo.sort_values(["data", "valor_abs"], ascending=False).head(300)
-            lancamentos = [_lancamento(linha) for linha in ordenados.itertuples()]
-
-    return {
-        "resumo": resumo,
-        "variacao": variacao,
-        "por_mes": por_mes,
-        "meses_com_gastos": len(meses_do_arquivo),
-        "por_categoria": por_categoria,
-        "maiores_lancamentos": maiores,
-        "lancamentos": lancamentos,
-        "recorrentes": _recorrentes(gastos, meses_do_arquivo),
-        "assinaturas_pelo_nome": _assinaturas_pelo_nome(gastos),
-    }
-
-
-# --------------------------------------------------------------------------- #
-# 3. Arquivo completo: bytes -> transações preparadas -> resultado
-# --------------------------------------------------------------------------- #
 
 @dataclass
 class ArquivoProcessado:
@@ -303,6 +146,7 @@ class ArquivoProcessado:
     transacoes: pd.DataFrame  # vazio quando nenhuma linha é válida
     rejeitadas: list[dict]
     regra: str | None
+    document_type: str | None = None
 
     @property
     def qualidade(self) -> dict:
@@ -316,16 +160,57 @@ class ArquivoProcessado:
             "percentual": round(validas / self.linhas_lidas * 100, 1) if self.linhas_lidas else 0.0,
         }
 
+    @property
+    def dimensoes(self) -> dict:
+        """Evidência de origem; a unicidade persistida será refeita pelo serviço."""
+        total = self.linhas_lidas
+        incompletas = sum(r["codigo"] == "empty_description" or any(not str(r["conteudo"].get(k, "")).strip() for k in ("data", "descricao", "valor")) for r in self.rejeitadas)
+        suspeitas = int(self.transacoes["duplicada"].sum()) if len(self.transacoes) else 0
+        ids = self.transacoes.get("bank_transaction_id", pd.Series(dtype="object")).dropna()
+        confirmadas = int(ids[ids.astype(str).str.strip() != ""].duplicated().sum())
+        def medida(validas):
+            return dict(percentual=round(validas / total * 100, 1) if total else None,
+                        quantidade=validas, total=total, motivo=None if total else "sem_linhas")
+        return dict(completude=medida(total - incompletas), validade=medida(len(self.transacoes)),
+                    unicidade=dict(quantidade=confirmadas, total=len(self.transacoes), suspeitas=suspeitas,
+                                   percentual=round((len(self.transacoes) - confirmadas) / len(self.transacoes) * 100, 1) if len(self.transacoes) else None,
+                                   motivo=None if len(self.transacoes) else "sem_linhas",
+                                   contexto="Duplicatas por identificador bancário; suspeitas permanecem contabilizadas."),
+                    consistencia=_conferir_saldos(self.transacoes, self.formato))
 
-def processar_arquivo(conteudo: bytes, nome: str) -> ArquivoProcessado:
+
+def _conferir_saldos(df, formato):
+    """Confere só transições adjacentes com saldo pós-lançamento conhecido.
+
+    Não inventa saldo inicial nem ordem de movimentos de uma fonte descendente.
+    Linhas rejeitadas/sem saldo interrompem uma cadeia verificável.
+    """
+    indisponivel = dict(percentual=None, quantidade=0, total=0, motivo="saldo_ou_ordem_insuficiente")
+    if df.empty or "saldo_centavos" not in df or formato == "fatura_nubank" or not df["data"].is_monotonic_increasing:
+        return indisponivel
+    verificadas = 0
+    registros = df.to_dict("records")
+    for anterior, atual in zip(registros, registros[1:]):
+        if pd.isna(anterior.get("saldo_centavos")) or pd.isna(atual.get("saldo_centavos")) or atual["linha"] != anterior["linha"] + 1:
+            continue
+        verificadas += 1
+        if int(anterior["saldo_centavos"]) + int(atual["centavos"]) != int(atual["saldo_centavos"]):
+            raise ArquivoInvalido(f"Saldo não reconciliado na linha {atual['linha']}; confira a sequência do extrato.")
+    return dict(percentual=100.0, quantidade=verificadas, total=verificadas, motivo=None,
+                contexto="Transições observadas; saldo inicial não informado.") if verificadas else indisponivel
+
+
+def processar_arquivo(conteudo: bytes, nome: str, document_type: str | None = None) -> ArquivoProcessado:
     """Lê, reconhece, limpa e prepara um arquivo. Levanta ArquivoInvalido se não der."""
     bruto = ler_arquivo(conteudo, nome)
     formato, adaptado = adaptar(bruto)
+    tipo = _tipo_documento(formato, document_type)
     validas, rejeitadas = limpar(adaptado)
     if validas.empty:
-        return ArquivoProcessado(nome, formato, len(adaptado), validas, rejeitadas, None)
-    preparadas, regra = preparar_transacoes(formato, validas)
-    return ArquivoProcessado(nome, formato, len(adaptado), preparadas, rejeitadas, regra)
+        return ArquivoProcessado(nome, formato, len(adaptado), validas, rejeitadas, None, tipo)
+    preparadas, regra = preparar_transacoes(formato, validas, tipo)
+    _conferir_saldos(preparadas, formato)
+    return ArquivoProcessado(nome, formato, len(adaptado), preparadas, rejeitadas, regra, tipo)
 
 
 def resultado_da_previa(processado: ArquivoProcessado) -> dict:
@@ -351,6 +236,6 @@ def resultado_da_previa(processado: ArquivoProcessado) -> dict:
     return {**resultado, **analise}
 
 
-def analisar_arquivo(conteudo: bytes, nome: str) -> dict:
+def analisar_arquivo(conteudo: bytes, nome: str, document_type: str | None = None) -> dict:
     """Caminho completo da prévia: bytes do arquivo -> dicionário pronto para virar JSON."""
-    return resultado_da_previa(processar_arquivo(conteudo, nome))
+    return resultado_da_previa(processar_arquivo(conteudo, nome, document_type))

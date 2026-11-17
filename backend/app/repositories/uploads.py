@@ -5,19 +5,13 @@ quando fazer o commit, para que o arquivo seja gravado inteiro ou não seja
 gravado.
 """
 
-from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
 from sqlalchemy import and_, func, select
 from sqlalchemy.orm import Session
 
-from app.models import Category, QualityCheck, RejectedRow, Transaction, Upload
-
-# O planejamento prevê descartar o arquivo original; a coluna storage_path
-# ainda é obrigatória no esquema atual, então guardamos este aviso nela.
-ARQUIVO_DESCARTADO = "descartado"
-
+from app.models import Category, CategoryRule, QualityCheck, RejectedRow, Transaction, Upload
 
 def get_by_sha256(db: Session, *, user_id: UUID, sha256: str) -> Upload | None:
     """Procura um arquivo já enviado pelo mesmo usuário com o mesmo conteúdo."""
@@ -39,8 +33,10 @@ def create(
     file_extension: str,
     file_size_bytes: int,
     sha256: str,
-    started_at: datetime,
-    finished_at: datetime,
+    source_format: str | None = None,
+    document_type: str | None = None,
+    period_start=None,
+    period_end=None,
 ) -> Upload:
     """Registra o upload já como concluído, porque o processamento é atômico."""
     upload = Upload(
@@ -49,10 +45,10 @@ def create(
         file_extension=file_extension,
         file_size_bytes=file_size_bytes,
         sha256=sha256,
-        storage_path=ARQUIVO_DESCARTADO,
-        status="completed",
-        processing_started_at=started_at,
-        processing_finished_at=finished_at,
+        source_format=source_format,
+        document_type=document_type,
+        period_start=period_start,
+        period_end=period_end,
     )
     db.add(upload)
     db.flush()
@@ -68,9 +64,16 @@ def system_category_ids(db: Session) -> dict[str, UUID]:
 
 def add_transactions(db: Session, *, user_id: UUID, upload_id: UUID, linhas: list[dict], category_ids: dict[str, UUID]) -> None:
     """Grava as transações limpas. `linhas` vem de pipeline.analise.linhas_para_gravar."""
+    rules = db.scalars(select(CategoryRule).where(CategoryRule.user_id == user_id,
+        CategoryRule.is_active.is_(True), CategoryRule.match_type == "merchant")
+        .order_by(CategoryRule.priority, CategoryRule.id)).all()
+    by_merchant = {}
+    for rule in rules:
+        by_merchant.setdefault(rule.match_value.casefold(), rule.category_id)
     registros = []
     for linha in linhas:
-        category_id = category_ids.get(linha["category_name"])
+        personal = by_merchant.get((linha["merchant"] or linha["description_raw"]).casefold())
+        category_id = personal or category_ids.get(linha["category_name"])
         registros.append(Transaction(
             user_id=user_id,
             upload_id=upload_id,
@@ -82,11 +85,15 @@ def add_transactions(db: Session, *, user_id: UUID, upload_id: UUID, linhas: lis
             transaction_type=linha["transaction_type"],
             category_id=category_id,
             # Sem a categoria no banco, a transação fica sem categoria, e o motivo é registrado.
-            category_source=linha["category_source"] if category_id else "uncategorized",
+            category_source="personal_rule" if personal else linha["category_source"] if category_id else "uncategorized",
             installment_current=linha["installment_current"],
             installment_total=linha["installment_total"],
             source_row=linha["source_row"],
-            is_duplicate=linha["is_duplicate"],
+            bank_transaction_id=linha.get("bank_transaction_id"),
+            balance=linha.get("balance"),
+            source_sheet=linha.get("source_sheet"),
+            is_duplicate=False,
+            is_suspected_duplicate=linha.get("is_suspected_duplicate", False),
         ))
     db.add_all(registros)
     db.flush()
@@ -171,30 +178,19 @@ def delete(db: Session, upload: Upload) -> None:
 
 def transactions_for_analysis(db: Session, *, user_id: UUID) -> list[dict]:
     """Transações do usuário no formato que pipeline.analise.quadro_de_transacoes espera."""
-    statement = (
-        select(
-            Transaction.transaction_date,
-            Transaction.description_raw,
-            Transaction.merchant,
-            Transaction.amount,
-            Transaction.transaction_type,
-            Transaction.installment_current,
-            Transaction.installment_total,
-            Category.name.label("category_name"),
-        )
-        .outerjoin(Category, Category.id == Transaction.category_id)
-        .where(Transaction.user_id == user_id)
-    )
-    return [
-        {
-            "data": row.transaction_date,
-            "descricao": row.description_raw,
-            "estabelecimento": row.merchant or row.description_raw,
-            "categoria": row.category_name or "Outros",
-            "valor": row.amount,
-            "tipo": row.transaction_type,
-            "parcela_atual": row.installment_current,
-            "parcela_total": row.installment_total,
-        }
-        for row in db.execute(statement).all()
-    ]
+    from app.repositories.transactions import analysis_records
+    return analysis_records(db, user_id)
+
+
+def rejected_rows(db, user_id, upload_id):
+    return db.scalars(select(RejectedRow).where(RejectedRow.user_id == user_id,
+        RejectedRow.upload_id == upload_id).order_by(RejectedRow.source_row, RejectedRow.id)).all()
+
+
+def set_duplicate_flags(db, user_id, decisions):
+    transactions = {str(t.id): t for t in db.scalars(select(Transaction).where(Transaction.user_id == user_id))}
+    for decision in decisions:
+        row = transactions[str(decision["id"])]
+        row.is_duplicate = decision["is_duplicate"]
+        row.is_suspected_duplicate = decision["is_suspected_duplicate"]
+    db.flush()

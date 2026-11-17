@@ -20,5 +20,7 @@ class UploadResponse(BaseModel):
     linhas_rejeitadas: int
     linhas_duplicadas: int
     percentual: float | None
-    total_saidas: float
-    total_entradas: float
+    total_saidas: float | None
+    total_entradas: float | None
+    document_type: str | None = None
+    reused: bool = False

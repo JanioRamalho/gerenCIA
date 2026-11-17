@@ -24,12 +24,7 @@ const STEPS: Step[] = [
   {
     title: "Defina limites por categoria",
     text: "Um teto mensal opcional para cada categoria, com aviso no painel ao chegar a 80% e ao passar de 100%.",
-    status: "Em breve",
-  },
-  {
-    title: "Receba o diagnóstico do mês",
-    text: "Um resumo em linguagem simples, gerado por IA a partir das suas análises, com sugestões de onde economizar.",
-    status: "Em breve",
+    status: "Disponível em Limites",
   },
 ];
 

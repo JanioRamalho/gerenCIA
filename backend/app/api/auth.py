@@ -114,3 +114,11 @@ def me(response: Response, user: User = Depends(get_current_user)):
     # respondeu 401 e esta função nem chega a rodar.
     response.headers["Cache-Control"] = "no-store"
     return user
+
+
+@router.delete("/me", status_code=204)
+def delete_account(response: Response, user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Exclui a própria conta; a confirmação das consequências ocorre na interface."""
+    auth_service.delete_account(db, user)
+    response.delete_cookie(settings.session_cookie_name, path="/")
+    response.headers["Cache-Control"] = "no-store"

@@ -20,7 +20,7 @@ from decimal import Decimal
 
 import pandas as pd
 
-MAX_BYTES = 5 * 1024 * 1024  # limite de 5 MB do planejamento
+MAX_BYTES = 4 * 1024 * 1024  # margem abaixo do limite de corpo da hospedagem
 
 CATEGORIAS = (
     "Alimentação", "Transporte", "Lazer", "Saúde", "Educação", "Moradia",
@@ -61,11 +61,29 @@ def _ler_csv(conteudo: bytes) -> pd.DataFrame:
         raise ArquivoInvalido("Não encontrei colunas no arquivo. Confira se é um CSV com cabeçalho.")
 
     try:
-        return pd.read_csv(
+        leitor = csv.reader(io.StringIO(texto), delimiter=separador, strict=True)
+        cabecalho = next(leitor)
+        origens = []
+        while True:
+            inicio = leitor.line_num + 1
+            try:
+                linha = next(leitor)
+            except StopIteration:
+                break
+            if not linha or all(not c.strip() for c in linha):
+                continue
+            if len(linha) != len(cabecalho):
+                raise ArquivoInvalido(f"A linha {inicio} tem quantidade de colunas diferente do cabeçalho.")
+            origens.append(inicio)
+        quadro = pd.read_csv(
             io.StringIO(texto), sep=separador, dtype=str, keep_default_na=False,
             quoting=csv.QUOTE_MINIMAL, skip_blank_lines=True,
         )
-    except (pd.errors.ParserError, pd.errors.EmptyDataError) as exc:
+        # A origem vem do CSV real, inclusive quando há linhas vazias/multilinha.
+        quadro = quadro.loc[~(quadro.apply(lambda c: c.astype(str).str.strip()) == "").all(axis=1)].copy()
+        quadro["linha_origem"] = origens
+        return quadro
+    except (csv.Error, pd.errors.ParserError, pd.errors.EmptyDataError) as exc:
         raise ArquivoInvalido("Não foi possível ler o CSV. Confira o separador e as aspas.") from exc
 
 
@@ -74,14 +92,16 @@ def ler_arquivo(conteudo: bytes, nome: str) -> pd.DataFrame:
     if not conteudo:
         raise ArquivoInvalido("O arquivo está vazio.")
     if len(conteudo) > MAX_BYTES:
-        raise ArquivoInvalido("O arquivo passa de 5 MB.")
+        raise ArquivoInvalido("O arquivo passa de 4 MB.")
 
     nome_minusculo = nome.lower()
     if nome_minusculo.endswith(".csv"):
         df = _ler_csv(conteudo)
     elif nome_minusculo.endswith(".xlsx"):
         try:
-            df = pd.read_excel(io.BytesIO(conteudo), dtype=str, engine="openpyxl")
+            with pd.ExcelFile(io.BytesIO(conteudo), engine="openpyxl") as planilha:
+                folha = planilha.sheet_names[0]
+                df = pd.read_excel(planilha, sheet_name=folha, dtype=str)
         except Exception as exc:  # openpyxl levanta vários tipos de erro para arquivos corrompidos
             raise ArquivoInvalido("Não foi possível abrir a planilha XLSX.") from exc
     else:
@@ -91,7 +111,9 @@ def ler_arquivo(conteudo: bytes, nome: str) -> pd.DataFrame:
     df = df.fillna("")
     df = df.loc[~(df.apply(lambda coluna: coluna.astype(str).str.strip()) == "").all(axis=1)]
     # O cabeçalho é a linha 1 do arquivo; o índice do pandas começa em 0 na linha 2.
-    df = df.assign(linha_origem=df.index + 2)
+    if not nome_minusculo.endswith(".csv"):
+        df = df.assign(linha_origem=df.index + 2)
+    df["folha_origem"] = folha if nome_minusculo.endswith(".xlsx") else None
     if df.empty:
         raise ArquivoInvalido("O arquivo não tem nenhum lançamento abaixo do cabeçalho.")
     return df
@@ -106,12 +128,17 @@ _ALIAS = {
     "descricao": {"descricao", "estabelecimento", "historico", "lancamento", "title", "detalhes"},
     "valor": {"valor", "valorr", "valorrs", "valoremr", "amount"},
     "categoria": {"categoria", "category"},
+    "identificador": {"identificador", "id", "transactionid", "idtransacao"},
+    "saldo": {"saldo", "balance"},
+    "natureza": {"natureza", "tipo", "transactiontype"},
 }
 
 
 def adaptar(df: pd.DataFrame) -> tuple[str, pd.DataFrame]:
     """Devolve o formato reconhecido e um DataFrame com colunas data, descricao, valor, categoria."""
     por_chave = {_chave_coluna(c): c for c in df.columns if c != "linha_origem"}
+    if len(por_chave) != len([c for c in df.columns if c != "linha_origem"]):
+        raise ArquivoInvalido("Existem colunas com o mesmo nome normalizado; confira o cabeçalho.")
 
     if {"date", "title", "amount"} <= por_chave.keys():
         formato = "fatura_nubank"
@@ -141,6 +168,10 @@ def adaptar(df: pd.DataFrame) -> tuple[str, pd.DataFrame]:
         "descricao": df[escolhidas["descricao"]],
         "valor": df[escolhidas["valor"]],
         "categoria": df[escolhidas["categoria"]] if "categoria" in escolhidas else "",
+        "identificador": df[escolhidas["identificador"]] if "identificador" in escolhidas else "",
+        "saldo": df[escolhidas["saldo"]] if "saldo" in escolhidas else "",
+        "natureza": df[escolhidas["natureza"]] if "natureza" in escolhidas else "",
+        "folha_origem": df.get("folha_origem", None),
     })
     return formato, adaptado
 
@@ -228,15 +259,30 @@ def limpar(adaptado: pd.DataFrame) -> tuple[pd.DataFrame, list[dict]]:
             rejeitar("invalid_value", f"O valor '{linha['valor']}' não pôde ser convertido.")
             continue
 
+        saldo_texto = str(linha.get("saldo", "")).strip()
+        saldo = _converter_valor(saldo_texto, ponto) if saldo_texto else None
+        if saldo_texto and saldo is None:
+            rejeitar("invalid_balance", "O saldo informado não pôde ser convertido.")
+            continue
+
+        natureza = str(linha.get("natureza", "")).strip()
+        if natureza and natureza not in {"purchase", "fee", "refund", "payment", "income", "other"}:
+            rejeitar("invalid_type", "Natureza desconhecida; use purchase, fee, refund, payment, income ou other.")
+            continue
+
         validas.append({
             "linha": int(linha["linha_origem"]),
             "data": data,
             "descricao": descricao,
             "centavos": centavos,
             "categoria_banco": str(linha["categoria"]).strip(),
+            "bank_transaction_id": str(linha.get("identificador", "")).strip() or None,
+            "saldo_centavos": saldo,
+            "source_sheet": linha.get("folha_origem"),
+            "natureza": natureza,
         })
 
-    colunas = ["linha", "data", "descricao", "centavos", "categoria_banco"]
+    colunas = ["linha", "data", "descricao", "centavos", "categoria_banco", "bank_transaction_id", "saldo_centavos", "source_sheet", "natureza"]
     return pd.DataFrame(validas, columns=colunas), rejeitadas
 
 
@@ -321,17 +367,20 @@ def _parcela_info(descricao: str) -> tuple[int, int] | None:
 
 _PAGAMENTO_FATURA = re.compile(r" (pagamento (recebido|efetuado|da fatura|de fatura|fatura)|fatura (do )?cartao) ")
 _TARIFA = re.compile(r" (juros|iof|multa|tarifa|anuidade|encargos?) ")
+_ESTORNO = re.compile(r" (estorno|reembolso|devolucao) ")
 
 
 def _tipo_transacao(descricao: str, saiu_dinheiro: bool, modo: str) -> str:
     """Tipo da transação, entre os valores aceitos pelo banco.
 
     purchase e fee aumentam o gasto. payment (pagamento da fatura), refund
-    (estorno ou crédito) e other (entrada do extrato) ficam fora do gasto.
+    Estornos reduzem o gasto. Receitas e pagamentos ficam separados.
     """
     texto = _texto_busca(descricao)
     if _PAGAMENTO_FATURA.search(texto):
         return "payment"
+    if _ESTORNO.search(texto) and not saiu_dinheiro:
+        return "refund"
     if saiu_dinheiro:
         return "fee" if _TARIFA.search(texto) else "purchase"
-    return "refund" if modo == "fatura" else "other"
+    return "refund" if modo == "fatura" else "income"

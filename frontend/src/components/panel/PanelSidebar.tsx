@@ -1,21 +1,22 @@
 import { useEffect, useRef, useState, type FocusEvent } from "react";
 import type { User } from "../../auth/api";
 import Brand from "../Brand";
+import Icon, { type IconName } from "../Icon";
 
-/** Uma seção do menu. `href: null` quer dizer que a seção ainda não foi construída. */
+/** Seções disponíveis na área autenticada. */
 type MenuItem = {
   label: string;
-  href: string | null;
+  href: string;
+  icon: IconName;
 };
 
-// Seções do painel, na ordem do menu. As que ainda não existem aparecem sem
-// link, com a marca "em breve", para a pessoa saber o que vem por aí.
+// A ordem acompanha o percurso da análise à revisão e configuração.
 const MENU_ITEMS: MenuItem[] = [
-  { label: "Painel", href: "/app" },
-  { label: "Arquivos", href: "/app/files" },
-  { label: "Transações", href: null },
-  { label: "Limites", href: null },
-  { label: "Conta", href: "/app/account" },
+  { label: "Painel", href: "/app", icon: "tags" },
+  { label: "Arquivos", href: "/app/files", icon: "upload" },
+  { label: "Transações", href: "/app/transactions", icon: "rows" },
+  { label: "Limites", href: "/app/budgets", icon: "columns" },
+  { label: "Conta", href: "/app/account", icon: "user" },
 ];
 
 type PanelSidebarProps = {
@@ -105,20 +106,11 @@ type MenuEntryProps = {
   currentPath: string;
 };
 
-/** Uma linha do menu: link para seções prontas, texto com "em breve" para as futuras. */
+/** O link ativo é identificado também para leitores de tela. */
 function MenuEntry({ item, currentPath }: MenuEntryProps) {
-  if (item.href === null) {
-    return <li>
-      <span className="panel-menu-item is-planned">
-        {item.label}
-        <small>em breve</small>
-      </span>
-    </li>;
-  }
-
   // aria-current="page" avisa aos leitores de tela qual seção está aberta.
   const isCurrent = item.href === currentPath;
   return <li>
-    <a className="panel-menu-item" href={item.href} aria-current={isCurrent ? "page" : undefined}>{item.label}</a>
+    <a className="panel-menu-item" href={item.href} aria-current={isCurrent ? "page" : undefined}><Icon name={item.icon} size={20} />{item.label}</a>
   </li>;
 }

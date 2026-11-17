@@ -48,6 +48,17 @@ def rule(category):
     """
 
 
+# Os fixtures históricos acima continuam descrevendo a revisão 0001.
+HEAD_SETUP = SETUP.replace("file_size_bytes, sha256, storage_path)", "file_size_bytes, sha256)").replace(
+    "repeat('a', 64), 'test.xlsx')", "repeat('a', 64))")
+
+
+def head_transaction(category="NULL", current="NULL", total="NULL"):
+    return transaction(category, current, total).replace(
+        "installment_current, installment_total, bronze_row_id)", "installment_current, installment_total)").replace(
+        f"{current}, {total}, NULL)", f"{current}, {total})")
+
+
 def assert_rejected(db, statements, state):
     result = db.sql(SETUP + statements + "ROLLBACK;", check=False)
     assert result.returncode != 0, "The database accepted an invalid operation."
@@ -214,8 +225,13 @@ def test_orm_constraints_work_in_postgresql(postgres_cluster):
     Base.metadata.create_all(engine)
     db.sql(";\n".join(statements) + ";")
     db.script(ROOT / "scripts/sql/category_integrity.sql")
-    test_delete_bronze_preserves_transaction_owner(db)
-    test_invalid_installments_rejected(db, "NULL", "3")
-    test_same_row_number_in_different_sheets(db)
-    test_duplicate_row_in_same_sheet_or_csv_rejected(db, "NULL")
-    test_foreign_category_rejected_on_insert(db, "transaction")
+    for statement in (head_transaction(current="NULL", total="3"), head_transaction(category=f"'{OTHER}'")):
+        result = db.sql(HEAD_SETUP + statement + "ROLLBACK;", check=False)
+        assert result.returncode != 0 and "23514" in result.stderr
+    result = db.sql(HEAD_SETUP + head_transaction(category=f"'{OWN}'") + f"""
+        DELETE FROM uploads WHERE id='{UPLOAD}';
+        SELECT count(*) FROM transactions;
+        ROLLBACK;
+    """)
+    assert result.stdout.strip() == "0"
+    assert db.sql("SELECT to_regclass('bronze_rows') IS NULL AND to_regclass('upload_mappings') IS NULL;").stdout.strip() == "t"
