@@ -6,6 +6,8 @@ Base: [especificação aprovada](../specs/2026-11-16-renovacao-interna-v1-design
 
 Estado: **plano para revisão e escolha da execução**. Nenhuma tarefa de produto deste plano foi executada. A aprovação da especificação autorizou preparar este documento.
 
+Atualização pendente: a [nova entrevista de interface e simplificação](../specs/2026-11-16-refatoracao-geral-v1-design.md) registra decisões adicionais e prazo de 27/11. Após sua revisão escrita, atualizar este plano, principalmente comparação entre dois meses, cores/ícones, recorrências, lista recente e remoções de duplicação, antes de iniciar sua execução.
+
 A skill complementar `writing-plans` não foi encontrada por nome de diretório ou conteúdo nos diretórios de skills e cache disponíveis. Este plano foi elaborado diretamente a partir da especificação, do inventário do código e das revisões dos especialistas; não se declara aplicação daquela skill.
 
 ## 1. Resultado e organização
