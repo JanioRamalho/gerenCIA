@@ -2,7 +2,7 @@
 
 Data: 16 de novembro de 2026. Branch: `Janio`. Base examinada: `0fc5899`.
 
-Estado: **direção escolhida na entrevista; especificação escrita para revisão do usuário**. Este documento não declara aprovação escrita, implementação, migração aplicada ou publicação. A entrega tem prazo de **27 de novembro de 2026**; a data da banca não foi informada.
+Estado: **especificação escrita aprovada pelo usuário em 16/11/2026**, a partir do documento registrado em `72d6488`. A aprovação autoriza preparar o plano de execução; não declara implementação, migração aplicada ou publicação. A entrega tem prazo de **27 de novembro de 2026**; a data da banca não foi informada.
 
 ## 1. Resultado e decisões da entrevista
 
@@ -28,7 +28,7 @@ Este documento complementa a [especificação financeira e funcional anterior](2
 
 O [planejamento acadêmico](../../planejamento-gerencia.txt), a [arquitetura](../../arquitetura.md), a [análise de dados](../../analise-de-dados.md) e o [guia do banco](../../database-setup.md) continuam definindo o núcleo do produto. As escolhas desta entrevista prevalecem sobre as antigas decisões de layout em `PRODUCT.md`, `DESIGN.md` e na especificação anterior. Textos antigos de estado não comprovam o estado atual do código.
 
-O [plano anterior](../plans/2026-11-16-renovacao-interna-v1.md) é referência de tarefas, dependências e verificações. Antes de executar, ele precisa incorporar esta entrevista e a revisão escrita. Não executar sua comparação antiga como substituta da seleção de dois meses.
+O [plano de execução](../plans/2026-11-16-renovacao-interna-v1.md) incorpora esta entrevista e continua sujeito à revisão e escolha da execução pelo usuário. Suas versões anteriores permanecem no Git. Não executar a comparação antiga como substituta da seleção de dois meses.
 
 ## 3. Estado observado e escopo
 
@@ -163,4 +163,4 @@ Usar pytest para cálculos e regras alteradas, casos pequenos conferidos à mão
 
 Revisão documental: os agentes de experiência e código fizeram leituras independentes do repositório e desta especificação. A revisão encontrou e resolveu a ambiguidade da base de anualização de serviços. Links locais foram conferidos; não foram executados testes de produto nesta etapa.
 
-Próximo passo após a revisão escrita do usuário: atualizar o plano com esta especificação, tarefas verificáveis e divisão dos agentes, e apresentar a sequência para escolha da execução. Até lá, não iniciar código de produto ou protótipo.
+Com a revisão escrita aprovada, o próximo entregável é o plano atualizado, com tarefas verificáveis e divisão dos agentes, para revisão e escolha da execução. Até essa escolha, não iniciar código de produto ou protótipo.
