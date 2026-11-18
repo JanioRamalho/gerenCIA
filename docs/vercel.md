@@ -13,9 +13,11 @@ migrações. A publicação depende da preparação e autorização da compatibi
 do banco; veja [a validação visual](validacao-visual-2026-11-17.md).
 
 O usuário autorizou somente preparar o banco, sem aplicar em produção.
-O [procedimento de backup e ensaio](preparacao-banco-2026-11-17.md) foi testado
-com PostgreSQL descartável; a captura real aguarda conexão direta do Neon
-configurada localmente. Nenhum teste sintético substitui essa validação real.
+O [backup real foi restaurado e conferido em duas cópias locais](preparacao-banco-2026-11-17.md).
+O ensaio recusou as migrações atuais: a origem usa `0002_upload_history`,
+ausente do grafo atual, e possui campos/restrições diferentes. É necessária uma
+ponte de compatibilidade antes de propor aplicação em produção; não usar `stamp`
+para saltar a divergência. Nenhuma migração foi aplicada ao banco hospedado.
 
 O `vercel.json` da raiz declara dois serviços: Vite em `frontend/` e FastAPI em
 `backend/`, com entrada `main:app`. Os rewrites enviam `/api/...` à API e o restante

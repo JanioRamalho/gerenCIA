@@ -94,6 +94,11 @@ escopo estritamente visual: conferir revisão/estrutura reais, obter backup
 restaurável, ensaiar numa cópia e apresentar o resultado antes de autorizar a
 execução em produção. Não executar `upgrade head` ou `stamp` sem essa preparação.
 
-A revisão real do PostgreSQL hospedado ainda não foi confirmada. A CLI informou
-que as variáveis sensíveis de produção não podem ser exportadas e recorreu ao
-ambiente local; essa leitura foi descartada e não constitui inventário de produção.
+A tentativa inicial pela CLI usou configuração local e foi descartada. Após
+configurar a conexão direta fornecida pelo usuário, o backup real confirmou a
+revisão `0002_upload_history`, ausente do grafo atual. Duas restaurações locais
+conferiram dados, estruturas e sequências; o ensaio da migração atual foi recusado
+sem alterar os dados da cópia. O banco real já tem alguns objetos da evolução
+financeira, com nomes e tipos diferentes, portanto não deve receber `stamp` ou
+a 0002 atual diretamente. Veja o [resultado e a ponte necessária](preparacao-banco-2026-11-17.md).
+Nenhuma migração foi executada em produção e o deployment não foi promovido.
