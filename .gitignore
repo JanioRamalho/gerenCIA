@@ -49,3 +49,5 @@ Thumbs.db
 .audit-tools-js/
 # Local design tooling context and generated review artifacts
 .impeccable/
+# Private database backups and manifests
+.private/

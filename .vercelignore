@@ -8,6 +8,7 @@
 .audit-tools/
 .audit-tools-js/
 .impeccable/
+.private/
 .agents/
 .codex/
 .aws/

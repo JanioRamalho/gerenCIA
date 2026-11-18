@@ -12,6 +12,11 @@ promoção ao domínio público: a importação encontrou a coluna
 migrações. A publicação depende da preparação e autorização da compatibilidade
 do banco; veja [a validação visual](validacao-visual-2026-11-17.md).
 
+O usuário autorizou somente preparar o banco, sem aplicar em produção.
+O [procedimento de backup e ensaio](preparacao-banco-2026-11-17.md) foi testado
+com PostgreSQL descartável; a captura real aguarda conexão direta do Neon
+configurada localmente. Nenhum teste sintético substitui essa validação real.
+
 O `vercel.json` da raiz declara dois serviços: Vite em `frontend/` e FastAPI em
 `backend/`, com entrada `main:app`. Os rewrites enviam `/api/...` à API e o restante
 ao frontend. O rewrite interno do Vite entrega `index.html` para deep links como
