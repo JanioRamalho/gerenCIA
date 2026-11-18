@@ -6,8 +6,10 @@ from sqlalchemy.orm import Session
 
 from app.api.analysis import router as analysis_router
 from app.api.auth import router as auth_router
+from app.api.budgets import router as budgets_router
 from app.api.dashboard import router as dashboard_router
 from app.api.errors import validation_error_handler
+from app.api.transactions import router as transactions_router
 from app.api.uploads import router as uploads_router
 from app.db.session import engine, get_db
 from app.models import Category
@@ -19,6 +21,8 @@ app.include_router(auth_router)
 app.include_router(analysis_router)
 app.include_router(uploads_router)
 app.include_router(dashboard_router)
+app.include_router(transactions_router)
+app.include_router(budgets_router)
 
 @app.get("/api/health")
 def health():

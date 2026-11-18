@@ -693,6 +693,9 @@ ALTER TABLE ONLY public.uploads
 \ir sql/category_integrity.sql
 \ir sql/display_codes.sql
 \ir sql/seed_categories.sql
+\ir sql/budgets.sql
+\ir sql/budget_months.sql
+\ir sql/category_colors.sql
 
 COMMIT;
 

@@ -21,6 +21,7 @@ from app.pipeline.analise import calcular_analise, linhas_para_gravar, processar
 from app.pipeline.previa import ArquivoInvalido
 from app.repositories import uploads as uploads_repo
 from app.schemas.uploads import UploadResponse
+from app.services import budgets
 
 FUSO_BRASIL = ZoneInfo("America/Sao_Paulo")
 
@@ -94,6 +95,7 @@ def enviar_arquivo(db: Session, user: User, *, nome: str, conteudo: bytes) -> Up
     gastos = transacoes[transacoes["eh_gasto"]]
     qualidade = processado.qualidade
     try:
+        budgets.lock_user(db, user.id)
         upload = uploads_repo.create(
             db,
             user_id=user.id,
@@ -132,6 +134,7 @@ def enviar_arquivo(db: Session, user: User, *, nome: str, conteudo: bytes) -> Up
                 "periodo_fim": transacoes["data"].max().date().isoformat(),
             },
         )
+        budgets.record_alerts(db, user.id)
         db.commit()
     except IntegrityError as exc:
         db.rollback()
@@ -154,10 +157,12 @@ def historico(db: Session, user: User) -> list[UploadResponse]:
 
 def remover(db: Session, user: User, upload_id) -> bool:
     """Remove um arquivo e tudo o que veio dele. Devolve False se não for desta pessoa."""
+    budgets.lock_user(db, user.id)
     upload = uploads_repo.get(db, user_id=user.id, upload_id=upload_id)
     if upload is None:
         return False
     uploads_repo.delete(db, upload)
+    budgets.record_alerts(db, user.id)
     db.commit()
     return True
 
@@ -168,6 +173,9 @@ def painel(db: Session, user: User, mes: str | None) -> dict:
     if not registros:
         return {"tem_dados": False, "arquivos": 0}
     analise = calcular_analise(quadro_de_transacoes(registros), mes=mes, incluir_lancamentos=True)
+    colors = uploads_repo.category_colors(db, user_id=user.id)
+    for item in analise["por_categoria"]:
+        item["cor"] = colors.get(item["categoria"])
     return {
         "tem_dados": True,
         "arquivos": uploads_repo.count(db, user_id=user.id),

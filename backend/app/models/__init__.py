@@ -1,7 +1,9 @@
 from app.models.entities import (
     BronzeRow,
     Category,
+    CategoryBudget,
     CategoryRule,
+    Notification,
     QualityCheck,
     RejectedRow,
     SessionRecord,
@@ -14,7 +16,9 @@ from app.models.entities import (
 __all__ = [
     "BronzeRow",
     "Category",
+    "CategoryBudget",
     "CategoryRule",
+    "Notification",
     "QualityCheck",
     "RejectedRow",
     "SessionRecord",

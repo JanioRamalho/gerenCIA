@@ -9,10 +9,10 @@ from datetime import datetime
 from decimal import Decimal
 from uuid import UUID
 
-from sqlalchemy import and_, func, select
+from sqlalchemy import and_, func, or_, select
 from sqlalchemy.orm import Session
 
-from app.models import Category, QualityCheck, RejectedRow, Transaction, Upload
+from app.models import Category, CategoryRule, QualityCheck, RejectedRow, Transaction, Upload
 
 # O planejamento prevê descartar o arquivo original; a coluna storage_path
 # ainda é obrigatória no esquema atual, então guardamos este aviso nela.
@@ -68,9 +68,20 @@ def system_category_ids(db: Session) -> dict[str, UUID]:
 
 def add_transactions(db: Session, *, user_id: UUID, upload_id: UUID, linhas: list[dict], category_ids: dict[str, UUID]) -> None:
     """Grava as transações limpas. `linhas` vem de pipeline.analise.linhas_para_gravar."""
+    rules = db.scalars(
+        select(CategoryRule).join(Category, Category.id == CategoryRule.category_id)
+        .where(CategoryRule.user_id == user_id, CategoryRule.is_active.is_(True),
+               CategoryRule.match_type == "merchant", Category.is_active.is_(True))
+        .order_by(CategoryRule.priority, CategoryRule.code)
+    )
+    by_merchant = {}
+    for rule in rules:
+        by_merchant.setdefault(rule.match_value.casefold(), rule.category_id)
     registros = []
     for linha in linhas:
-        category_id = category_ids.get(linha["category_name"])
+        personal = by_merchant.get((linha["merchant"] or "").casefold())
+        category_id = personal or category_ids.get(linha["category_name"])
+        source = "personal_rule" if personal else linha["category_source"] if category_id else "uncategorized"
         registros.append(Transaction(
             user_id=user_id,
             upload_id=upload_id,
@@ -82,7 +93,7 @@ def add_transactions(db: Session, *, user_id: UUID, upload_id: UUID, linhas: lis
             transaction_type=linha["transaction_type"],
             category_id=category_id,
             # Sem a categoria no banco, a transação fica sem categoria, e o motivo é registrado.
-            category_source=linha["category_source"] if category_id else "uncategorized",
+            category_source=source,
             installment_current=linha["installment_current"],
             installment_total=linha["installment_total"],
             source_row=linha["source_row"],
@@ -198,3 +209,15 @@ def transactions_for_analysis(db: Session, *, user_id: UUID) -> list[dict]:
         }
         for row in db.execute(statement).all()
     ]
+
+
+def category_colors(db: Session, *, user_id: UUID) -> dict[str, str]:
+    rows = db.execute(
+        select(Category.name, Category.color)
+        .where(Category.color.is_not(None), or_(Category.user_id.is_(None), Category.user_id == user_id))
+        .order_by(Category.user_id.is_not(None), Category.id)
+    )
+    colors = {}
+    for name, color in rows:
+        colors.setdefault(name, color)
+    return colors

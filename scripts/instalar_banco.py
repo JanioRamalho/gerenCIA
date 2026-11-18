@@ -65,7 +65,7 @@ def main() -> None:
     except psycopg.Error as erro:
         sys.exit(f"Não foi possível instalar o esquema: {erro}")
 
-    print(f"Pronto: {tabelas} tabelas e {categorias} categorias iniciais. (O esperado é 10 e 11.)")
+    print(f"Pronto: {tabelas} tabelas e {categorias} categorias iniciais. (O esperado é 12 e 11.)")
 
 
 if __name__ == "__main__":

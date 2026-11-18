@@ -219,6 +219,42 @@ class CategoryRule(DisplayCodeMixin, Base):
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
 
+class CategoryBudget(DisplayCodeMixin, Base):
+    __tablename__ = "category_budgets"
+    __table_args__ = (
+        UniqueConstraint("user_id", "category_id", "period", "month", name="category_budgets_user_category_month_key"),
+        CheckConstraint("amount > 0", name="category_budgets_positive_amount"),
+        CheckConstraint("period = 'monthly'", name="category_budgets_period_valid"),
+        CheckConstraint("extract(day FROM month) = 1", name="category_budgets_month_starts_on_first"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4, server_default=text("gen_random_uuid()"))
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    category_id: Mapped[UUID] = mapped_column(ForeignKey("categories.id", ondelete="CASCADE"), nullable=False)
+    period: Mapped[str] = mapped_column(Text, nullable=False, server_default=text("'monthly'"))
+    month: Mapped[date] = mapped_column(Date, nullable=False)
+    amount: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
+
+
+class Notification(DisplayCodeMixin, Base):
+    __tablename__ = "notifications"
+    __table_args__ = (
+        UniqueConstraint("user_id", "category_id", "month", "threshold", name="notifications_budget_threshold_key"),
+        CheckConstraint("threshold IN (80, 100)", name="notifications_threshold_valid"),
+        Index("notifications_user_read_idx", "user_id", "read_at"),
+    )
+
+    id: Mapped[UUID] = mapped_column(Uuid(as_uuid=True), primary_key=True, default=uuid4, server_default=text("gen_random_uuid()"))
+    user_id: Mapped[UUID] = mapped_column(ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    category_id: Mapped[UUID] = mapped_column(ForeignKey("categories.id", ondelete="CASCADE"), nullable=False)
+    month: Mapped[date] = mapped_column(Date, nullable=False)
+    threshold: Mapped[int] = mapped_column(Integer, nullable=False)
+    spent: Mapped[Decimal] = mapped_column(Numeric, nullable=False)
+    budget: Mapped[Decimal] = mapped_column(Numeric(14, 2), nullable=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
+    read_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
 class QualityCheck(DisplayCodeMixin, Base):
     __tablename__ = "quality_checks"
     __table_args__ = (
