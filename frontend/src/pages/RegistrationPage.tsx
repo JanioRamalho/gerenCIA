@@ -10,12 +10,6 @@ type FormErrors = Partial<Record<FieldName | "form", string>>;
 
 const initialValues: FormValues = { name: "", email: "", password: "", confirm: "" };
 
-const planned = [
-  "Enviar faturas CSV e XLSX do cartão.",
-  "Revisar estabelecimentos e corrigir categorias.",
-  "Comparar meses e chegar aos lançamentos de cada total.",
-];
-
 function validate(values: FormValues): FormErrors {
   const errors: FormErrors = {};
   if (values.name.trim().length < 2) errors.name = "Informe seu nome completo.";
@@ -82,22 +76,15 @@ export default function RegistrationPage() {
 
   return <div className="registration-page">
     <a className="skip-link" href="#main-content">Pular para o conteúdo</a>
-    <header className="site-header on-night"><div className="page-container header-inner">
+    <header className="site-header"><div className="page-container header-inner">
       <Brand />
-      <nav className="account-nav" aria-label="Navegação de conta"><a className="text-link" href="/login">Entrar</a><a className="text-link" href="/">Voltar ao início</a></nav>
+      <nav className="account-nav" aria-label="Navegação de conta"><a className="text-link" href="/">Voltar ao início</a></nav>
     </div></header>
     <main className="registration-main page-container" id="main-content" tabIndex={-1}>
-      <section className="registration-intro" aria-labelledby="registration-title">
-        <h1 id="registration-title">Crie sua conta.</h1>
-        <p className="lead">Com a conta, as suas faturas ficarão guardadas só para você. O envio de arquivos ainda está em desenvolvimento, e a demonstração com dados fictícios continua aberta a todos.</p>
-        <div className="planned-list">
-          <h2>Com uma conta, será possível:</h2>
-          <ul>{planned.map((item) => <li key={item}><i className="status-mark" aria-hidden="true" />{item}</li>)}</ul>
-        </div>
-      </section>
       <section className="registration-form-panel" aria-labelledby="form-title">
-        <h2 id="form-title">Dados da conta</h2>
-        <form onSubmit={submit} noValidate>
+        <h1 id="form-title">Crie sua conta.</h1>
+        <p className="access-intro">Importe seus arquivos e organize suas finanças por período e categoria.</p>
+        <form onSubmit={submit} noValidate aria-busy={submitting}>
           {errors.form && <p ref={alertRef} tabIndex={-1} role="alert" className="form-alert">{errors.form}</p>}
           <Field id="register-name" label="Nome completo" error={errors.name}>
             <input id="register-name" name="name" type="text" autoComplete="name" value={values.name} onChange={(event) => change("name", event.target.value)} aria-invalid={!!errors.name} aria-describedby={described("name")} required />
@@ -114,6 +101,7 @@ export default function RegistrationPage() {
           <button className="primary-button is-night form-submit" type="submit" disabled={submitting}>{submitting ? "Criando conta…" : "Criar conta"}</button>
         </form>
         <p className="form-switch">Já tem conta? <a className="text-link" href="/login">Entrar</a></p>
+        <div className="access-demo"><p>Quer conhecer primeiro?</p><a className="text-link" href="/#demo">Explorar demonstração</a></div>
       </section>
     </main>
   </div>;

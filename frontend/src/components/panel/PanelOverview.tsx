@@ -76,5 +76,5 @@ export default function PanelOverview({ user }: PanelOverviewProps) {
   if (!data.meses_disponiveis.length) {
     return <PanelHome user={user} />;
   }
-  return <AnalyticsDashboard user={user} data={data} month={period.month} reference={period.reference || data.comparacao?.mes_referencia || ""} onPeriodChange={changePeriod} busy={reloading} failed={failed} onRetry={() => setAttempt((value) => value + 1)} />;
+  return <AnalyticsDashboard data={data} month={period.month} reference={period.reference || data.comparacao?.mes_referencia || ""} onPeriodChange={changePeriod} busy={reloading} failed={failed} onRetry={() => setAttempt((value) => value + 1)} />;
 }

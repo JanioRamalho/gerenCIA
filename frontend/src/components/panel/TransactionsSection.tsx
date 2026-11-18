@@ -1,8 +1,10 @@
 import { useEffect, useRef, useState, type FormEvent } from "react";
-import { correctCategory, getTransactions, leaveIfSignedOut, listCategories, type CategoryItem, type TransactionItem, type TransactionPage } from "../../panel/api";
+import { correctCategory, getTransactions, getUploadDetail, leaveIfSignedOut, listCategories, type CategoryItem, type TransactionItem, type TransactionPage } from "../../panel/api";
 import { money } from "../../lib/format";
 import CategoryMark from "./CategoryMark";
 import Icon from "../Icon";
+import { monthLabel } from "./formatDate";
+import "../../styles/panel-tasks.css";
 
 const types: Record<string, string> = { purchase: "Compra", fee: "Tarifa", refund: "Estorno", payment: "Pagamento", income: "Entrada", other: "Outra movimentação" };
 const failureMessage = (error: unknown) => error instanceof Error ? error.message : "Não foi possível concluir. Tente de novo.";
@@ -90,7 +92,7 @@ export default function TransactionsSection() {
     navigate(next);
   }
 
-  return <div className="panel-page">
+  return <div className="panel-page gc-task-page gc-transactions-page">
     <header className="panel-page-head">
       <h1>Transações</h1>
       <p className="lead">Encontre uma despesa e confira o que está por trás de cada total.</p>
@@ -148,7 +150,7 @@ export default function TransactionsSection() {
         next.delete("page");
         navigate(next);
       }} aria-label={`Remover filtro ${filterLabels[key] ?? key}`}>
-        {filterLabels[key] ?? key}: {key === "uncategorized" ? "Sem categoria" : key === "category_id" ? categories.find((item) => item.id === value)?.name ?? "Categoria selecionada" : key === "transaction_type" ? types[value] : key === "eligibility" ? eligibilityLabels[value] ?? value : value}<span aria-hidden="true"> ×</span>
+        {filterLabels[key] ?? key}: {key === "month" ? value === "all" ? "Todos os meses" : value === "latest" ? "Mês mais recente" : /^\d{4}-\d{2}$/.test(value) ? monthLabel(value) : value : key === "uncategorized" ? "Sem categoria" : key === "category_id" ? categories.find((item) => item.id === value)?.name ?? "Categoria selecionada" : key === "transaction_type" ? types[value] : key === "eligibility" ? eligibilityLabels[value] ?? value : value}<span aria-hidden="true"> ×</span>
       </button>
     </li>)}</ul> : null}
     {error ? <p className="pd-error" role="alert">{error} <button className="text-button" onClick={() => setAttempt((value) => value + 1)}>Tentar de novo</button>
@@ -156,7 +158,7 @@ export default function TransactionsSection() {
     <section className="gc-surface" aria-busy={busy} aria-labelledby="transactions-heading">
       <div className="gc-section-heading">
         <div>
-          <h2 id="transactions-heading">{data ? `${data.total} movimentações encontradas` : "Carregando transações…"}</h2>
+          <h2 id="transactions-heading">{data ? `${data.total} movimentações encontradas` : error ? "Transações indisponíveis" : "Carregando transações…"}</h2>
           <p>Os totais consideram todos os resultados do filtro, em todas as páginas.</p>
         </div>
       </div>
@@ -175,29 +177,29 @@ export default function TransactionsSection() {
             <dd>{money(data.aggregates.payments)}</dd>
           </div>
         </dl>
-        {data.items.length ? <div className="pd-scroll" tabIndex={0} role="region" aria-label="Tabela de transações, role horizontalmente para conferir todas as colunas">
+        {data.items.length ? <div className="pd-scroll gc-transaction-results" tabIndex={0} role="region" aria-label="Resultados das transações">
           <table className="pd-table gc-transactions-table">
             <thead>
               <tr>
-                <th>Data</th>
-                <th>Estabelecimento</th>
-                <th>Categoria</th>
-                <th>Valor</th>
-                <th>Detalhes</th>
+                <th scope="col">Data</th>
+                <th scope="col">Estabelecimento</th>
+                <th scope="col">Categoria</th>
+                <th scope="col">Valor</th>
+                <th scope="col">Detalhes</th>
               </tr>
             </thead>
             <tbody>{data.items.map((item) => <tr key={item.id}>
-              <td>{day(item.date)}</td>
-              <td>
+              <td className="gc-transaction-date">{day(item.date)}</td>
+              <td className="gc-transaction-merchant">
                 <strong>{item.merchant || item.description}</strong>
                 <small>{types[item.transaction_type] ?? item.transaction_type}{item.is_duplicate ? " · duplicata excluída" : item.is_suspected_duplicate ? " · suspeita mantida no gasto" : ""}</small>
               </td>
-              <td>
+              <td className="gc-transaction-category">
                 <span className="gc-inline-category">
                   <CategoryMark name={item.category_name} compact />{item.category_name}</span>
               </td>
-              <td>{money(item.amount)}</td>
-              <td>
+              <td className="gc-transaction-amount">{money(item.amount)}</td>
+              <td className="gc-transaction-action">
                 <button className="text-button" onClick={() => setEditing(item)}>Conferir e categorizar</button>
               </td>
             </tr>)}</tbody>
@@ -224,9 +226,19 @@ function CategoryEditor({ item, categories, onClose, onSaved }: { item: Transact
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [saved, setSaved] = useState(false);
+  const [sourceName, setSourceName] = useState("");
   useEffect(() => {
     heading.current?.focus();
   }, []);
+  useEffect(() => {
+    const controller = new AbortController();
+    getUploadDetail(item.upload_id, controller.signal).then((detail) => {
+      if (!controller.signal.aborted) setSourceName(detail.arquivo.original_filename);
+    }).catch((failure) => {
+      if (!controller.signal.aborted) leaveIfSignedOut(failure);
+    });
+    return () => controller.abort();
+  }, [item.upload_id]);
   async function submit(event: FormEvent) {
     event.preventDefault();
     setBusy(true);
@@ -261,7 +273,7 @@ function CategoryEditor({ item, categories, onClose, onSaved }: { item: Transact
       </div>
       <div>
         <dt>Origem</dt>
-        <dd>Arquivo {item.upload_id}, linha {item.source_row}{item.source_sheet ? `, planilha ${item.source_sheet}` : ""}. <a className="text-link" href={`/app/files?upload=${item.upload_id}`}>Conferir arquivo</a>
+        <dd>{sourceName || "Arquivo de origem"}, linha {item.source_row}{item.source_sheet ? `, planilha ${item.source_sheet}` : ""}. <a className="text-link" href={`/app/files?upload=${item.upload_id}`}>Conferir arquivo</a>
         </dd>
       </div>
       <div>

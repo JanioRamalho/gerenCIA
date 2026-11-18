@@ -1,18 +1,15 @@
 import { lazy, Suspense, useEffect, useRef, useState } from "react";
 import Brand from "../components/Brand";
 import CitedFigure from "../components/CitedFigure";
-import GroundChart from "../components/GroundChart";
-import Icon from "../components/Icon";
 import ReadingsFigure from "../components/ReadingsFigure";
 import SourceTable from "../components/SourceTable";
 import { useAuth } from "../auth/AuthContext";
 import useDemoExperience from "../hooks/useDemoExperience";
-import { categories, demo, formatPercentage, money, monthKeys, monthlyDelta, monthRows, type DemoPreset } from "../components/dashboard/demoModel";
+import { categories, demo, money, monthKeys, monthRows, type DemoPreset } from "../components/dashboard/demoModel";
 
 const ConnectedDashboard = lazy(() => import("../components/dashboard/ConnectedDashboard"));
 
 const contents = [
-  { href: "#problema", label: "Problema" },
   { href: "#como-funciona", label: "Como funciona" },
   { href: "#demo", label: "Demonstração" },
   { href: "#perguntas", label: "Perguntas" },
@@ -21,15 +18,6 @@ const contents = [
 // Every number on the page comes from the same fictitious data the figures use.
 const quarterTotal = monthRows.reduce((sum, row) => sum + row.total, 0);
 const entryCount = monthKeys.reduce((sum, key) => sum + demo[key].transactions.length, 0);
-const august = monthlyDelta("ago")!;
-
-const stats = [
-  { icon: "calendar", label: "Faturas", value: String(monthKeys.length), text: `Meses fictícios, de junho a agosto de 2026, somando ${money(quarterTotal)} em saídas.` },
-  { icon: "receipt", label: "Lançamentos", value: String(entryCount), text: "Compras com data, estabelecimento e categoria. Cada total é a soma exata delas." },
-  { icon: "tags", label: "Categorias", value: String(categories.length), text: "Categorias com cor fixa, as mesmas em todas as figuras e na demonstração." },
-] as const;
-
-const BarsMark = ({ className }: { className: string }) => <svg className={className} viewBox="0 0 30 29" aria-hidden="true"><path d="M2 27h6l3-11H5L2 27Zm10 0h6l5-20h-6l-5 20Zm10 0h6l6-27h-6l-6 27Z" /></svg>;
 
 export default function ExperiencePage() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -68,7 +56,7 @@ export default function ExperiencePage() {
   const closeMenu = () => setMenuOpen(false);
 
   return <div className="experience-shell"><a className="skip-link" href="#main-content">Pular para o conteúdo</a>
-    <header className="site-header on-night" onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) closeMenu(); }}>
+    <header className="site-header" onBlur={(event) => { if (!event.currentTarget.contains(event.relatedTarget)) closeMenu(); }}>
       <div className="page-container header-inner">
         <Brand />
         <button ref={menuButton} className="menu-toggle" type="button" aria-label={menuOpen ? "Fechar menu" : "Abrir menu"} aria-expanded={menuOpen} aria-controls="site-navigation" onClick={() => setMenuOpen((value) => !value)}><span /><span /></button>
@@ -76,108 +64,92 @@ export default function ExperiencePage() {
           <ol>{contents.map((item) => <li key={item.href}><a href={item.href} onClick={closeMenu} aria-current={current === item.href ? "location" : undefined}>{item.label}</a></li>)}</ol>
           {/* Quem está logado já está a caminho do painel, então só visitantes veem estes links. */}
           <div className="nav-account" data-state={status}>
-            {status !== "authenticated" && <><a className="nav-signin" href="/login">Entrar</a><a className="header-pill" href="/register">Cadastrar</a></>}
+            {status !== "authenticated" && <><a className="nav-signin" href="/login">Entrar</a><a className="header-pill" href="/register">Criar conta</a></>}
           </div>
         </nav>
       </div>
     </header>
 
     <main id="main-content" tabIndex={-1}>
-      <section className="hero on-night" id="visao-geral" aria-labelledby="hero-title">
+      <section className="hero" id="visao-geral" aria-labelledby="hero-title">
         <div className="page-container hero-inner">
           <div className="hero-copy">
-            <h1 id="hero-title">Sua fatura diz mais que o total.</h1>
-            <p className="lead">O gerenCIA está sendo construído para transformar faturas de cartão em CSV ou XLSX numa leitura por mês e por categoria, em que cada total leva aos lançamentos que o formam.</p>
-            <div className="action-row"><a className="primary-button" href="#demo">Explorar a demonstração</a><a className="secondary-button" href="#como-funciona">Como funciona</a></div>
+            <h1 id="hero-title">Entenda para onde seu dinheiro vai.</h1>
+            <p className="lead">Organize extratos e faturas em CSV ou XLSX. Compare meses, explore categorias e confira os lançamentos de cada total.</p>
+            <div className="action-row"><a className="primary-button is-night" href="#demo">Explorar demonstração</a><a className="text-link" href="/register">Criar minha conta</a></div>
+            <p className="hero-note">Conheça o gerenCIA com dados fictícios, sem cadastro.</p>
           </div>
           <div className="hero-stage">
-            <div className="float-card is-left"><p>Saídas no trimestre</p><strong>{money(quarterTotal)}</strong><span>{entryCount} lançamentos</span></div>
-            <div className="float-card is-right"><p>Agosto em relação a julho</p><strong>{money(august.amount).replace("-", "−")}</strong><span>{formatPercentage(Math.abs(august.percentage) / 100)} a menos</span></div>
             <CitedFigure number="1" onOpenPreset={openPreset} />
           </div>
         </div>
       </section>
 
-      <section className="band has-glow" id="numeros" aria-labelledby="numbers-title">
-        <GroundChart />
+      <section className="workflow-band" id="como-funciona" aria-labelledby="workflow-title">
         <div className="page-container">
-          <div className="section-head is-center">
-            <h2 id="numbers-title" className="section-title">Uma demonstração que fecha a conta.</h2>
-            <p className="section-intro">Os números abaixo vêm dos dados fictícios usados em todas as figuras. A importação de faturas está em desenvolvimento.</p>
-          </div>
-          <ul className="stat-cards">{stats.map((stat, index) => <li key={stat.label} className={index === 1 ? "is-featured" : undefined}>
-            <span className="stat-label"><i><Icon name={stat.icon} size={18} /></i>{stat.label}</span>
-            <strong>{stat.value}</strong>
-            <p>{stat.text}</p>
-          </li>)}</ul>
+          <h2 id="workflow-title" className="workflow-title">Do arquivo à análise, em três etapas.</h2>
+          <ol className="procedure">
+            <li><span className="step-no" aria-hidden="true">1</span><div><h3>Envie seu arquivo</h3><p>Importe um extrato ou uma fatura em CSV ou XLSX.</p></div></li>
+            <li><span className="step-no" aria-hidden="true">2</span><div><h3>Confira os dados</h3><p>Verifique a qualidade do arquivo e revise as categorias dos lançamentos importados.</p></div></li>
+            <li><span className="step-no" aria-hidden="true">3</span><div><h3>Explore seus gastos</h3><p>Compare períodos, confira categorias e acompanhe seus orçamentos.</p></div></li>
+          </ol>
         </div>
       </section>
 
       <section className="band" id="problema" aria-labelledby="problema-title">
-        <div className="band-sheet"><div className="page-container split">
-          <div className="split-media"><SourceTable /></div>
+        <div className="page-container split">
           <div className="split-copy">
-            <h2 id="problema-title" className="section-title">O total da fatura não explica o mês.</h2>
-            <p className="section-intro">A fatura do cartão informa quanto pagar, mas não mostra para onde foi o dinheiro.</p>
-            <ul className="feature-list">
-              <li><span className="chip"><Icon name="rows" /></span><div><h3>Linhas sem contexto</h3><p>As compras chegam como dezenas de linhas com descrições abreviadas, sem categoria e sem comparação com os meses anteriores.</p></div></li>
-              <li><span className="chip"><Icon name="columns" /></span><div><h3>Leitura organizada</h3><p>O gerenCIA foi projetado para ler essas linhas, identificar o estabelecimento, atribuir uma categoria e organizar os valores por período. A <a className="xref" href="#tabela-1">Tabela 1</a> mostra o mesmo lançamento antes e depois.</p></div></li>
-            </ul>
+            <h2 id="problema-title" className="section-title">Cada total tem uma origem.</h2>
+            <p className="section-intro">Saia das descrições abreviadas para uma leitura por estabelecimento, categoria e período. A tabela mostra as mesmas compras no arquivo e na leitura organizada.</p>
           </div>
-        </div></div>
+          <div className="split-media"><SourceTable /></div>
+        </div>
       </section>
 
-      <section className="band has-glow is-mirrored" id="como-funciona" aria-labelledby="workflow-title">
+      <section className="band readings-band" aria-labelledby="readings-title">
         <div className="page-container">
-          <div className="section-head is-center">
-            <h2 id="workflow-title" className="section-title">Do arquivo à leitura por categoria.</h2>
-            <p className="section-intro">O percurso tem três etapas. As duas primeiras dependem da importação, que está em desenvolvimento; a terceira já funciona na demonstração, como mostra a <a className="xref" href="#figura-2">Figura 2</a>.</p>
+          <div className="section-head">
+            <h2 id="readings-title" className="section-title">O mesmo dinheiro, três leituras.</h2>
+            <p className="section-intro">Veja a evolução dos meses, a composição por categoria e os lançamentos que formam cada valor. Cada recorte abre a demonstração correspondente.</p>
           </div>
-          <ol className="procedure">
-            <li><span className="step-no">1</span><h3>Envie a fatura</h3><p>Arquivos CSV ou XLSX com data, descrição e valor de cada compra.</p><p className="status-line"><i className="status-mark" aria-hidden="true" />Em desenvolvimento</p></li>
-            <li><span className="step-no">2</span><h3>Revise descrições e categorias</h3><p>Estabelecimentos padronizados e categorias que podem ser corrigidas e salvas como regra.</p><p className="status-line"><i className="status-mark" aria-hidden="true" />Em desenvolvimento</p></li>
-            <li><span className="step-no">3</span><h3>Leia por período, categoria e lançamento</h3><p>Compare meses, veja a parte de cada categoria e chegue aos lançamentos de cada total.</p><p className="status-line"><i className="status-mark is-available" aria-hidden="true" />Disponível na demonstração</p></li>
-          </ol>
           <ReadingsFigure onOpenPreset={openPreset} />
         </div>
       </section>
 
-      <section className="band" id="demo" aria-labelledby="demo-title">
-        <div className="band-night on-night"><div className="page-container">
-          <div className="section-head is-split">
+      <section className="band demo-band" id="demo" aria-labelledby="demo-title">
+        <div className="page-container">
+          <div className="section-head">
             <h2 id="demo-title" className="section-title">Explore a demonstração.</h2>
-            <p className="section-intro">Escolha um período, alterne entre barras e rosca e selecione uma categoria para ver os lançamentos dela. A soma dos lançamentos confere com cada total, e o endereço da página guarda o recorte escolhido.</p>
+            <p className="section-intro">Escolha um período, alterne entre barras e rosca e selecione uma categoria para ver seus lançamentos. O endereço da página guarda o recorte para compartilhar.</p>
           </div>
+          <p className="demo-provenance">Dados fictícios de junho a agosto de 2026: {monthKeys.length} meses, {entryCount} lançamentos e {categories.length} categorias, somando {money(quarterTotal)}. Cada total é a soma exata dos lançamentos.</p>
           <Suspense fallback={<div className="dashboard-loading" role="status">Preparando a demonstração…</div>}><ConnectedDashboard state={state} onChange={update} /></Suspense>
-        </div></div>
+        </div>
       </section>
 
-      <section className="band has-glow" id="perguntas" aria-labelledby="questions-title">
-        <div className="page-container">
-          <div className="section-head is-center">
+      <section className="band" id="perguntas" aria-labelledby="questions-title">
+        <div className="page-container questions-layout">
+          <div className="section-head">
             <h2 id="questions-title" className="section-title">Perguntas frequentes.</h2>
-            <p className="section-intro">O que a demonstração mostra e o que ainda está em desenvolvimento.</p>
           </div>
           <div className="question-list">
             <details><summary>Os números são de uma conta real?</summary><p>Não. Períodos, totais e lançamentos são fictícios, criados para a demonstração. Ainda assim, cada total é a soma exata dos lançamentos do período, como numa fatura de verdade.</p></details>
-            <details><summary>Posso importar minha fatura agora?</summary><p>Ainda não. A importação de CSV e XLSX está em desenvolvimento. Você já pode criar uma conta, e a demonstração funciona sem cadastro e sem enviar dados.</p></details>
+            <details><summary>Posso importar minha fatura agora?</summary><p>Sim. Crie uma conta para importar arquivos CSV ou XLSX, conferir a qualidade e revisar seus lançamentos. Para conhecer primeiro, a demonstração funciona sem cadastro e sem enviar dados.</p></details>
             <details><summary>Como as figuras se conectam à demonstração?</summary><p>Cada recorte da Figura 2 abre o período, o gráfico ou a categoria correspondente na Figura 3. O endereço da página guarda o recorte, e ele pode ser compartilhado.</p></details>
           </div>
         </div>
       </section>
 
       <section className="closing" aria-labelledby="closing-title">
-        <div className="closing-panel">
-          <BarsMark className="closing-mark is-left" />
-          <BarsMark className="closing-mark is-right" />
+        <div className="page-container closing-panel">
           <h2 id="closing-title">Veja de onde vem cada total.</h2>
           <p>A demonstração funciona sem cadastro e sem enviar dados.</p>
-          <div className="action-row"><a className="primary-button is-night" href="#demo">Explorar a demonstração</a><a className="secondary-button" href="/register">Criar conta</a></div>
+          <div className="action-row"><a className="primary-button is-night" href="/register">Criar minha conta</a><a className="text-link" href="#demo">Explorar demonstração</a></div>
         </div>
       </section>
     </main>
 
-    <footer className="site-footer on-night">
+    <footer className="site-footer">
       <div className="page-container footer-grid">
         <div className="footer-brand"><Brand /><p>Organização financeira para o dia a dia. Projeto acadêmico em desenvolvimento.</p></div>
         <nav className="footer-links" aria-label="Rodapé">
@@ -186,11 +158,10 @@ export default function ExperiencePage() {
         </nav>
         <dl className="footer-facts">
           <div><dt>Dados</dt><dd>Fictícios, junho a agosto de 2026</dd></div>
-          <div><dt>Em desenvolvimento</dt><dd>Importação de faturas</dd></div>
+          <div><dt>Arquivos aceitos</dt><dd>CSV e XLSX</dd></div>
         </dl>
         <p className="footer-legal">© {new Date().getFullYear()} gerenCIA</p>
       </div>
-      <div className="footer-wordmark" aria-hidden="true" />
     </footer>
   </div>;
 }

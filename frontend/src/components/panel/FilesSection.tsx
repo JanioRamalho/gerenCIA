@@ -1,6 +1,8 @@
 import { useCallback, useEffect, useRef, useState, type FormEvent } from "react";
 import { ApiError } from "../../auth/api";
 import { deleteUpload, getUploadDetail, leaveIfSignedOut, listUploads, money, sendFile, type UploadDetail, type UploadItem } from "../../panel/api";
+import Icon from "../Icon";
+import "../../styles/panel-tasks.css";
 
 const FORMATOS: Record<string, string> = {
   fatura_nubank: "Fatura Nubank",
@@ -116,7 +118,7 @@ export default function FilesSection() {
     }
   }
 
-  return <div className="panel-page">
+  return <div className="panel-page gc-task-page gc-files-page">
     <header className="panel-page-head">
       <h1>Arquivos</h1>
       <p className="lead">Envie a fatura ou o extrato e acompanhe o que foi lido de cada arquivo.</p>
@@ -150,33 +152,11 @@ export default function FilesSection() {
         <strong>{lastSent.reused ? "Este arquivo já havia sido enviado. O registro existente foi preservado." : "Arquivo lido e gravado."}</strong>
         <p>
           {lastSent.linhas_validas} transações válidas, {lastSent.linhas_rejeitadas} rejeitadas
-          {lastSent.linhas_duplicadas > 0 ? `, ${lastSent.linhas_duplicadas} repetições sinalizadas` : ""}.
+          {lastSent.linhas_duplicadas > 0 ? `, ${lastSent.linhas_duplicadas} repetições sinalizadas` : ""}.{" "}
           {lastSent.percentual == null ? "Qualidade indisponível." : `Qualidade de ${lastSent.percentual.toLocaleString("pt-BR")}%.`} Saídas: {displayTotal(lastSent.total_saidas)}. Entradas: {displayTotal(lastSent.total_entradas)}.
         </p>
         <a className="text-link" href="/app">Ver a análise no painel</a>
       </div>}
-    </section>
-
-    <section className="gc-surface" aria-labelledby="examples-heading">
-      <div className="gc-section-heading">
-        <div>
-          <h2 id="examples-heading">Comece com dados fictícios</h2>
-          <p>Escolha uma versão CSV ou XLSX de cada exemplo. Não é necessário enviar suas informações pessoais.</p>
-        </div>
-      </div>
-      <div className="gc-download-grid">{[
-        ["modelo-vazio", "Planilha-modelo", "Colunas fixas para outro banco. Escolha Extrato ou Fatura no envio. Negativo é saída; positivo é entrada."],
-        ["exemplo-extrato-3-meses", "Extrato de exemplo", "Nubank fictício de setembro a novembro, com receitas e despesas."],
-        ["exemplo-fatura-3-meses", "Fatura de exemplo", "Nubank fictício de setembro a novembro, com assinaturas e estornos."],
-        ["exemplo-comparacao-com-lacuna", "Comparação com intervalo", "Agosto e outubro sem setembro. Use em uma conta separada dos outros exemplos e escolha Extrato."],
-      ].map(([fileName, title, text]) => <article key={fileName}>
-        <h3>{title}</h3>
-        <p>{text}</p>
-        <div className="gc-filter-actions">
-          <a className="text-link" href={`/exemplos/${fileName}.csv`} download>Baixar CSV</a>
-          <a className="text-link" href={`/exemplos/${fileName}.xlsx`} download>Baixar XLSX</a>
-        </div>
-      </article>)}</div>
     </section>
 
     <section className="panel-card" aria-labelledby="history-title">
@@ -186,7 +166,7 @@ export default function FilesSection() {
       {uploads === null && !loadFailed && <p className="pd-hint">Carregando…</p>}
       {uploads !== null && uploads.length === 0 && <p className="pd-empty">Nenhum arquivo enviado ainda.</p>}
       {uploads !== null && uploads.length > 0 && <div className="pd-scroll">
-        <table className="pd-table">
+        <table className="pd-table gc-upload-history">
           <caption className="sr-only">Arquivos enviados, do mais recente ao mais antigo</caption>
           <thead>
             <tr>
@@ -203,20 +183,20 @@ export default function FilesSection() {
             </tr>
           </thead>
           <tbody>{uploads.map((item) => <tr key={item.id}>
-            <td>
+            <td className="gc-upload-name">
               <button className="text-button" onClick={() => {
                 setSelected(item.id);
                 window.history.replaceState(null, "", `/app/files?upload=${item.id}`);
               }}>{item.original_filename}</button>
               <small>{item.formato ? FORMATOS[item.formato] ?? item.formato : ""}</small>
             </td>
-            <td>{formatSent(item.created_at)}</td>
-            <td>{formatDay(item.periodo_inicio)} a {formatDay(item.periodo_fim)}</td>
-            <td>{item.linhas_validas}</td>
-            <td>{item.linhas_rejeitadas}</td>
-            <td>{item.percentual === null ? "—" : `${item.percentual.toLocaleString("pt-BR")}%`}</td>
-            <td>{displayTotal(item.total_saidas)}</td>
-            <td>{confirmRemoval === item.id ? <div className="gc-inline-confirm">
+            <td className="gc-upload-sent" data-label="Enviado em">{formatSent(item.created_at)}</td>
+            <td className="gc-upload-period" data-label="Período">{formatDay(item.periodo_inicio)} a {formatDay(item.periodo_fim)}</td>
+            <td className="gc-upload-valid" data-label="Válidas">{item.linhas_validas}</td>
+            <td className="gc-upload-rejected" data-label="Rejeitadas">{item.linhas_rejeitadas}</td>
+            <td className="gc-upload-quality" data-label="Qualidade">{item.percentual === null ? "—" : `${item.percentual.toLocaleString("pt-BR")}%`}</td>
+            <td className="gc-upload-total" data-label="Saídas">{displayTotal(item.total_saidas)}</td>
+            <td className="gc-upload-actions">{confirmRemoval === item.id ? <div className="gc-inline-confirm">
               <p>Remover este arquivo e suas transações? As análises serão atualizadas.</p>
               <button className="text-button" disabled={removingId === item.id} onClick={() => void remove(item)}>{removingId === item.id ? "Removendo…" : "Confirmar exclusão"}</button>
               <button className="text-button" onClick={() => setConfirmRemoval(null)}>Cancelar</button>
@@ -229,7 +209,7 @@ export default function FilesSection() {
       <div className="gc-section-heading">
         <div>
           <h2 id="quality-heading" ref={detailHeading} tabIndex={-1}>Qualidade da importação</h2>
-          <p>{detail?.arquivo.original_filename ?? "Consultando o arquivo…"}</p>
+          <p>{detail?.arquivo.original_filename ?? (detailError ? "Não foi possível consultar o arquivo." : "Consultando o arquivo…")}</p>
         </div>
         <button className="text-button" onClick={() => {
           setSelected(null);
@@ -242,8 +222,9 @@ export default function FilesSection() {
         <p className="gc-footnote">Registro da qualidade no momento do envio. Correções posteriores de categoria não alteram este relatório.</p>
         <dl className="gc-statistics">{Object.entries(detail.dimensoes ?? {}).map(([name, dimension]) => <div key={name}>
           <dt>{qualityNames[name] ?? name}</dt>
-          <dd>{dimension.percentual == null ? "Indisponível" : `${dimension.percentual.toLocaleString("pt-BR")}%`}</dd>
-          <p className="gc-footnote">{dimension.quantidade} de {dimension.total}{dimension.motivo ? ` · ${qualityReason(dimension.motivo)}` : ""}{dimension.suspeitas ? ` · ${dimension.suspeitas} suspeitas` : ""}</p>
+          <dd>{dimension.percentual == null ? "Indisponível" : `${dimension.percentual.toLocaleString("pt-BR")}%`}
+            <span className="gc-quality-context gc-footnote">{name === "unicidade" ? `${dimension.quantidade} duplicadas em ${dimension.total} linhas` : `${dimension.quantidade} de ${dimension.total}`}{dimension.motivo ? ` · ${qualityReason(dimension.motivo)}` : ""}{dimension.suspeitas ? ` · ${dimension.suspeitas} suspeitas` : ""}</span>
+          </dd>
         </div>)}</dl>{!detail.dimensoes ? <p className="pd-empty">Este registro histórico não possui as quatro dimensões detalhadas.</p> : null}<h3 className="gc-detail-title">Linhas rejeitadas ({detail.rejeitadas.length})</h3>{detail.rejeitadas.length ? <>
           <a className="text-link" href={`/api/uploads/${selected}/rejections.csv`} download>Baixar rejeições em CSV</a>
           <div className="pd-scroll">
@@ -267,5 +248,21 @@ export default function FilesSection() {
           </div>
         </> : <p className="pd-empty">Nenhuma linha rejeitada neste arquivo.</p>}</> : null}
     </section> : null}
+    <details className="gc-details gc-file-examples">
+      <summary>Experimentar com arquivos de exemplo <Icon name="arrow" size={18} /></summary>
+      <p className="pd-hint">Dados fictícios para conhecer o painel. Escolha uma versão CSV ou XLSX e envie o arquivo acima.</p>
+      <div className="gc-download-grid">{[
+        ["modelo-vazio", "Planilha-modelo", "Colunas fixas para outro banco. Escolha Extrato ou Fatura no envio. Negativo é saída; positivo é entrada."],
+        ["exemplo-extrato-3-meses", "Extrato de exemplo", "Nubank fictício de setembro a novembro, com receitas e despesas."],
+        ["exemplo-fatura-3-meses", "Fatura de exemplo", "Nubank fictício de setembro a novembro, com assinaturas e estornos."],
+        ["exemplo-comparacao-com-lacuna", "Comparação com intervalo", "Agosto e outubro sem setembro. Use em uma conta separada dos outros exemplos e escolha Extrato."],
+      ].map(([fileName, title, text]) => <article key={fileName}>
+        <h3>{title}</h3><p>{text}</p>
+        <div className="gc-filter-actions">
+          <a className="text-link" href={`/exemplos/${fileName}.csv`} download>Baixar CSV</a>
+          <a className="text-link" href={`/exemplos/${fileName}.xlsx`} download>Baixar XLSX</a>
+        </div>
+      </article>)}</div>
+    </details>
   </div>;
 }

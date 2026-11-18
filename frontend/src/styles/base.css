@@ -103,7 +103,7 @@ main:focus { outline: none; }
 /* Segmented control: a pill whose pressed option fills in petrol */
 .segmented { display: inline-flex; flex-wrap: wrap; gap: 4px; padding: 4px; border: 1px solid var(--line); border-radius: var(--radius-pill); background: var(--paper); }
 .segmented button {
-  min-height: 36px; padding: 0 var(--space-4);
+  min-height: 44px; padding: 0 var(--space-4);
   border: 0; border-radius: var(--radius-pill); background: transparent;
   font-size: var(--text-small); font-weight: 600; white-space: nowrap;
   transition: background-color var(--duration) ease, color var(--duration) ease;

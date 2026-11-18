@@ -47,18 +47,14 @@ export default function LoginPage() {
     }
   };
 
-  return <div className="access-shell on-night">
+  return <div className="access-shell">
     <a className="skip-link" href="#main-content">Pular para o conteúdo</a>
-    <header className="site-header on-night"><div className="page-container header-inner"><Brand /><nav className="account-nav" aria-label="Navegação de conta"><a className="text-link" href="/register">Criar conta</a><a className="text-link" href="/">Voltar ao início</a></nav></div></header>
+    <header className="site-header"><div className="page-container header-inner"><Brand /><nav className="account-nav" aria-label="Navegação de conta"><a className="text-link" href="/">Voltar ao início</a></nav></div></header>
     <main className="access-main page-container" id="main-content" tabIndex={-1}>
-      <div className="access-copy">
-        <h1>Entre na sua conta.</h1>
-        <p className="lead">Use o e-mail e a senha do cadastro. O envio de faturas ainda está em desenvolvimento; a demonstração com dados fictícios continua aberta a todos.</p>
-        <div className="action-row"><a className="secondary-button" href="/#demo">Explorar a demonstração</a></div>
-      </div>
       <section className="access-form form-block" aria-labelledby="login-title">
-        <h2 id="login-title">Entrar</h2>
-        <form onSubmit={submit} noValidate>
+        <h1 id="login-title">Bom ter você de volta.</h1>
+        <p className="access-intro">Acesse seus arquivos e acompanhe seus gastos.</p>
+        <form onSubmit={submit} noValidate aria-busy={submitting}>
           {errors.form && <p ref={alertRef} tabIndex={-1} role="alert" className="form-alert">{errors.form}</p>}
           <Field id="login-email" label="E-mail" error={errors.email}>
             <input
@@ -78,6 +74,7 @@ export default function LoginPage() {
           <button className="primary-button is-night form-submit" type="submit" disabled={submitting}>{submitting ? "Entrando…" : "Entrar"}</button>
         </form>
         <p className="form-switch">Ainda não tem conta? <a className="text-link" href="/register">Criar conta</a></p>
+        <div className="access-demo"><p>Quer conhecer primeiro?</p><a className="text-link" href="/#demo">Explorar demonstração</a></div>
       </section>
     </main>
   </div>;

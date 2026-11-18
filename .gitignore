@@ -23,6 +23,7 @@ dist/
 coverage/
 *.tsbuildinfo
 .vite/
+.vercel/
 
 # Banco, uploads e dados locais
 *.db

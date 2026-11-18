@@ -21,6 +21,6 @@ export default function SourceTable() {
         <td>{money(row.amount)}</td>
       </tr>)}</tbody>
     </table>
-    <p className="figure-source">Fonte: lançamentos fictícios. A leitura automática dos arquivos está em desenvolvimento.</p>
+    <p className="figure-source">Fonte: lançamentos fictícios do gerenCIA, agosto de 2026.</p>
   </figure>;
 }

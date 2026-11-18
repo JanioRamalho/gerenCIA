@@ -20,7 +20,7 @@ OUT = ROOT / ".impeccable/review"
 OUT.mkdir(parents=True, exist_ok=True)
 EXAMPLES = ROOT / "frontend/public/exemplos"
 AXE = ROOT / ".audit-tools-js/node_modules/axe-core/axe.min.js"
-report = {"checks": [], "screens": []}
+report = {"checks": [], "screens": [], "issues": []}
 
 
 def visit(page, path):
@@ -29,12 +29,13 @@ def visit(page, path):
 
 
 def check_layout(page, name):
-    assert not page.evaluate("document.documentElement.scrollWidth > innerWidth"), name
+    overflow = page.evaluate("document.documentElement.scrollWidth > innerWidth")
+    if overflow: report["issues"].append({"screen": name, "overflow": True})
     page.add_script_tag(path=str(AXE))
     violations = page.evaluate("""async () => (await axe.run(document, {
       runOnly: {type: 'tag', values: ['wcag2a','wcag2aa','wcag21aa','wcag22aa']}
     })).violations.map(v => ({id:v.id, targets:v.nodes.map(n=>n.target)}))""")
-    assert not violations, (name, violations)
+    if violations: report["issues"].append({"screen": name, "axe": violations})
     page.screenshot(path=str(OUT / f"real-{name}.png"), full_page=True)
     report["screens"].append(name)
 
@@ -60,6 +61,14 @@ with sync_playwright() as p:
     email = f"painel-{uuid4().hex[:10]}@exemplo.test"
     password = "senha-de-ensaio-123"
 
+    for width in [390, 1440]:
+        page.set_viewport_size({"width": width, "height": 900})
+        for path, name in [("/", "inicio"), ("/login", "login"), ("/register", "cadastro")]:
+            visit(page, path)
+            check_layout(page, f"{name}-{width}")
+        page.get_by_role("button", name="Criar conta", exact=True).click()
+        check_layout(page, f"cadastro-erros-{width}")
+    page.set_viewport_size({"width": 1440, "height": 1000})
     visit(page, "/register")
     page.fill("#register-name", "Ensaio Financeiro")
     page.fill("#register-email", email)
@@ -80,22 +89,53 @@ with sync_playwright() as p:
     expect(page.locator(".pd-success")).to_contain_text("já havia sido enviado")
     page.get_by_role("button", name="exemplo-extrato-3-meses.csv", exact=True).click()
     expect(page.get_by_text("Completude", exact=True)).to_be_visible()
+    for width in [390, 1440]:
+        page.set_viewport_size({"width": width, "height": 900})
+        check_layout(page, f"qualidade-{width}")
     report["checks"].append("CSV/XLSX, reenvio idempotente e detalhe da qualidade")
 
     visit(page, "/app?month=2026-11&reference_month=2026-10")
     expect(page.locator(".gc-primary-metric strong")).to_contain_text("1.990,00")
-    expect(page.locator(".gc-recent .gc-recent-list li")).to_have_count(5)
-    expect(page.locator(".gc-difference strong")).to_contain_text("255,00")
+    expect(page.locator(".gc-recent-table tbody tr")).to_have_count(5)
+    expect(page.locator(".gc-comparison-delta strong")).to_contain_text("255,00")
     for month, total in [("2026-09", "1820.00"), ("2026-10", "1735.00"), ("2026-11", "1990.00")]:
         data = context.request.get(BASE + f"/api/analytics/summary?month={month}").json()
         assert data["resumo"]["total_saidas"] == total, data
-    report["checks"].append("Totais 1820/1735/1990 reconciliados e cinco recentes")
+    services = data["servicos"]
+    assert any(item["estabelecimento"] == "Netflix" for item in services)
+    for service in services:
+        expect(page.locator(".gc-service-details strong").get_by_text(service["estabelecimento"], exact=True)).to_be_visible()
+    expect(page.locator(".gc-services details").first).not_to_have_attribute("open", "")
+    expect(page.locator(".gc-services .gc-comparison-column")).to_have_count(2)
+    expect(page.locator(".gc-comparison .gc-comparison-column")).to_have_count(2)
+    for chart in [".gc-comparison", ".gc-services"]:
+        bars = page.locator(f"{chart} .gc-comparison-fill")
+        expect(bars).to_have_count(2)
+        assert bars.evaluate_all("nodes => nodes.every(n => getComputedStyle(n).backgroundColor !== 'rgba(0, 0, 0, 0)' && n.getBoundingClientRect().height > 0)"), chart
+    expect(page.locator(".gc-service-details strong").first).to_have_text("Netflix")
+    page.get_by_role("button", name="Ver todas as 9 categorias").click()
+    expect(page.locator(".gc-category-bars li")).to_have_count(9)
+    page.get_by_role("button", name="Mostrar as 5 maiores").click()
+    expect(page.locator(".gc-category-bars li")).to_have_count(5)
+    expect(page.locator(".gc-recent").get_by_role("link", name="Ver tudo")).to_have_attribute("href", re.compile("/app/transactions"))
+    report["checks"].append("Totais 1820/1735/1990 reconciliados, Netflix e serviços reais visíveis, dois gráficos e cinco recentes")
 
     # Seletores reais e URL persistente de comparação.
-    page.get_by_label("Comparar com").select_option("2026-09")
-    expect(page.locator(".gc-difference strong")).to_contain_text("170,00")
+    page.get_by_label("Mês de referência").select_option("2026-09")
+    expect(page.locator(".gc-comparison-delta strong")).to_contain_text("170,00")
     page.reload(wait_until="networkidle")
-    expect(page.get_by_label("Comparar com")).to_have_value("2026-09")
+    expect(page.get_by_label("Mês de referência")).to_have_value("2026-09")
+
+    # Falha apenas na referência das recorrências: não inventar valor zero.
+    page.route("**/api/analytics/summary?month=2026-10", lambda route: route.fulfill(status=503, json={"detail": "Ensaio de indisponibilidade"}))
+    visit(page, "/app?month=2026-11&reference_month=2026-10")
+    expect(page.locator(".gc-services .pd-error")).to_be_visible()
+    expect(page.locator(".gc-services .gc-comparison-column").first).to_contain_text("Sem dados")
+    page.unroute("**/api/analytics/summary?month=2026-10")
+    page.locator(".gc-services").get_by_role("button", name="Tentar de novo").click()
+    expect(page.locator(".gc-services .pd-error")).to_have_count(0)
+    expect(page.locator(".gc-services .gc-comparison-column").first).not_to_contain_text("Sem dados")
+    report["checks"].append("Barras dos dois meses visíveis, assinaturas primeiro e referência indisponível sem substituir por zero")
 
     visit(page, "/app/transactions?month=all&page_size=5")
     expect(page.locator(".gc-transactions-table tbody tr")).to_have_count(5)
@@ -130,7 +170,7 @@ with sync_playwright() as p:
     assert context.request.get(BASE + "/api/notifications").json()["unread_count"] == 0
     report["checks"].append("Limite, avisos e leitura persistidos")
 
-    for width in [320, 768, 1280, 1920]:
+    for width in [320, 390, 1440]:
         page.set_viewport_size({"width": width, "height": 900})
         for path, name in [("/app", "painel"), ("/app/files", "arquivos"),
                            ("/app/transactions", "transacoes"), ("/app/budgets", "limites"),
@@ -174,22 +214,22 @@ with sync_playwright() as p:
     visit(page, "/app/files")
     upload(page, "exemplo-comparacao-com-lacuna.csv", "extrato")
     visit(page, "/app?month=2026-10")
-    expect(page.get_by_label("Comparar com")).to_have_value("")
-    expect(page.locator(".gc-difference")).to_have_count(0)
-    page.get_by_label("Comparar com").select_option("2026-08")
-    expect(page.locator(".gc-difference strong")).to_contain_text("40,00")
-    expect(page.locator(".gc-difference strong")).to_contain_text("-")
+    expect(page.get_by_label("Mês de referência")).to_have_value("")
+    expect(page.locator(".gc-comparison-delta")).to_have_count(0)
+    page.get_by_label("Mês de referência").select_option("2026-08")
+    expect(page.locator(".gc-comparison-delta strong")).to_contain_text("40,00")
+    expect(page.locator(".gc-comparison-delta strong")).to_contain_text("-")
     page.get_by_text("Comparar por categoria", exact=True).click()
     health = page.locator(".gc-comparison tbody tr").filter(has_text="Saúde")
     expect(health).to_contain_text("30,00")
-    expect(page.locator(".gc-compare-totals a").nth(1)).to_have_attribute("href", re.compile("month=2026-08"))
-    page.locator(".gc-compare-totals a").nth(1).click()
+    expect(page.locator(".gc-comparison .gc-comparison-column").first).to_have_attribute("href", re.compile("month=2026-08"))
+    page.locator(".gc-comparison .gc-comparison-column").first.click()
     expect(page).to_have_url(re.compile(r"/app/transactions\?.*month=2026-08"))
     expect(page.locator(".gc-statistics")).to_contain_text("150,00")
     page.go_back(wait_until="networkidle")
-    expect(page.get_by_label("Comparar com")).to_have_value("2026-08")
+    expect(page.get_by_label("Mês de referência")).to_have_value("2026-08")
     page.reload(wait_until="networkidle")
-    expect(page.locator(".gc-difference strong")).to_contain_text("40,00")
+    expect(page.locator(".gc-comparison-delta strong")).to_contain_text("40,00")
     assert context.request.delete(BASE + "/api/auth/me").status == 204
     visit(page, "/teste-analise")
     page.wait_for_url(BASE + "/login")
@@ -199,3 +239,4 @@ with sync_playwright() as p:
     (OUT / "panel-real-flow.json").write_text(json.dumps(report, ensure_ascii=False, indent=2), encoding="utf-8")
     print(json.dumps(report, ensure_ascii=False))
     browser.close()
+    assert not report["issues"], report["issues"]

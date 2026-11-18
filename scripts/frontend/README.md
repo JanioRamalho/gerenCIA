@@ -52,7 +52,9 @@ $env:GERENCIA_TEST_URL='http://127.0.0.1:5199'
 
 Esse script só prossegue se `/api/__review_context` confirmar o banco descartável.
 Ele cria conta fictícia, importa exemplos CSV/XLSX, confere totais, filtros,
-correção, limites, avisos, exclusões e as cinco abas em quatro larguras com axe.
+correção, limites, avisos, exclusões e as cinco abas em 320, 390 e 1440 px com axe. Também verifica início, login,
+cadastro, qualidade, nomes das assinaturas e a indisponibilidade da referência
+sem substituí-la por zero.
 Não acrescenta rotas de revisão à aplicação de produção: essas rotas só existem
 no runner local. Para encerrar, pare Vite com Ctrl+C e a API com Ctrl+C ou
 `POST http://127.0.0.1:8011/api/__review_stop`; a saída do runner encerra seu cluster.

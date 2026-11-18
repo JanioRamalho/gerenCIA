@@ -1,9 +1,11 @@
+import { useState, type CSSProperties } from "react";
 import { Bar, BarChart, CartesianGrid, Cell, LabelList, Line, LineChart, Pie, PieChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import type { User } from "../../auth/api";
-import { money, percent, type AnalyticsData } from "../../panel/api";
+import { money, percent, type AnalyticsData, type CategoryAnalysis } from "../../panel/api";
 import { categoryPresentation } from "../../panel/categoryPresentation";
 import Icon from "../Icon";
 import CategoryMark from "./CategoryMark";
+import ComparisonBars from "./ComparisonBars";
+import ServicesSection from "./ServicesSection";
 import { currentMonth, dayLabel, formatDate, monthLabel, shortMonth } from "./formatDate";
 
 const currency = (value: string | number | null | undefined) => value == null ? "—" : money(Number(value));
@@ -20,196 +22,89 @@ const transactionLink = (month: string | null, category?: string, merchant?: str
   if (categoryId) query.set("category_id", categoryId);
   else if (category) query.set("uncategorized", "true");
   if (merchant) query.set("merchant", merchant);
-  return `/app/transactions${query.size ? `?${query}` : ""}`;
+  return `/app/transactions?${query}`;
 };
 
 type Props = {
-  user: User;
-  data: AnalyticsData;
-  busy: boolean;
-  failed: boolean;
-  month: string;
-  reference: string;
-  onPeriodChange: (month: string, reference: string) => void;
-  onRetry: () => void;
+  data: AnalyticsData; busy: boolean; failed: boolean; month: string; reference: string;
+  onPeriodChange: (month: string, reference: string) => void; onRetry: () => void;
 };
 
-export default function AnalyticsDashboard({ user, data, busy, failed, month, reference, onPeriodChange, onRetry }: Props) {
+export default function AnalyticsDashboard({ data, busy, failed, month, reference, onPeriodChange, onRetry }: Props) {
   const summary = data.resumo;
   const current = data.mes;
-  const categories = data.por_categoria;
   const comparison = data.comparacao;
   if (!summary) return <section className="panel-card panel-message">
-    <h1>Análise indisponível neste período.</h1>
-    <p>Não há resumo para os dados selecionados. Confira seus arquivos ou selecione outro mês.</p>
+    <h1>Análise indisponível neste período.</h1><p>Confira seus arquivos ou selecione outro mês.</p>
     <a className="gc-button" href="/app">Voltar ao período mais recente</a>
   </section>;
   const period = current ? monthLabel(current) : "Todos os meses";
-  const temporal = current ? data.por_dia.map((item) => ({ label: dayLabel(item.data), total: item.total == null ? null : Number(item.total) })) : data.por_mes.map((item) => ({ label: item.rotulo, total: item.total == null ? null : Number(item.total) }));
+  const temporal = current
+    ? data.por_dia.map((item) => ({ label: dayLabel(item.data), total: item.total == null ? null : Number(item.total) }))
+    : data.por_mes.map((item) => ({ label: item.rotulo, total: item.total == null ? null : Number(item.total) }));
   return <div className="panel-page gc-dashboard" aria-busy={busy}>
     <header className="gc-page-heading">
-      <div>
-        <p className="gc-greeting">Olá, {user.name.split(" ")[0]}.</p>
-        <h1>Seu dinheiro, em perspectiva.</h1>
-        <p>Entenda os gastos. Encontre o que vale revisar.</p>
+      <h1>Painel</h1>
+      <div className="gc-header-actions">
+        <label className="gc-period-control"><Icon name="calendar" size={18} />
+          <select aria-label="Período da análise" value={month === "latest" ? current ?? "all" : month} onChange={(event) => onPeriodChange(event.target.value, reference)}>
+            <option value="all">Todos os meses</option>
+            {data.meses_disponiveis.map((item) => <option key={item} value={item}>{monthLabel(item)}</option>)}
+          </select>
+        </label>
+        <a className="gc-button gc-button-primary" href="/app/files"><Icon name="upload" size={18} />Enviar arquivo</a>
       </div>
-      <a className="gc-button" href="/app/files">
-        <Icon name="upload" size={18} /> Enviar arquivo</a>
     </header>
-
-    <div className="gc-period-bar">
-      <label>
-        <Icon name="calendar" size={18} />
-        <span>Período</span>
-        <select aria-label="Período da análise" value={month === "latest" ? current ?? "all" : month} onChange={(event) => onPeriodChange(event.target.value, reference)}>
-          <option value="all">Todos os meses</option>{data.meses_disponiveis.map((item) => <option key={item} value={item}>{monthLabel(item)}</option>)}</select>
-      </label>
-      <p>
-        <span className="gc-status-dot" />Dados dos arquivos importados{data.cobertura.mes_em_andamento ? " · mês em andamento" : ""}</p>
-    </div>
-
-    {failed ? <p className="pd-error" role="alert">Não foi possível atualizar esta análise. <button className="text-button" type="button" onClick={onRetry}>Tentar de novo</button>
-    </p> : null}
-
+    {failed ? <p className="pd-error" role="alert">Não foi possível atualizar esta análise. <button className="text-button" onClick={onRetry}>Tentar de novo</button></p> : null}
     <section className="gc-summary" aria-label={`Resumo de ${period}`}>
       <div className="gc-primary-metric">
-        <span>Gasto líquido em {current ? shortMonth(current) : "todos os meses"}</span>
-        <strong>{currency(summary.total_saidas)}</strong>
-        <p>Compras e tarifas, descontados os estornos.</p>
-        {data.cobertura.mes_em_andamento ? <p className="gc-period-note">Mês em andamento: os valores ainda podem mudar.</p> : null}
+        <span>Gasto líquido no período</span><strong>{currency(summary.total_saidas)}</strong>
+        <p>{data.cobertura.mes_em_andamento ? "Mês em andamento" : period}</p>
       </div>
       <dl className="gc-summary-support">
-        <div>
-          <dt>Despesas</dt>
-          <dd>{summary.quantidade_saidas}<small>compras e tarifas</small>
-          </dd>
-        </div>
-        <div>
-          <dt>Média por dia</dt>
-          <dd>{currency(summary.media_por_dia)}<small>nos dados importados</small>
-          </dd>
-        </div>
-        <div>
-          <dt>Maior categoria</dt>
-          <dd className="gc-top-category">{summary.maior_categoria ? <>
-            <CategoryMark name={summary.maior_categoria} compact />{summary.maior_categoria}</> : "Sem gasto positivo"}</dd>
-        </div>
+        <div><dt>Despesas</dt><dd>{summary.quantidade_saidas}</dd></div>
+        <div><dt>Média por dia</dt><dd>{currency(summary.media_por_dia)}</dd></div>
       </dl>
     </section>
-
     <div className="gc-main-grid">
-      <section className="gc-surface gc-categories" aria-labelledby="categories-heading">
-        <div className="gc-section-heading">
-          <div>
-            <h2 id="categories-heading">Para onde foi o dinheiro</h2>
-            <p>Cada categoria conta uma parte da história.</p>
-          </div>
-          <Icon name="tags" size={22} />
-        </div>
-        {categories.length ? <>
-          <div className="gc-category-chart" style={{ height: Math.max(240, categories.length * 49) }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart layout="vertical" data={categories.map((item) => ({ ...item, plot: Number(item.total) }))} margin={{ top: 5, right: 80, bottom: 5, left: 0 }} barSize={13}>
-                <XAxis type="number" hide />
-                <YAxis dataKey="categoria" type="category" width={142} axisLine={false} tickLine={false} tick={({ x, y, payload, index }) => {
-                  const item = categories[index];
-                  return <g transform={`translate(${Number(x) - 136},${Number(y) - 11})`}>
-                    <foreignObject width="25" height="25">
-                      <CategoryMark name={String(payload.value)} compact />
-                    </foreignObject>
-                    <text x="34" y="16" fill="#233e43" fontSize="13">{String(payload.value)}</text>
-                    <text x="34" y="29" fill="#607376" fontSize="10">{item?.participacao != null ? percent(item.participacao) : ""}</text>
-                  </g>;
-                }} />
-                <Tooltip cursor={{ fill: "#f3f7f5" }} formatter={(value) => currency(Number(value))} labelStyle={{ fontWeight: 600 }} />
-                <Bar dataKey="plot" name="Gasto líquido" radius={5} isAnimationActive={false} onClick={(_, index) => {
-                  const item = categories[index];
-                  if (item) window.location.assign(transactionLink(current, item.categoria, undefined, item.category_id));
-                }}>
-                  <LabelList dataKey="plot" position="right" formatter={(value: unknown) => currency(Number(value))} style={{ fill: "#354e50", fontSize: 12 }} />{categories.map((item) => <Cell key={categoryKey(item)} fill={categoryPresentation(item.categoria).color} />)}</Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          </div>
-          <details className="gc-details gc-values">
-            <summary>Conferir valores e investigar categorias <Icon name="arrow" size={16} />
-            </summary>
-            <ul>{categories.map((item) => <li key={categoryKey(item)}>
-              <a href={transactionLink(current, item.categoria, undefined, item.category_id)}>
-                <span>
-                  <CategoryMark name={item.categoria} compact />{item.categoria}</span>
-                <strong>{currency(item.total)}</strong>
-                <small>{item.participacao == null ? "Sem percentual" : percent(item.participacao)}</small>
-                <Icon name="arrow" size={16} />
-              </a>
-            </li>)}</ul>
-          </details>
-        </> : <p className="pd-empty">Nenhuma categoria com movimentação neste período.</p>}
-      </section>
-
-      <section className="gc-surface gc-comparison" aria-labelledby="comparison-heading">
-        <div className="gc-section-heading">
-          <div>
-            <h2 id="comparison-heading">Um mês ao lado do outro</h2>
-            <p>Escolha a referência da sua comparação.</p>
-          </div>
-          <Icon name="columns" size={22} />
-        </div>
-        <label className="gc-reference-label">Comparar com<select value={reference} disabled={!current} onChange={(event) => onPeriodChange(month === "latest" ? current ?? "all" : month, event.target.value)}>
-          <option value="">Escolher mês</option>{data.meses_disponiveis.filter((item) => item !== current).map((item) => <option key={item} value={item}>{monthLabel(item)}</option>)}</select>
+      <CategoryBars key={current ?? "all"} categories={data.por_categoria} month={current} />
+      <section className="gc-comparison" aria-labelledby="comparison-heading">
+        <h2 id="comparison-heading">Comparar meses</h2>
+        <label className="gc-reference-label"><span className="sr-only">Mês de referência</span>
+          <select value={reference} disabled={!current} onChange={(event) => onPeriodChange(current ?? "all", event.target.value)}>
+            <option value="">Escolher mês</option>
+            {data.meses_disponiveis.filter((item) => item !== current).map((item) => <option key={item} value={item}>{monthLabel(item)}</option>)}
+          </select>
         </label>
-        {reference === currentMonth() ? <p className="gc-footnote">O mês de referência está em andamento.</p> : null}
         {comparison?.mes_referencia && comparison.diferenca != null ? <>
-          <div className="gc-difference">
-            <strong>{currency(comparison.diferenca)}</strong>
-            <span>{comparison.percentual == null ? "Percentual indisponível: base não positiva." : `${comparison.percentual > 0 ? "+" : ""}${percent(comparison.percentual, 1)} em relação à referência`}</span>
-          </div>
-          <div className="gc-compare-totals">
-            <a href={transactionLink(current)}>
-              <span>{current ? shortMonth(current) : "Período"}</span>
-              <strong>{currency(comparison.total)}</strong>
-            </a>
-            <a href={transactionLink(comparison.mes_referencia)}>
-              <span>{shortMonth(comparison.mes_referencia)}</span>
-              <strong>{currency(comparison.total_referencia)}</strong>
-            </a>
-          </div>
-          <details className="gc-details">
-            <summary>Comparar por categoria <Icon name="arrow" size={16} />
-            </summary>
-            <div className="pd-scroll">
-              <table className="pd-table">
-                <caption className="sr-only">Comparação de gastos por categoria, mês analisado e referência</caption>
-                <thead>
-                  <tr>
-                    <th>Categoria</th>
-                    <th>{current ? shortMonth(current) : "Analisado"}</th>
-                    <th>{shortMonth(comparison.mes_referencia)}</th>
-                    <th>Diferença</th>
-                    <th>Variação</th>
-                  </tr>
-                </thead>
-                <tbody>{comparison.por_categoria.map((item) => <tr key={categoryKey(item)}>
-                  <th scope="row">{item.categoria}</th>
-                  <td>
-                    <a href={transactionLink(current, item.categoria, undefined, item.category_id)}>{currency(item.total)}</a>
-                  </td>
-                  <td>
-                    <a href={transactionLink(comparison.mes_referencia, item.categoria, undefined, item.category_id)}>{currency(item.total_referencia)}</a>
-                  </td>
-                  <td>{currency(item.diferenca)}</td>
-                  <td>{item.percentual == null ? <>Indisponível<small>{comparisonReason(item.motivo)}</small></> : `${item.percentual > 0 ? "+" : ""}${percent(item.percentual, 1)}`}</td>
-                </tr>)}</tbody>
-              </table>
-            </div>
+          <ComparisonBars label="Gasto líquido dos dois meses; selecione um valor para conferir os lançamentos" entries={[
+            { label: shortMonth(comparison.mes_referencia), value: comparison.total_referencia == null ? null : Number(comparison.total_referencia), href: transactionLink(comparison.mes_referencia) },
+            { label: current ? shortMonth(current) : "Período", value: Number(comparison.total), href: transactionLink(current) },
+          ]} />
+          <p className="gc-comparison-delta"><strong>{Number(comparison.diferenca) > 0 ? "+" : ""}{currency(comparison.diferenca)}</strong>
+            <span>{comparison.percentual == null ? comparisonReason(comparison.motivo) : `${percent(Math.abs(comparison.percentual), 1)} ${comparison.percentual > 0 ? "a mais" : comparison.percentual < 0 ? "a menos" : "de variação"}`}</span>
+          </p>
+          <details className="gc-details gc-category-comparison">
+            <summary>Comparar por categoria <Icon name="arrow" size={16} /></summary>
+            <div className="pd-scroll"><table className="pd-table">
+              <caption className="sr-only">Gastos por categoria nos meses comparados</caption>
+              <thead><tr><th>Categoria</th><th>{current ? shortMonth(current) : "Analisado"}</th><th>{shortMonth(comparison.mes_referencia)}</th><th>Diferença</th><th>Variação</th></tr></thead>
+              <tbody>{comparison.por_categoria.map((item) => <tr key={categoryKey(item)}>
+                <th scope="row">{item.categoria}</th>
+                <td><a href={transactionLink(current, item.categoria, undefined, item.category_id)}>{currency(item.total)}</a></td>
+                <td><a href={transactionLink(comparison.mes_referencia, item.categoria, undefined, item.category_id)}>{currency(item.total_referencia)}</a></td>
+                <td>{currency(item.diferenca)}</td>
+                <td>{item.percentual == null ? <>Indisponível<small>{comparisonReason(item.motivo)}</small></> : `${item.percentual > 0 ? "+" : ""}${percent(item.percentual, 1)}`}</td>
+              </tr>)}</tbody>
+            </table></div>
           </details>
-          <p className="gc-footnote">Uma redução nos arquivos importados não comprova economia. Os períodos podem ter coberturas diferentes.</p>
-        </> : <div className="gc-comparison-empty">
-          <Icon name="columns" size={32} />
-          <p>{current ? "Selecione outro mês disponível para comparar os gastos e as categorias." : "Escolha um mês específico para comparar."}</p>
-        </div>}
+          <p className="gc-footnote">A cobertura dos arquivos pode variar. Menor gasto observado não comprova economia.{reference === currentMonth() ? " A referência está em andamento." : ""}</p>
+        </> : <p className="gc-comparison-empty">{current ? "Escolha outro mês disponível para comparar." : "Selecione um mês específico para comparar."}</p>}
       </section>
     </div>
-
+    <ServicesSection data={data} reference={reference} />
+    <details className="gc-additional-analysis gc-details">
+      <summary>Mais análises e estatísticas <Icon name="arrow" size={18} /></summary>
     <section className="gc-surface" aria-labelledby="evolution-heading">
       <div className="gc-section-heading">
         <div>
@@ -238,28 +133,6 @@ export default function AnalyticsDashboard({ user, data, busy, failed, month, re
         </li>)}</ul>
       </details>
     </section>
-
-    <div className="gc-bottom-grid">
-      <Services data={data} />
-      <section className="gc-surface gc-recent" aria-labelledby="recent-heading">
-        <div className="gc-section-heading">
-          <div>
-            <h2 id="recent-heading">Últimas movimentações</h2>
-            <p>Até cinco lançamentos deste período.</p>
-          </div>
-          <Icon name="receipt" size={22} />
-        </div>
-        <ul className="gc-recent-list">{data.recentes.slice(0, 5).map((item) => <li key={item.id}>
-          <CategoryMark name={item.categoria} />
-          <div>
-            <strong>{item.estabelecimento || item.descricao}</strong>
-            <span>{dayLabel(item.data)} · {item.categoria}</span>
-          </div>
-          <b>{currency(item.valor)}</b>
-        </li>)}</ul>{!data.recentes.length ? <p className="pd-empty">Nenhum lançamento neste período.</p> : null}<a className="gc-section-link" href={transactionLink(current, undefined, undefined, undefined, "all")}>Ver todas as transações <Icon name="arrow" size={18} />
-        </a>
-      </section>
-    </div>
 
     <section className="gc-analysis-details" aria-labelledby="analysis-details-heading">
       <h2 id="analysis-details-heading">Mais contexto para decidir</h2>
@@ -321,8 +194,54 @@ export default function AnalyticsDashboard({ user, data, busy, failed, month, re
         <p className="gc-footnote">Entradas e pagamentos ficam separados do gasto por categoria. Estes dados não representam seu saldo bancário.</p>
       </details>
     </section>
+    </details>
+    <section className="gc-recent gc-open-section" aria-labelledby="recent-heading">
+      <div className="gc-section-heading">
+        <h2 id="recent-heading">Últimos lançamentos</h2>
+        <a className="text-link" href={transactionLink(current, undefined, undefined, undefined, "all")}>Ver tudo <Icon name="arrow" size={16} /></a>
+      </div>
+      {data.recentes.length ? <table className="gc-recent-table">
+        <caption className="sr-only">Até cinco lançamentos mais recentes de {period}</caption>
+        <thead><tr><th>Data</th><th>Estabelecimento</th><th>Categoria</th><th>Valor</th></tr></thead>
+        <tbody>{data.recentes.slice(0, 5).map((item, index) => <tr key={item.id ?? `${item.data}-${index}`}>
+          <td>{dayLabel(item.data)}</td><td>{item.estabelecimento || item.descricao}</td>
+          <td><span className="gc-category-dot" style={{ background: categoryPresentation(item.categoria).color }} />{item.categoria}</td>
+          <td>{currency(item.valor)}</td>
+        </tr>)}</tbody>
+      </table> : <p className="pd-empty">Nenhum lançamento neste período.</p>}
+    </section>
     <p className="gc-data-note">{data.cobertura.inicio && data.cobertura.fim ? `Lançamentos observados de ${formatDate(`${data.cobertura.inicio}T12:00:00`)} a ${formatDate(`${data.cobertura.fim}T12:00:00`)}. ` : ""}A análise representa os arquivos importados, que podem não cobrir todas as movimentações da conta.</p>
   </div>;
+}
+
+function CategoryBars({ categories, month }: { categories: CategoryAnalysis[]; month: string | null }) {
+  const [expanded, setExpanded] = useState(false);
+  const visible = expanded ? categories : categories.slice(0, 5);
+  const maximum = Math.max(1, ...categories.map((item) => Math.abs(Number(item.total))));
+  const diverging = categories.some((item) => Number(item.total) < 0);
+  return <section className="gc-categories" aria-labelledby="categories-heading">
+    <div className="gc-section-heading"><div><h2 id="categories-heading">Para onde foi o dinheiro</h2>
+      <p>{categories.length > 5 && !expanded ? "5 maiores categorias" : "Distribuição por categoria"}</p></div></div>
+    {categories.length ? <>
+      <ul className="gc-category-bars" id="category-values">
+        {visible.map((item) => {
+          const value = Number(item.total);
+          const width = Math.abs(value) / maximum * (diverging ? 50 : 100);
+          const style = { "--category-color": categoryPresentation(item.categoria).color,
+            "--category-width": `${width}%`, "--category-left": `${diverging ? value < 0 ? 50 - width : 50 : 0}%`,
+          } as CSSProperties;
+          return <li key={categoryKey(item)} style={style}>
+            <a href={transactionLink(month, item.categoria, undefined, item.category_id)} title={item.participacao == null ? undefined : `${percent(item.participacao)} do gasto líquido`}>
+              <span>{item.categoria}</span><span className={`gc-category-plot${diverging ? " is-diverging" : ""}`} aria-hidden="true"><i /></span><strong>{currency(item.total)}</strong>
+            </a>
+          </li>;
+        })}
+      </ul>
+      {categories.length > 5 ? <button className="text-button gc-category-expand" aria-expanded={expanded} aria-controls="category-values" onClick={() => setExpanded((value) => !value)}>
+        {expanded ? "Mostrar as 5 maiores" : `Ver todas as ${categories.length} categorias`}<Icon name="arrow" size={16} />
+      </button> : null}
+    </> : <p className="pd-empty">Nenhuma categoria com movimentação neste período.</p>}
+  </section>;
 }
 
 function AnalysisDetails({ data }: { data: AnalyticsData }) {
@@ -404,52 +323,4 @@ function AnalysisDetails({ data }: { data: AnalyticsData }) {
       </li>)}</ul>
     </details>
   </>;
-}
-
-function Services({ data }: { data: AnalyticsData }) {
-  return <section className="gc-surface gc-services" aria-labelledby="services-heading">
-    <div className="gc-section-heading">
-      <div>
-        <h2 id="services-heading">O que se repete</h2>
-        <p>Assinaturas identificadas e cobranças recorrentes.</p>
-      </div>
-      <Icon name="repeat" size={22} />
-    </div>{data.servicos.length ? <>
-      <div className="gc-services-chart" style={{ height: Math.max(110, data.servicos.length * 39) }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <BarChart data={data.servicos.map((item) => ({ ...item, plot: Number(item.total_periodo) }))} layout="vertical" barSize={12} margin={{ left: 0, top: 0, right: 80, bottom: 0 }}>
-            <XAxis type="number" hide />
-            <YAxis type="category" dataKey="estabelecimento" width={95} axisLine={false} tickLine={false} tick={{ fill: "#334c51", fontSize: 12 }} />
-            <Tooltip formatter={(value) => currency(Number(value))} cursor={{ fill: "#f4f7f5" }} />
-            <Bar dataKey="plot" name="Gasto observado no período" fill="#688b80" radius={4} isAnimationActive={false}>
-              <LabelList dataKey="plot" position="right" formatter={(value: unknown) => currency(Number(value))} style={{ fill: "#354e50", fontSize: 12 }} />
-            </Bar>
-          </BarChart>
-        </ResponsiveContainer>
-      </div>
-      <details className="gc-details">
-        <summary>Serviços, valores e evidências <Icon name="arrow" size={16} />
-        </summary>
-        <ul className="gc-service-details">{data.servicos.map((service) => <li key={service.estabelecimento}>
-          <a href={transactionLink(data.mes, undefined, service.estabelecimento)}>
-            <strong>{service.estabelecimento}</strong>
-            <b>{currency(service.total_periodo)}<small>no período</small>
-            </b>
-          </a>
-          <p>{service.classificacoes.includes("recorrencia_confirmada") ? "Recorrência confirmada" : "Assinatura identificada pelo nome"}{service.classificacoes.length > 1 ? " e assinatura identificada" : ""}</p>
-          <dl>
-            <div>
-              <dt>Base mensal ({shortMonth(service.mes_base)})</dt>
-              <dd>{currency(service.base_mensal)}</dd>
-            </div>
-            <div>
-              <dt>Extrapolação de 12 meses</dt>
-              <dd>{currency(service.anualizado)}</dd>
-            </div>
-          </dl>
-          <p>Última cobrança: {dayLabel(service.ultima_cobranca)}. Evidência: {service.meses_evidencia.map(shortMonth).join(", ")}.{service.lacunas.length ? ` Sem dados em ${service.lacunas.map(shortMonth).join(", ")}.` : ""}</p>
-        </li>)}</ul>
-      </details>
-    </> : <p className="pd-empty">Nenhum serviço identificado. A confirmação de recorrência exige ao menos dois meses de dados.</p>}<p className="gc-footnote">Valores do período selecionado. A detecção consulta o histórico completo; a estimativa anual não prevê cobranças futuras.</p>
-  </section>;
 }

@@ -2,6 +2,7 @@ import { useRef, useState, type FormEvent } from "react";
 import { deleteAccount, type User } from "../../auth/api";
 import { leaveIfSignedOut } from "../../panel/api";
 import { formatDate } from "./formatDate";
+import "../../styles/panel-tasks.css";
 
 type AccountSectionProps = {
   user: User;
@@ -28,13 +29,13 @@ export default function AccountSection({ user }: AccountSectionProps) {
       setBusy(false);
     }
   }
-  return <div className="panel-page">
+  return <div className="panel-page gc-task-page gc-account-page">
     <header className="panel-page-head">
       <h1>Conta</h1>
       <p className="lead">Os dados que você informou no cadastro.</p>
     </header>
 
-    <div className="panel-grid">
+    <div className="gc-account-sections">
       <section className="panel-card" aria-labelledby="account-data-title">
         <h2 id="account-data-title">Dados da conta</h2>
         <dl className="panel-facts is-wide">
