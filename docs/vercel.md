@@ -5,8 +5,12 @@ que uma versão tenha sido publicada: a validação hospedada é uma etapa separ
 
 Projeto informado: `janioramalho12-2999/gerencia`; site existente
 [gerencia-liart.vercel.app](https://gerencia-liart.vercel.app/). Em 17/11, a página
-e as duas rotas de saúde responderam 200. A versão refatorada ainda é local;
-esses GETs não identificam o commit ou revisão do banco da hospedagem.
+e as duas rotas de saúde responderam 200. O frontend `bf2efca`, na branch `Janio`,
+foi compilado também no deploy protegido `dpl_6WEHasHq1aCxrRvMVLzXffboijbG`, sem
+promoção ao domínio público: a importação encontrou a coluna
+`uploads.source_format` ausente no PostgreSQL hospedado. Não foram executadas
+migrações. A publicação depende da preparação e autorização da compatibilidade
+do banco; veja [a validação visual](validacao-visual-2026-11-17.md).
 
 O `vercel.json` da raiz declara dois serviços: Vite em `frontend/` e FastAPI em
 `backend/`, com entrada `main:app`. Os rewrites enviam `/api/...` à API e o restante

@@ -63,6 +63,37 @@ que reconhece “Inter” dentro de “Inter Tight”; a fonte da marca foi pres
 ## Publicação
 
 Publicação autorizada pelo usuário no projeto existente `janioramalho12-2999/gerencia`.
-O registro do commit, envio à branch e resultado hospedado deve ser acrescentado
-após sua verificação; compilação local ou push, isoladamente, não comprovam
-publicação em produção. Não executar migrações como parte desta mudança visual.
+Frontend registrado no commit `bf2efcae3564aca3d8df67436cc8b8647f43276e` e enviado
+à branch `Janio`. A `main` permaneceu em `d741130241f3bd1b955675768aaf68e22cfbed3c`.
+
+O deploy de validação `dpl_6WEHasHq1aCxrRvMVLzXffboijbG` compilou com sucesso:
+[versão protegida](https://gerencia-5aqeejq29-janioramalho12-2999.vercel.app).
+Foi criado com ambiente de produção e sem atribuir o domínio público. O envio
+usou uma exportação limpa do commit, excluindo ambientes e ferramentas locais.
+
+Na hospedagem, páginas públicas, saúde da API, conexão com PostgreSQL e cadastro
+da conta fictícia funcionaram. A importação CSV retornou HTTP 500. O log contém
+`psycopg.errors.UndefinedColumn: column uploads.source_format does not exist`.
+A conta de ensaio foi excluída com HTTP 204. Nenhum dado da conta do usuário foi
+alterado pelo ensaio. O cookie local de autorização da validação foi removido.
+
+**O deploy não foi promovido.** O domínio público continua no deployment anterior
+`dpl_7DuUMjr5EJkqrquHbWykXZVxCte9`. Nenhuma migração foi executada.
+
+### Pré-requisito para publicar
+
+A coluna ausente é introduzida pela migração `0002_financial_core`. A `0003`
+adiciona limites e notificações. Isso não significa que executar apenas essas
+revisões resolva tudo: o modelo atual de upload não preenche o campo legado
+`storage_path`, obrigatório na baseline, e sua remoção ocorre na `0004`.
+
+A `0004_remove_legacy` também transfere metadados, remove estruturas Bronze e
+mapeamentos, aplica verificações de segurança e não oferece downgrade. Portanto,
+a publicação depende de uma etapa própria de compatibilidade do banco, fora do
+escopo estritamente visual: conferir revisão/estrutura reais, obter backup
+restaurável, ensaiar numa cópia e apresentar o resultado antes de autorizar a
+execução em produção. Não executar `upgrade head` ou `stamp` sem essa preparação.
+
+A revisão real do PostgreSQL hospedado ainda não foi confirmada. A CLI informou
+que as variáveis sensíveis de produção não podem ser exportadas e recorreu ao
+ambiente local; essa leitura foi descartada e não constitui inventário de produção.
