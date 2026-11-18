@@ -1,6 +1,6 @@
 # Banco PostgreSQL do gerenCIA
 
-O esquema está em `scripts/init.sql`. Ele cria as 10 tabelas, índices,
+O esquema está em `scripts/init.sql`. Ele cria as 12 tabelas, índices,
 relacionamentos, proteções de categorias e as 11 categorias globais do
 planejamento. Todas as tabelas também recebem um código numérico curto.
 O banco `gerencia_db` precisa existir antes da execução.
@@ -31,7 +31,7 @@ Confira o resultado:
 & "$pgBin\psql.exe" -X -h 127.0.0.1 -p 5432 -U postgres -d gerencia_db -c 'SELECT name FROM categories WHERE user_id IS NULL ORDER BY name;'
 ```
 
-O primeiro comando deve mostrar 10 tabelas; o segundo, 11 categorias.
+O primeiro comando deve mostrar 12 tabelas e o segundo deve mostrar 11 categorias.
 No pgAdmin, abra o servidor, `Databases`, `gerencia_db`, `Schemas`, `public`,
 `Tables`. Atualize a árvore se o banco tiver sido criado pelo terminal.
 
@@ -43,6 +43,8 @@ use a atualização versionada:
 ```powershell
 & "$pgBin\psql.exe" -X -h 127.0.0.1 -p 5432 -U postgres -d gerencia_db -v ON_ERROR_STOP=1 -f scripts/migrations/001_integrity.sql
 & "$pgBin\psql.exe" -X -h 127.0.0.1 -p 5432 -U postgres -d gerencia_db -v ON_ERROR_STOP=1 -f scripts/migrations/002_display_codes.sql
+& "$pgBin\psql.exe" -X -h 127.0.0.1 -p 5432 -U postgres -d gerencia_db -v ON_ERROR_STOP=1 -f scripts/migrations/003_budgets.sql
+& "$pgBin\psql.exe" -X -h 127.0.0.1 -p 5432 -U postgres -d gerencia_db -v ON_ERROR_STOP=1 -f scripts/migrations/004_budget_months_and_category_colors.sql
 ```
 
 A atualização mantém os dados e valida as regras antes de confirmar a
@@ -55,13 +57,27 @@ alterado silenciosamente.
 Os arquivos em `scripts/migrations/` são atualizações SQL manuais. A adoção
 de Alembic permanece uma etapa prevista na arquitetura.
 
-Se a correção de integridade já estiver instalada, execute apenas `002_display_codes.sql`.
-A instalação nova por `init.sql` já inclui ambas as alterações; não execute
-as atualizações novamente nesse caso.
+Execute as migrações pendentes na ordem acima antes de atualizar a API.
+A migração 003 cria as tabelas de limites e notificações. A migração 004
+vincula os limites existentes ao mês corrente no fuso de São Paulo e
+preenche as cores das categorias globais que ainda estiverem sem cor.
+O `init.sql` já inclui todas as alterações.
+
+### Banco hospedado com histórico `0002_upload_history`
+
+Para publicar esta versão da `main` em um banco que já tem as colunas e
+proteções das migrações 001 e 002, aplique as migrações 003 e 004 após
+confirmar o esquema em uma restauração recente. Elas acrescentam limites,
+notificações e cores de categorias. As tabelas de contas, arquivos e
+transações conservam suas colunas e seus registros.
+
+O valor `0002_upload_history` fica registrado no Alembic. As migrações SQL
+desta versão são independentes desse histórico. Antes de usar outra linha
+de migrações, confira a compatibilidade com o esquema hospedado.
 
 ## Códigos numéricos e UUIDs
 
-Cada uma das 10 tabelas tem dois identificadores:
+Cada uma das 12 tabelas tem dois identificadores:
 
 - `id`: UUID interno, que continua sendo a chave primária e a referência
   utilizada pelos relacionamentos entre tabelas.

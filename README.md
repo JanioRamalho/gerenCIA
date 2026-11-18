@@ -3,9 +3,9 @@
 Aplicação web de gestão e análise financeira baseada em extratos bancários e
 faturas de cartão, em CSV e XLSX, com o histórico de todos os arquivos enviados.
 
-O frontend já oferece uma demonstração interativa com dados fictícios. A API
-possui rotas de saúde, verificação do banco e consulta de categorias; os demais recursos serão construídos por etapas, com
-o backend desenvolvido de forma acompanhada e didática.
+O site oferece uma demonstração interativa com dados fictícios. No painel
+logado, a pessoa pode importar arquivos, acompanhar gastos, revisar a categoria
+dos lançamentos e definir limites mensais com avisos no painel.
 
 ## Arquitetura
 
@@ -70,7 +70,11 @@ No PowerShell, a partir da pasta principal do projeto, execute sempre que quiser
 
 Deixe o terminal aberto enquanto usa a API. Acesse http://127.0.0.1:8000/api/health para verificar a resposta {"status":"ok"} ou http://127.0.0.1:8000/docs para abrir a documentação automática. Para parar o servidor, pressione Ctrl+C.
 
-O comando usa o ambiente virtual .venv da pasta principal, com FastAPI e Uvicorn instalados. A conexão com PostgreSQL exige `DATABASE_URL` no `.env` e o driver `psycopg` no ambiente Python. Com a API no ar, o `npm run dev` do frontend encaminha `/api` para `http://127.0.0.1:8000`; para apontar para outro endereço, defina `GERENCIA_API_URL`. Cadastro e login funcionam de verdade e levam ao painel do usuário, em `/app`; a análise financeira ainda usa dados de demonstração. Para o site funcionar por completo, deixe dois terminais abertos: um com a API e outro com o `npm run dev`.
+O comando usa o ambiente virtual `.venv` da pasta principal, com FastAPI e
+Uvicorn instalados. A conexão com o PostgreSQL exige `DATABASE_URL` no `.env` e
+o driver `psycopg`. O frontend encaminha `/api` para `http://127.0.0.1:8000`.
+Defina `GERENCIA_API_URL` para usar outro endereço. Deixe a API e o frontend
+em execução para testar o painel em `/app`.
 
 ## Banco de dados
 
