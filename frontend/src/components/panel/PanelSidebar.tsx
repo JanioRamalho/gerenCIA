@@ -1,22 +1,8 @@
 import { useEffect, useRef, useState, type FocusEvent } from "react";
 import type { User } from "../../auth/api";
+import { panelRoutes } from "../../panel/routes";
 import Brand from "../Brand";
-
-/** Uma seção do menu. `href: null` quer dizer que a seção ainda não foi construída. */
-type MenuItem = {
-  label: string;
-  href: string | null;
-};
-
-// Seções do painel, na ordem do menu. As que ainda não existem aparecem sem
-// link, com a marca "em breve", para a pessoa saber o que vem por aí.
-const MENU_ITEMS: MenuItem[] = [
-  { label: "Painel", href: "/app" },
-  { label: "Arquivos", href: "/app/files" },
-  { label: "Transações", href: null },
-  { label: "Limites", href: null },
-  { label: "Conta", href: "/app/account" },
-];
+import Icon from "../Icon";
 
 type PanelSidebarProps = {
   currentPath: string;
@@ -60,10 +46,7 @@ export default function PanelSidebar({ currentPath, user, signingOut, signOutFai
     }
   }
 
-  let bodyClass = "panel-sidebar-body";
-  if (menuOpen) {
-    bodyClass = "panel-sidebar-body is-open";
-  }
+  const initials = user?.name.trim().split(/\s+/).slice(0, 2).map((part) => Array.from(part)[0]).join("").toLocaleUpperCase("pt-BR");
 
   return <aside className="panel-sidebar on-night" onBlur={closeMenuWhenFocusLeaves}>
     <div className="panel-sidebar-top">
@@ -79,18 +62,24 @@ export default function PanelSidebar({ currentPath, user, signingOut, signOutFai
       ><span /><span /></button>
     </div>
 
-    <div id="panel-navigation" className={bodyClass}>
+    <div id="panel-navigation" className={`panel-sidebar-body${menuOpen ? " is-open" : ""}`}>
       <nav aria-label="Seções do painel">
         <ul className="panel-menu">
-          {MENU_ITEMS.map((item) => <MenuEntry key={item.label} item={item} currentPath={currentPath} />)}
+          {panelRoutes.map((item) => <li key={item.path}>
+            <a className="panel-menu-item" href={item.path} aria-current={item.path === currentPath ? "page" : undefined}>
+              <Icon name={item.icon} size={20} />{item.label}
+            </a>
+          </li>)}
         </ul>
       </nav>
 
       {/* Enquanto a sessão é conferida, esta área guarda o espaço mas fica
           invisível, para não piscar vazia. */}
       <div className="panel-account" data-state={user ? "ready" : "loading"}>
-        <p className="panel-account-name">{user?.name}</p>
-        <p className="panel-account-email">{user?.email}</p>
+        <div className="panel-identity">
+          <span className="panel-avatar" aria-hidden="true">{initials}</span>
+          <div><p className="panel-account-name">{user?.name}</p><p className="panel-account-email">{user?.email}</p></div>
+        </div>
         <button className="header-pill" type="button" onClick={onSignOut} disabled={signingOut}>
           {signingOut ? "Saindo…" : "Sair"}
         </button>
@@ -98,27 +87,4 @@ export default function PanelSidebar({ currentPath, user, signingOut, signOutFai
       </div>
     </div>
   </aside>;
-}
-
-type MenuEntryProps = {
-  item: MenuItem;
-  currentPath: string;
-};
-
-/** Uma linha do menu: link para seções prontas, texto com "em breve" para as futuras. */
-function MenuEntry({ item, currentPath }: MenuEntryProps) {
-  if (item.href === null) {
-    return <li>
-      <span className="panel-menu-item is-planned">
-        {item.label}
-        <small>em breve</small>
-      </span>
-    </li>;
-  }
-
-  // aria-current="page" avisa aos leitores de tela qual seção está aberta.
-  const isCurrent = item.href === currentPath;
-  return <li>
-    <a className="panel-menu-item" href={item.href} aria-current={isCurrent ? "page" : undefined}>{item.label}</a>
-  </li>;
 }

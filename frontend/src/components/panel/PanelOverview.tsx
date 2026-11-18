@@ -17,6 +17,7 @@ export default function PanelOverview({ user }: PanelOverviewProps) {
   const [data, setData] = useState<DashboardData | null>(null);
   const [failed, setFailed] = useState(false);
   const [reloading, setReloading] = useState(false);
+  const [retry, setRetry] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -35,20 +36,20 @@ export default function PanelOverview({ user }: PanelOverviewProps) {
         if (!cancelled) setReloading(false);
       });
     return () => { cancelled = true; };
-  }, [month]);
+  }, [month, retry]);
 
   if (failed && data === null) {
     return <section className="panel-card panel-message" aria-labelledby="overview-error-title">
       <h1 id="overview-error-title">Não foi possível carregar a análise.</h1>
       <p>O servidor não respondeu. Confira se a API está no ar e tente de novo.</p>
-      <button className="primary-button is-night" type="button" onClick={() => window.location.reload()}>Tentar de novo</button>
+      <button className="primary-button is-night" type="button" onClick={() => { setFailed(false); setRetry((value) => value + 1); }}>Tentar de novo</button>
     </section>;
   }
   if (data === null) {
-    return <p className="sr-only" role="status">Carregando a análise…</p>;
+    return <p className="panel-card" role="status">Carregando a análise…</p>;
   }
   if (!data.tem_dados) {
     return <PanelHome user={user} />;
   }
-  return <PanelDashboard user={user} data={data} month={month} onMonthChange={setMonth} busy={reloading} failed={failed} />;
+  return <PanelDashboard user={user} data={data} month={month} onMonthChange={setMonth} busy={reloading} failed={failed} onRetry={() => setRetry((value) => value + 1)} />;
 }

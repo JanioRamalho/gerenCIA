@@ -1,4 +1,5 @@
 import type { User } from "../../auth/api";
+import Icon from "../Icon";
 import { formatDate } from "./formatDate";
 
 type AccountSectionProps = {
@@ -10,27 +11,27 @@ export default function AccountSection({ user }: AccountSectionProps) {
   return <div className="panel-page">
     <header className="panel-page-head">
       <h1>Conta</h1>
-      <p className="lead">Os dados que você informou no cadastro.</p>
+      <p className="lead">Confira seus dados de cadastro e as informações da sua sessão.</p>
     </header>
 
     <div className="panel-grid">
-      <section className="panel-card" aria-labelledby="account-data-title">
+      <section className="panel-card panel-stack" aria-labelledby="account-data-title">
+        <span className="panel-icon-tile"><Icon name="user" /></span>
         <h2 id="account-data-title">Dados da conta</h2>
         <dl className="panel-facts is-wide">
           <div><dt>Nome</dt><dd>{user.name}</dd></div>
           <div><dt>E-mail</dt><dd>{user.email}</dd></div>
           <div><dt>Conta criada em</dt><dd>{formatDate(user.created_at)}</dd></div>
         </dl>
-        <p className="status-line panel-card-foot"><i className="status-mark" aria-hidden="true" />Excluir a conta, com todos os seus dados: em breve.</p>
       </section>
 
-      {/* Cada frase descreve o que o sistema já faz hoje (veja backend/README.md). */}
-      <section className="panel-card" aria-labelledby="account-privacy-title">
+      <section className="panel-card panel-stack" aria-labelledby="account-privacy-title">
+        <span className="panel-icon-tile"><Icon name="check" /></span>
         <h2 id="account-privacy-title">Acesso e privacidade</h2>
         <dl className="panel-facts">
           <div><dt>Sessão</dt><dd>Fica aberta neste navegador até você sair ou até ela expirar.</dd></div>
-          <div><dt>Senha</dt><dd>Guardada só como um código irreversível, que não permite descobrir a senha.</dd></div>
-          <div><dt>Seus dados</dt><dd>Nenhum outro usuário tem acesso a eles.</dd></div>
+          <div><dt>Senha</dt><dd>Protegida por hash no servidor.</dd></div>
+          <div><dt>Importações</dt><dd>Você pode revisar e remover seus dados importados na seção <a className="xref" href="/app/files">Arquivos</a>.</dd></div>
         </dl>
       </section>
     </div>
