@@ -18,7 +18,7 @@ const planned = [
 
 function validate(values: FormValues): FormErrors {
   const errors: FormErrors = {};
-  if (values.name.trim().length < 2) errors.name = "Informe seu nome completo.";
+  if (!/\s/.test(values.name.trim())) errors.name = "Informe seu nome e sobrenome.";
   if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(values.email.trim())) errors.email = "Informe um e-mail válido, como nome@exemplo.com.";
   if (values.password.length < 8) errors.password = "Use pelo menos 8 caracteres.";
   if (values.confirm !== values.password || !values.confirm) errors.confirm = "As senhas precisam ser iguais.";
