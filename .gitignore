@@ -33,6 +33,10 @@ data/raw/*
 data/rejected/*
 !data/rejected/.gitkeep
 uploads/
+.private/
+
+# Configuracao local de deploy
+.vercel/
 
 # Logs e sistema operacional
 *.log
