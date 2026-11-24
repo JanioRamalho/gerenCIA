@@ -39,6 +39,7 @@ class User(DisplayCodeMixin, Base):
     __table_args__ = (
         CheckConstraint("length(trim(name)) > 0", name="users_name_not_empty"),
         CheckConstraint("length(trim(email)) > 0", name="users_email_not_empty"),
+        CheckConstraint("monthly_income IS NULL OR monthly_income > 0", name="users_monthly_income_positive"),
         Index("users_email_lower_uq", func.lower(text("email")), unique=True),
     )
 
@@ -46,6 +47,7 @@ class User(DisplayCodeMixin, Base):
     name: Mapped[str] = mapped_column(Text, nullable=False)
     email: Mapped[str] = mapped_column(Text, nullable=False)
     password_hash: Mapped[str] = mapped_column(Text, nullable=False)
+    monthly_income: Mapped[Decimal | None] = mapped_column(Numeric(14, 2))  # opcional; contexto do perfil da IA
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
     updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=False, server_default=func.now())
 
