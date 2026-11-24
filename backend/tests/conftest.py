@@ -163,15 +163,39 @@ def auth_database(postgres_cluster):
     return db
 
 
+@pytest.fixture(scope="session")
+def app_test_environment():
+    with pytest.MonkeyPatch.context() as env:
+        env.setenv("PYTHON_DOTENV_DISABLED", "1")
+        env.setenv("DATABASE_URL", "postgresql+psycopg://unused@127.0.0.1:1/unused")
+        env.setenv("APP_ENV", "test")
+        env.setenv("SESSION_COOKIE_SECURE", "false")
+        env.setenv("SESSION_TTL_DAYS", "14")
+        yield
+
+
+@pytest.fixture(scope="session")
+def api_app(app_test_environment):
+    from app.api.main import app
+
+    return app
+
+
 @pytest.fixture
-def auth_client(auth_database):
+def api_client(api_app):
+    from fastapi.testclient import TestClient
+
+    with TestClient(api_app) as client:
+        yield client
+
+
+@pytest.fixture
+def auth_client(api_app, auth_database):
     """HTTP client wired to the temporary database; DATABASE_URL is never used."""
-    os.environ.setdefault("DATABASE_URL", "postgresql+psycopg://unused@127.0.0.1:1/unused")
     from fastapi.testclient import TestClient
     from sqlalchemy import create_engine
     from sqlalchemy.orm import sessionmaker
 
-    from app.api.main import app
     from app.db.session import get_db
 
     engine = create_engine(
@@ -187,10 +211,10 @@ def auth_client(auth_database):
             db.close()
 
     auth_database.sql("DELETE FROM users;")  # sessions go with their users
-    app.dependency_overrides[get_db] = override_get_db
+    api_app.dependency_overrides[get_db] = override_get_db
     try:
-        with TestClient(app) as client:
+        with TestClient(api_app) as client:
             yield client
     finally:
-        app.dependency_overrides.clear()
+        api_app.dependency_overrides.pop(get_db, None)
         engine.dispose()
