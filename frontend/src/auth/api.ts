@@ -1,4 +1,4 @@
-export type User = { id: string; code: number; name: string; email: string; created_at: string };
+export type User = { id: string; code: number; name: string; email: string; created_at: string; monthly_income: string | null };
 
 export type FieldErrors = Record<string, string>;
 
@@ -63,3 +63,7 @@ export const login = (input: { email: string; password: string }) =>
   request<User>("/auth/login", { method: "POST", json: input }) as Promise<User>;
 
 export const logout = () => request<null>("/auth/logout", { method: "POST" });
+
+/** Grava a renda mensal ("5000.00") ou a apaga (null). Devolve a conta atualizada. */
+export const updateIncome = (monthlyIncome: string | null) =>
+  request<User>("/auth/me", { method: "PATCH", json: { monthly_income: monthlyIncome } }) as Promise<User>;
