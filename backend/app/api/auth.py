@@ -11,7 +11,7 @@ from app.api.deps import get_current_user, get_session_token
 from app.core.config import settings
 from app.db.session import get_db
 from app.models import User
-from app.schemas.auth import LoginRequest, RegisterRequest, UserResponse
+from app.schemas.auth import IncomeUpdate, LoginRequest, RegisterRequest, UserResponse
 from app.services import auth as auth_service
 
 # Todas as rotas deste arquivo começam com /api/auth. A tag agrupa as rotas na
@@ -114,3 +114,15 @@ def me(response: Response, user: User = Depends(get_current_user)):
     # respondeu 401 e esta função nem chega a rodar.
     response.headers["Cache-Control"] = "no-store"
     return user
+
+
+@router.patch("/me", response_model=UserResponse)
+def update_me(
+    payload: IncomeUpdate,
+    response: Response,
+    user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Atualiza a renda mensal de quem está logado. Envie null para apagar."""
+    response.headers["Cache-Control"] = "no-store"
+    return auth_service.update_income(db, user, payload.monthly_income)
