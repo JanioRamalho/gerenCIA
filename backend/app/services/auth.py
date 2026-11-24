@@ -5,6 +5,7 @@ ao banco fica nos repositórios (repositories/).
 """
 
 from datetime import datetime, timezone
+from decimal import Decimal
 
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.orm import Session
@@ -100,3 +101,10 @@ def close_session(db: Session, token: str) -> None:
     token_hash = security.hash_session_token(token)
     sessions.revoke(db, token_hash=token_hash, now=now_utc())
     db.commit()
+
+
+def update_income(db: Session, user: User, monthly_income: Decimal | None) -> User:
+    """Guarda a renda mensal da pessoa logada, usada pelo perfil de gastos da IA."""
+    users.set_monthly_income(db, user, monthly_income)
+    db.commit()
+    return user
