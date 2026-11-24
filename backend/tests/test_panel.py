@@ -2,12 +2,16 @@
 
 from datetime import date
 
+import pytest
+
 from app.services import budgets
+
+pytestmark = [pytest.mark.api, pytest.mark.database]
 
 
 def register(client, name):
     response = client.post("/api/auth/register", json={
-        "name": name, "email": f"{name.lower()}@test.invalid", "password": "senha-de-teste-1",
+        "name": f"{name} Teste", "email": f"{name.lower()}@test.invalid", "password": "senha-de-teste-1",
     })
     assert response.status_code == 201, response.text
 
