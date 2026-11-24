@@ -5,6 +5,7 @@ import { categoryColor } from "../../panel/categoryColor";
 import Icon from "../Icon";
 import BudgetUsage, { BudgetStatus } from "./BudgetUsage";
 import MonthlySpendingChart from "./MonthlySpendingChart";
+import SpendingProfileCard from "./SpendingProfileCard";
 import { formatMonth, isPanelMonth } from "./formatDate";
 
 type PanelDashboardProps = {
@@ -89,6 +90,8 @@ export default function PanelDashboard({ user, data, month, onMonthChange, busy,
         </dl>
       </div> : <p className="panel-card">Não há saídas neste período. <a className="text-link" href={transactionHref}>Ver transações</a></p>}
     </section>
+
+    <SpendingProfileCard user={user} filesCount={data.arquivos} selectedMonth={loadedMonth} onSelectMonth={chooseMonth} />
 
     {summary && <div className="pd-grid">
       <MonthlySpendingChart months={months} selected={loadedMonth} onSelect={chooseMonth} />
