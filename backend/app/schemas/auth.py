@@ -6,6 +6,7 @@ estiver errado, a API responde 422 com as mensagens de api/errors.py.
 
 import re
 from datetime import datetime
+from decimal import Decimal
 from uuid import UUID
 
 from pydantic import BaseModel, ConfigDict, Field, field_validator
@@ -29,12 +30,11 @@ class RegisterRequest(BaseModel):
     @field_validator("name")
     @classmethod
     def clean_name(cls, value: str) -> str:
-        """Remove os espaços extras do nome e confere o tamanho."""
-        # split() quebra o texto nos espaços e descarta os pedaços vazios; o
-        # join junta as palavras com um espaço só.
-        # Exemplo: "  Alice   Souza " vira "Alice Souza".
+        """Normaliza os espaços e exige nome e sobrenome."""
         value = " ".join(value.split())
-        if len(value) < 2 or len(value) > 120:
+        if " " not in value:
+            raise ValueError("Informe seu nome e sobrenome.")
+        if len(value) > 120:
             raise ValueError("Informe seu nome completo.")
         return value
 
@@ -89,3 +89,12 @@ class UserResponse(BaseModel):
     name: str
     email: str
     created_at: datetime
+    # Renda mensal opcional, usada como contexto pelo perfil de gastos da IA.
+    monthly_income: Decimal | None = None
+
+
+class IncomeUpdate(BaseModel):
+    """Renda mensal informada na página Conta. None apaga o valor."""
+
+    # gt=0: renda zero ou negativa não faz sentido. Duas casas, como centavos.
+    monthly_income: Decimal | None = Field(default=None, gt=0, max_digits=14, decimal_places=2)
