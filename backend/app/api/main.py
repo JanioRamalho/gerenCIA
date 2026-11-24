@@ -4,6 +4,7 @@ from sqlalchemy import select, text
 from sqlalchemy.exc import SQLAlchemyError
 from sqlalchemy.orm import Session
 
+from app.api.ai import router as ai_router
 from app.api.analysis import router as analysis_router
 from app.api.auth import router as auth_router
 from app.api.budgets import router as budgets_router
@@ -23,6 +24,7 @@ app.include_router(uploads_router)
 app.include_router(dashboard_router)
 app.include_router(transactions_router)
 app.include_router(budgets_router)
+app.include_router(ai_router)
 
 @app.get("/api/health")
 def health():
