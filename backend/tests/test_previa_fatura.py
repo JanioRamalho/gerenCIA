@@ -25,6 +25,7 @@ from app.pipeline.previa import (
 )
 
 EXEMPLOS = Path(__file__).resolve().parents[2] / "scripts" / "exemplos"
+pytestmark = pytest.mark.unit
 
 
 def csv(texto: str) -> bytes:
@@ -73,6 +74,28 @@ def test_estabelecimento_e_categoria():
 
 
 # ---- arquivos completos -----------------------------------------------------
+
+@pytest.mark.parametrize("valor, compra_esperada", [
+    pytest.param("0.01", True, id="um-centavo"),
+    pytest.param("0.00", False, id="zero"),
+    pytest.param("-0.01", False, id="estorno"),
+])
+def test_fatura_compra_exige_valor_positivo(valor, compra_esperada):
+    fatura = csv(f"date,title,amount\n2026-08-01,Loja Teste,{valor}")
+
+    transacao = processar_arquivo(fatura, "fatura.csv").transacoes.iloc[0]
+
+    assert (transacao["tipo"] == "purchase") == compra_esperada
+
+
+def test_fatura_rejeita_valor_nao_numerico():
+    fatura = csv("date,title,amount\n2026-08-01,Loja Teste,abc")
+
+    resultado = processar_arquivo(fatura, "fatura.csv")
+
+    assert resultado.transacoes.empty
+    assert resultado.rejeitadas[0]["codigo"] == "invalid_value"
+
 
 def test_fatura_nubank_exemplo():
     resultado = analisar_arquivo((EXEMPLOS / "fatura_nubank_exemplo.csv").read_bytes(), "fatura.csv")
@@ -223,3 +246,36 @@ def test_sem_transacoes_a_analise_vem_vazia():
     analise = calcular_analise(quadro_de_transacoes([]))
     assert analise["resumo"] is None
     assert analise["por_mes"] == [] and analise["recorrentes"] == []
+
+
+def test_estatistica_descritiva_com_valores_conferidos_a_mao():
+    conteudo = csv("""date,title,amount
+2026-08-01,Padaria,10.00
+2026-08-02,Padaria,20.00
+2026-08-03,Uber Trip,60.00""")
+    resultado = analisar_arquivo(conteudo, "fatura.csv")
+
+    resumo = resultado["resumo"]
+    assert resumo["quantidade_saidas"] == 3
+    assert resumo["total_saidas"] == 90.0
+    assert resumo["media"] == 30.0
+    assert resumo["mediana"] == 20.0
+    assert resumo["maior"] == 60.0
+    assert resumo["dias"] == 3
+    assert resumo["media_por_dia"] == 30.0
+    assert [(item["categoria"], item["total"], item["participacao"]) for item in resultado["por_categoria"]] == [
+        ("Transporte", 60.0, 0.6667),
+        ("Alimentação", 30.0, 0.3333),
+    ]
+
+
+def test_previa_explica_quando_todas_as_linhas_sao_rejeitadas():
+    resultado = analisar_arquivo(csv("date,title,amount\n2026-02-31,Netflix.Com,10.00"), "fatura.csv")
+
+    assert resultado["resumo"] is None
+    assert resultado["qualidade"] == {
+        "linhas_lidas": 1, "linhas_validas": 0, "linhas_rejeitadas": 1,
+        "linhas_duplicadas": 0, "percentual": 0.0,
+    }
+    assert resultado["rejeitadas"][0]["codigo"] == "invalid_date"
+    assert "Nenhuma linha válida" in resultado["avisos"][0]
