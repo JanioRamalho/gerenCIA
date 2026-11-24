@@ -1,0 +1,345 @@
+date,title,amount
+2025-12-01,Posto Ipiranga,294.13
+2025-12-02,Netflix.Com,55.90
+2025-12-03,Drogasil,118.04
+2025-12-03,Spotify,21.90
+2025-12-04,Atacadão,473.51
+2025-12-05,Smart Fit,129.90
+2025-12-08,Atacadão,734.77
+2025-12-08,Padaria Pão Quente,15.10
+2025-12-10,Claro Celular,89.99
+2025-12-10,Posto Ipiranga,227.77
+2025-12-11,Atacadão,566.08
+2025-12-12,Drogasil,104.55
+2025-12-13,Atacadão,733.12
+2025-12-13,Uber *Trip,29.82
+2025-12-15,Atacadão,354.94
+2025-12-15,Seguro Auto Porto,310.00
+2025-12-16,Mercadolivre,400.87
+2025-12-16,Pet Shop Amigo,185.50
+2025-12-18,Cinema Kinoplex,63.13
+2025-12-18,Cinema Kinoplex,86.33
+2025-12-20,Pagamento recebido,-5922.00
+2025-12-21,Mercadolivre,108.24
+2025-12-21,Mercadolivre,398.20
+2025-12-23,Pet Shop Amigo,191.79
+2025-12-25,Padaria Pão Quente,45.92
+2025-12-26,Drogasil,92.69
+2025-12-27,Supermercado Bom Preço,747.81
+2026-01-01,Posto Ipiranga,155.63
+2026-01-02,Netflix.Com,55.90
+2026-01-02,Pet Shop Amigo,211.34
+2026-01-03,Spotify,21.90
+2026-01-05,Smart Fit,129.90
+2026-01-08,Padaria Pão Quente,48.99
+2026-01-09,Mercadolivre,287.12
+2026-01-09,Mercadolivre,392.46
+2026-01-09,Uber *Trip,50.55
+2026-01-10,Claro Celular,89.99
+2026-01-10,Pet Shop Amigo,163.19
+2026-01-14,Cinema Kinoplex,65.85
+2026-01-14,Restaurante Sabor Caseiro,86.33
+2026-01-15,Atacadão,646.41
+2026-01-15,Drogasil,168.35
+2026-01-15,Seguro Auto Porto,310.00
+2026-01-16,Cinema Kinoplex,61.90
+2026-01-16,Cinema Kinoplex,68.21
+2026-01-16,Mercadolivre,213.18
+2026-01-16,Pet Shop Amigo,191.47
+2026-01-17,Padaria Pão Quente,45.67
+2026-01-17,Pet Shop Amigo,188.72
+2026-01-17,Restaurante Sabor Caseiro,164.33
+2026-01-19,Supermercado Bom Preço,356.34
+2026-01-20,Pagamento recebido,-4878.00
+2026-01-20,Pet Shop Amigo,233.31
+2026-01-21,Atacadão,651.30
+2026-01-22,Mercadolivre,117.95
+2026-01-26,Padaria Pão Quente,32.37
+2026-01-27,IFD*IFOOD,39.16
+2026-01-27,Supermercado Bom Preço,172.18
+2026-02-02,Netflix.Com,55.90
+2026-02-03,Padaria Pão Quente,40.94
+2026-02-03,Spotify,21.90
+2026-02-03,Supermercado Bom Preço,280.07
+2026-02-04,Uber *Trip,47.19
+2026-02-05,Cinema Kinoplex,92.71
+2026-02-05,Restaurante Sabor Caseiro,118.42
+2026-02-05,Smart Fit,129.90
+2026-02-06,Pet Shop Amigo,228.96
+2026-02-09,Mercadolivre,247.58
+2026-02-09,Mercadolivre,327.34
+2026-02-10,Cinema Kinoplex,67.92
+2026-02-10,Claro Celular,89.99
+2026-02-10,Mercadolivre,111.24
+2026-02-12,Padaria Pão Quente,18.87
+2026-02-12,Pet Shop Amigo,96.31
+2026-02-13,Atacadão,731.74
+2026-02-13,Uber *Trip,18.66
+2026-02-14,IFD*IFOOD,106.61
+2026-02-15,Seguro Auto Porto,310.00
+2026-02-18,Cinema Kinoplex,91.27
+2026-02-18,IFD*IFOOD,53.95
+2026-02-20,Atacadão,691.32
+2026-02-20,Pagamento recebido,-4779.00
+2026-02-22,Drogasil,121.63
+2026-02-23,Padaria Pão Quente,43.82
+2026-02-26,Restaurante Sabor Caseiro,79.31
+2026-02-27,Supermercado Bom Preço,397.99
+2026-02-27,Supermercado Bom Preço,688.46
+2026-03-01,Pet Shop Amigo,91.95
+2026-03-02,Netflix.Com,55.90
+2026-03-03,Spotify,21.90
+2026-03-05,Mercadolivre,139.34
+2026-03-05,Smart Fit,129.90
+2026-03-07,Mercadolivre,370.60
+2026-03-07,Pet Shop Amigo,152.25
+2026-03-08,Cinema Kinoplex,77.32
+2026-03-10,Claro Celular,89.99
+2026-03-10,Pet Shop Amigo,146.52
+2026-03-10,Restaurante Sabor Caseiro,84.34
+2026-03-13,IFD*IFOOD,58.19
+2026-03-14,Mercadolivre,401.18
+2026-03-15,Seguro Auto Porto,310.00
+2026-03-15,Supermercado Bom Preço,575.15
+2026-03-16,Atacadão,757.98
+2026-03-17,Supermercado Bom Preço,441.85
+2026-03-18,Atacadão,521.64
+2026-03-19,IFD*IFOOD,79.17
+2026-03-20,Cinema Kinoplex,84.27
+2026-03-20,Pagamento recebido,-5508.00
+2026-03-20,Restaurante Sabor Caseiro,103.73
+2026-03-21,Supermercado Bom Preço,465.22
+2026-03-21,Uber *Trip,61.31
+2026-03-25,Drogasil,172.31
+2026-03-27,Supermercado Bom Preço,727.99
+2026-04-02,Netflix.Com,55.90
+2026-04-03,Spotify,21.90
+2026-04-05,Smart Fit,129.90
+2026-04-06,Pet Shop Amigo,233.40
+2026-04-06,Restaurante Sabor Caseiro,73.78
+2026-04-07,Mercadolivre,120.59
+2026-04-08,Uber *Trip,18.23
+2026-04-09,IFD*IFOOD,74.43
+2026-04-10,Atacadão,750.68
+2026-04-10,Claro Celular,89.99
+2026-04-10,Restaurante Sabor Caseiro,120.80
+2026-04-11,Mercadolivre,182.41
+2026-04-15,Atacadão,627.64
+2026-04-15,Seguro Auto Porto,310.00
+2026-04-17,Atacadão,692.54
+2026-04-17,Drogasil,107.49
+2026-04-18,Posto Ipiranga,277.71
+2026-04-18,Restaurante Sabor Caseiro,161.83
+2026-04-19,Uber *Trip,31.85
+2026-04-20,Pagamento recebido,-5301.00
+2026-04-21,IFD*IFOOD,88.56
+2026-04-22,Mercadolivre,291.76
+2026-04-22,Posto Ipiranga,244.47
+2026-04-25,Supermercado Bom Preço,401.13
+2026-04-26,Atacadão,463.40
+2026-04-27,Posto Ipiranga,166.08
+2026-04-27,Supermercado Bom Preço,91.58
+2026-04-28,Drogasil,61.95
+2026-05-01,Restaurante Sabor Caseiro,96.59
+2026-05-02,Cinema Kinoplex,90.86
+2026-05-02,Drogasil,142.95
+2026-05-02,Netflix.Com,55.90
+2026-05-03,Spotify,21.90
+2026-05-04,Posto Ipiranga,165.96
+2026-05-04,Supermercado Bom Preço,359.98
+2026-05-05,Smart Fit,129.90
+2026-05-09,IFD*IFOOD,56.77
+2026-05-10,Atacadão,680.19
+2026-05-10,Claro Celular,89.99
+2026-05-10,Drogasil,141.80
+2026-05-11,Drogasil,149.17
+2026-05-11,Mercadolivre,153.06
+2026-05-13,Posto Ipiranga,199.62
+2026-05-14,Padaria Pão Quente,54.16
+2026-05-14,Posto Ipiranga,314.12
+2026-05-14,Supermercado Bom Preço,574.61
+2026-05-15,Seguro Auto Porto,310.00
+2026-05-19,Drogasil,166.41
+2026-05-19,Mercadolivre,445.59
+2026-05-20,Drogasil,70.19
+2026-05-20,Pagamento recebido,-5706.00
+2026-05-21,Cinema Kinoplex,76.01
+2026-05-22,Atacadão,510.88
+2026-05-22,Mercadolivre,440.49
+2026-05-24,Supermercado Bom Preço,619.03
+2026-05-27,Supermercado Bom Preço,223.87
+2026-06-01,Posto Ipiranga,222.21
+2026-06-01,Supermercado Bom Preço,374.12
+2026-06-02,Drogasil,132.10
+2026-06-02,Mercadolivre,320.58
+2026-06-02,Netflix.Com,55.90
+2026-06-02,Padaria Pão Quente,53.81
+2026-06-03,Cinema Kinoplex,86.18
+2026-06-03,Spotify,21.90
+2026-06-05,Drogasil,172.19
+2026-06-05,Smart Fit,129.90
+2026-06-05,Supermercado Bom Preço,457.68
+2026-06-08,Pet Shop Amigo,201.73
+2026-06-08,Restaurante Sabor Caseiro,160.96
+2026-06-10,Claro Celular,89.99
+2026-06-12,IFD*IFOOD,70.30
+2026-06-14,Padaria Pão Quente,25.55
+2026-06-15,Seguro Auto Porto,310.00
+2026-06-17,Pet Shop Amigo,198.27
+2026-06-17,Pet Shop Amigo,216.56
+2026-06-18,IFD*IFOOD,37.42
+2026-06-18,Uber *Trip,56.97
+2026-06-20,IFD*IFOOD,45.43
+2026-06-20,Pagamento recebido,-5184.00
+2026-06-21,Cinema Kinoplex,93.53
+2026-06-21,Supermercado Bom Preço,612.56
+2026-06-22,Mercadolivre,285.31
+2026-06-23,Restaurante Sabor Caseiro,186.90
+2026-06-26,Posto Ipiranga,175.11
+2026-06-27,Mercadolivre,178.13
+2026-06-27,Supermercado Bom Preço,788.71
+2026-07-01,Atacadão,579.37
+2026-07-01,Padaria Pão Quente,53.02
+2026-07-01,Pet Shop Amigo,214.04
+2026-07-02,Netflix.Com,55.90
+2026-07-03,Spotify,21.90
+2026-07-05,Posto Ipiranga,271.50
+2026-07-05,Smart Fit,129.90
+2026-07-06,IFD*IFOOD,37.42
+2026-07-06,Mercadolivre,347.13
+2026-07-06,Supermercado Bom Preço,386.99
+2026-07-07,Restaurante Sabor Caseiro,186.90
+2026-07-09,Mercadolivre,194.86
+2026-07-10,Cinema Kinoplex,71.49
+2026-07-10,Claro Celular,89.99
+2026-07-10,IFD*IFOOD,60.10
+2026-07-12,Posto Ipiranga,172.78
+2026-07-12,Posto Ipiranga,242.94
+2026-07-13,Restaurante Sabor Caseiro,130.07
+2026-07-15,Drogasil,129.18
+2026-07-15,Seguro Auto Porto,310.00
+2026-07-16,Pet Shop Amigo,229.67
+2026-07-17,Atacadão,637.11
+2026-07-17,IFD*IFOOD,43.92
+2026-07-19,Pet Shop Amigo,123.07
+2026-07-20,Pagamento recebido,-6237.00
+2026-07-21,IFD*IFOOD,69.90
+2026-07-21,Supermercado Bom Preço,338.67
+2026-07-22,Cinema Kinoplex,83.30
+2026-07-23,Mercadolivre,231.08
+2026-07-24,IFD*IFOOD,68.08
+2026-07-26,Drogasil,148.13
+2026-07-26,Mercadolivre,255.40
+2026-07-26,Mercadolivre,318.30
+2026-07-27,Supermercado Bom Preço,629.75
+2026-07-28,Drogasil,68.14
+2026-08-02,Netflix.Com,55.90
+2026-08-03,Drogasil,91.52
+2026-08-03,Spotify,21.90
+2026-08-05,Smart Fit,129.90
+2026-08-06,Drogasil,67.51
+2026-08-06,Uber *Trip,33.28
+2026-08-07,Restaurante Sabor Caseiro,80.07
+2026-08-08,Cinema Kinoplex,46.96
+2026-08-08,Mercadolivre,386.60
+2026-08-08,Padaria Pão Quente,49.62
+2026-08-09,Padaria Pão Quente,20.81
+2026-08-09,Pet Shop Amigo,109.83
+2026-08-09,Posto Ipiranga,278.06
+2026-08-09,Restaurante Sabor Caseiro,102.77
+2026-08-10,Claro Celular,89.99
+2026-08-10,Posto Ipiranga,247.65
+2026-08-11,Atacadão,464.58
+2026-08-11,Restaurante Sabor Caseiro,72.35
+2026-08-12,Cinema Kinoplex,44.54
+2026-08-13,Atacadão,462.91
+2026-08-13,Pet Shop Amigo,137.91
+2026-08-15,Seguro Auto Porto,310.00
+2026-08-16,Drogasil,55.04
+2026-08-16,Padaria Pão Quente,19.84
+2026-08-18,IFD*IFOOD,100.66
+2026-08-18,Mercadolivre,202.73
+2026-08-18,Uber *Trip,25.25
+2026-08-20,Pagamento recebido,-5589.00
+2026-08-21,Posto Ipiranga,169.98
+2026-08-22,Cinema Kinoplex,80.49
+2026-08-22,Padaria Pão Quente,48.89
+2026-08-23,Mercadolivre,201.79
+2026-08-25,Drogasil,150.21
+2026-08-25,Pet Shop Amigo,70.34
+2026-08-26,Atacadão,562.77
+2026-08-27,Pet Shop Amigo,147.51
+2026-08-27,Restaurante Sabor Caseiro,164.42
+2026-08-27,Supermercado Bom Preço,751.58
+2026-08-28,Pet Shop Amigo,153.84
+2026-09-01,Drogasil,45.25
+2026-09-01,IFD*IFOOD,57.70
+2026-09-02,Drogasil,169.20
+2026-09-02,Netflix.Com,55.90
+2026-09-02,Restaurante Sabor Caseiro,84.08
+2026-09-03,Spotify,21.90
+2026-09-04,IFD*IFOOD,37.41
+2026-09-05,Atacadão,491.89
+2026-09-05,Posto Ipiranga,206.78
+2026-09-05,Smart Fit,129.90
+2026-09-06,Pet Shop Amigo,189.94
+2026-09-08,Mercadolivre,445.71
+2026-09-10,Claro Celular,89.99
+2026-09-11,Posto Ipiranga,153.02
+2026-09-12,Drogasil,84.49
+2026-09-14,Uber *Trip,34.55
+2026-09-15,Seguro Auto Porto,310.00
+2026-09-15,Uber *Trip,27.70
+2026-09-18,Atacadão,647.75
+2026-09-19,Atacadão,529.33
+2026-09-20,Pagamento recebido,-5085.00
+2026-09-20,Pet Shop Amigo,140.49
+2026-09-20,Posto Ipiranga,257.13
+2026-09-21,Uber *Trip,23.68
+2026-09-22,Mercadolivre,297.95
+2026-09-22,Padaria Pão Quente,41.52
+2026-09-25,Mercadolivre,84.22
+2026-09-25,Pet Shop Amigo,162.89
+2026-09-26,Uber *Trip,39.49
+2026-09-27,Supermercado Bom Preço,739.57
+2026-09-28,Padaria Pão Quente,50.57
+2026-10-02,Netflix.Com,55.90
+2026-10-03,Spotify,21.90
+2026-10-05,IFD*IFOOD,102.77
+2026-10-05,Mercadolivre,270.06
+2026-10-05,Padaria Pão Quente,37.36
+2026-10-05,Smart Fit,129.90
+2026-10-06,Drogasil,50.93
+2026-10-07,Cinema Kinoplex,41.59
+2026-10-07,Mercadolivre,136.24
+2026-10-07,Padaria Pão Quente,29.70
+2026-10-07,Posto Ipiranga,248.90
+2026-10-07,Uber *Trip,38.16
+2026-10-09,Padaria Pão Quente,34.53
+2026-10-10,Claro Celular,89.99
+2026-10-11,Padaria Pão Quente,41.42
+2026-10-12,Drogasil,179.61
+2026-10-15,IFD*IFOOD,49.31
+2026-10-15,Seguro Auto Porto,310.00
+2026-10-16,Pet Shop Amigo,92.65
+2026-10-17,Mercadolivre,300.46
+2026-10-18,Posto Ipiranga,267.80
+2026-10-18,Restaurante Sabor Caseiro,139.98
+2026-10-19,Pet Shop Amigo,80.38
+2026-10-20,Padaria Pão Quente,18.63
+2026-10-20,Pagamento recebido,-5823.00
+2026-10-21,Restaurante Sabor Caseiro,73.83
+2026-10-22,Pet Shop Amigo,156.52
+2026-10-23,Mercadolivre,442.51
+2026-10-25,Mercadolivre,397.47
+2026-10-25,Posto Ipiranga,298.55
+2026-10-25,Supermercado Bom Preço,343.12
+2026-10-26,Padaria Pão Quente,29.65
+2026-10-27,Drogasil,75.01
+2026-10-27,Mercadolivre,350.89
+2026-10-27,Posto Ipiranga,180.43
+2026-10-27,Supermercado Bom Preço,594.60
+2026-10-28,Mercadolivre,375.23
+2026-10-28,Pet Shop Amigo,75.87
+2026-10-28,Posto Ipiranga,239.76
+2026-10-28,Restaurante Sabor Caseiro,68.39
