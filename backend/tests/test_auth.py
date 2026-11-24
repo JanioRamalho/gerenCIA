@@ -1,46 +1,14 @@
-"""Authentication: password hashing, sessions and the /api/auth routes."""
+"""Integração das rotas de autenticação com PostgreSQL."""
 
 import hashlib
 
 import pytest
 
-from app.core import security
+pytestmark = [pytest.mark.api, pytest.mark.database]
 
 ALICE = {"name": "Alice Souza", "email": "alice@test.invalid", "password": "senha-segura-1"}
 BRUNO = {"name": "Bruno Lima", "email": "bruno@test.invalid", "password": "outra-senha-2"}
 COOKIE = "gerencia_session"
-
-
-# --- password hashing and tokens -------------------------------------------------
-
-def test_hash_is_salted_and_never_the_password():
-    first, second = security.hash_password("senha-segura-1"), security.hash_password("senha-segura-1")
-    assert first != second
-    assert "senha-segura-1" not in first
-    assert first.startswith("scrypt$")
-
-
-def test_verify_accepts_right_password_and_rejects_wrong_one():
-    stored = security.hash_password("senha-segura-1")
-    assert security.verify_password("senha-segura-1", stored)
-    assert not security.verify_password("senha-segura-2", stored)
-
-
-def test_verify_treats_equivalent_unicode_as_equal():
-    composed, decomposed = "café-seguro", "café-seguro"
-    assert security.verify_password(decomposed, security.hash_password(composed))
-
-
-@pytest.mark.parametrize("stored", ["", "texto-qualquer", "scrypt$1$2$3", "bcrypt$a$b$c$d$e", "scrypt$x$8$1$!!$!!"])
-def test_verify_rejects_malformed_hashes_without_raising(stored):
-    assert security.verify_password("senha-segura-1", stored) is False
-
-
-def test_session_token_digest_is_sha256_hex():
-    token = security.new_session_token()
-    assert len(token) >= 40
-    assert security.hash_session_token(token) == hashlib.sha256(token.encode()).hexdigest()
-    assert token != security.new_session_token()
 
 
 # --- register --------------------------------------------------------------------
@@ -93,6 +61,7 @@ def test_register_rejects_duplicate_email_ignoring_case(auth_client):
 
 @pytest.mark.parametrize("payload, field", [
     ({**ALICE, "name": " "}, "name"),
+    pytest.param({**ALICE, "name": "Alice"}, "name", id="nome-sem-sobrenome"),
     ({**ALICE, "email": "sem-arroba"}, "email"),
     ({**ALICE, "password": "curta"}, "password"),
     ({**ALICE, "password": "x" * 129}, "password"),
@@ -128,7 +97,7 @@ def test_login_with_right_credentials_opens_a_session(auth_client):
 
 
 def test_login_gives_the_same_answer_for_wrong_password_and_unknown_email(auth_client):
-    auth_client.post("/api/auth/register", json=ALICE)
+    assert auth_client.post("/api/auth/register", json=ALICE).status_code == 201
     auth_client.cookies.clear()
 
     wrong = auth_client.post("/api/auth/login", json={"email": ALICE["email"], "password": "senha-errada-9"})
@@ -137,6 +106,8 @@ def test_login_gives_the_same_answer_for_wrong_password_and_unknown_email(auth_c
     assert wrong.status_code == unknown.status_code == 401
     assert wrong.json() == unknown.json() == {"detail": "E-mail ou senha incorretos."}
     assert COOKIE not in wrong.headers.get("set-cookie", "")
+    assert COOKIE not in unknown.headers.get("set-cookie", "")
+    assert auth_client.get("/api/auth/me").status_code == 401
 
 
 def test_me_requires_a_session(auth_client):
