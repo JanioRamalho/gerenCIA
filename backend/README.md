@@ -1,15 +1,15 @@
 # Backend
 
-A aplicação FastAPI tem as rotas GET /api/health, GET /api/health/database,
-GET /api/categories e as de autenticação abaixo. Há conexão PostgreSQL e
-modelos SQLAlchemy; o processamento de extratos e faturas ainda será implementado.
-Consulte o README principal para o comando de inicialização da API.
+A aplicação FastAPI expõe saúde do servidor e do PostgreSQL, categorias,
+autenticação, prévia de análise, importação de arquivos, painel, transações,
+limites e avisos. Consulte o README principal para iniciar a API e abra
+`/docs` no servidor para ver os contratos HTTP.
 
 ## Autenticação
 
 | Rota | O que faz |
 |---|---|
-| POST /api/auth/register | Cria a conta (nome, e-mail e senha) e já abre a sessão. 409 se o e-mail já existe |
+| POST /api/auth/register | Cria a conta com nome e sobrenome, e-mail e senha, e já abre a sessão. 409 se o e-mail já existe |
 | POST /api/auth/login | Abre a sessão. 401 com a mesma mensagem para e-mail desconhecido e senha errada |
 | POST /api/auth/logout | Revoga a sessão no banco e apaga o cookie. Sempre responde 204 |
 | GET /api/auth/me | Devolve o usuário da sessão, ou 401 |
@@ -37,7 +37,7 @@ pendente antes de ampliar os endpoints.
 
 ## Banco e verificações
 
-O esquema completo é instalado por `scripts/init.sql`, com 10 tabelas,
+O esquema completo é instalado por `scripts/init.sql`, com 12 tabelas,
 proteções de integridade e categorias globais iniciais. A configuração e a
 atualização de bancos existentes estão no [guia do banco](../docs/database-setup.md).
 
@@ -50,13 +50,11 @@ não instala os triggers que protegem os vínculos com categorias.
 Para executar os testes com um PostgreSQL temporário e isolado:
 
 ```powershell
-.\.venv\Scripts\python.exe -m pytest -o pythonpath=backend backend/tests -q
+.\.venv\Scripts\python.exe -m pytest -q
 ```
 
-`test_auth.py` testa as rotas de autenticação contra esse mesmo banco
-temporário e nunca usa o `DATABASE_URL` do `.env`. Se o Windows negar acesso à
-pasta temporária do pytest, acrescente `--basetemp` apontando para uma pasta
-sua.
+O [guia de testes](../docs/testes.md) detalha a cobertura por camada. Os testes
+da API usam uma configuração isolada e o PostgreSQL temporário.
 
 ## Responsabilidades previstas
 
