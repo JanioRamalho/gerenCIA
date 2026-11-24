@@ -1,9 +1,9 @@
 # Arquitetura do gerenCIA
 
 O gerenCIA transforma extratos bancários e faturas de cartão, em CSV e XLSX, em
-análises financeiras pessoais e guarda o histórico de todos os arquivos enviados. Este
-é o mapa rápido da arquitetura planejada. O [planejamento completo](planejamento-gerencia.txt)
-define os requisitos; a tabela de estado ao final mostra o que já existe.
+análises financeiras pessoais e guarda o histórico dos arquivos enviados. O
+[planejamento completo](planejamento-gerencia.txt) define os requisitos. A
+tabela de estado indica os componentes disponíveis e os planejados.
 
 ## Divisão de responsabilidades
 
@@ -20,11 +20,10 @@ flowchart LR
         api["API e autenticação"] --> services["Serviços e casos de uso"]
         services --> repositories["Repositórios e SQLAlchemy"]
         services --> pipeline["Leitura, limpeza e análises"]
-        services --> ai["Diagnóstico com IA"]
+        services --> ai["Perfil de gastos com IA (regressão linear)"]
     end
 
     repositories <--> database[("PostgreSQL")]
-    ai -->|"Resumo agregado do mês"| provider["Provedor de IA"]
 ```
 
 | Parte | Onde fica | Responsabilidade |
@@ -35,7 +34,7 @@ flowchart LR
 | Serviços | `backend/app/services/` | Coordenar os casos de uso e o usuário autorizado |
 | Persistência | `backend/app/repositories/`, `models/` e `db/` | Consultas, modelos e conexão com PostgreSQL |
 | Processamento | `backend/app/pipeline/` | Leitura, limpeza, categorização e cálculos das análises |
-| IA | `backend/app/ai/` | Montar o resumo do mês, chamar o provedor e validar a resposta |
+| IA | `backend/app/ai/` | Regressão linear própria (mínimos quadrados), perfil mensal e detecção de anomalias |
 | Testes | `backend/tests/` e `scripts/frontend/` | Testes unitários e de integração com pytest; verificações da interface com Playwright |
 
 Crie os módulos futuros quando houver funcionalidade para implementar. A direção
@@ -63,7 +62,7 @@ flowchart TD
     analytics --> dashboard["Dashboard apresenta os resultados"]
     analytics --> limits["Comparar o gasto do mês com os limites"]
     limits -->|"80% ou 100% do limite"| bell["Notificação no sininho do painel"]
-    analytics --> ai["Diagnóstico do mês com IA"]
+    analytics --> ai["Perfil de gastos e anomalias com regressão linear"]
 ```
 
 O arquivo é processado durante a própria requisição de upload e gravado numa
@@ -85,7 +84,8 @@ ambiente da hospedagem, nunca no frontend.
 ## Regras para manter o projeto organizado
 
 - Rotas HTTP delegam os casos de uso aos serviços; consultas ficam nos repositórios.
-- Valores monetários usam `Decimal` no processamento e coluna numérica no banco.
+- O pipeline trabalha com valores inteiros em centavos. A gravação usa
+  `Decimal` e colunas numéricas.
 - Toda operação financeira usa o usuário obtido da sessão. O frontend não escolhe
   o dono dos dados. Categorias globais são a exceção pública já implementada.
 - O backend calcula as métricas reais; o frontend as apresenta. A demonstração
@@ -94,8 +94,8 @@ ambiente da hospedagem, nunca no frontend.
   Celery, Kafka e outros serviços continuam fora da primeira versão.
 - A IA recebe somente o resumo agregado do mês e explica as análises; os
   cálculos continuam no backend.
-- Toda função de leitura, limpeza, análise e regra de negócio tem testes
-  unitários com pytest, entregues no mesmo pull request.
+- O projeto usa pytest para as regras de leitura, limpeza, análise e negócio.
+  O [guia de testes](testes.md) indica o que está coberto e como executar.
 - Cada etapa tem uma branch própria, mesclada na `main` por pull request.
 - Testes do banco usam um servidor PostgreSQL temporário separado do banco de
   desenvolvimento. Produção será configurada na implantação.
@@ -108,35 +108,24 @@ ambiente da hospedagem, nunca no frontend.
 
 | Parte | Estado atual |
 |---|---|
-| PostgreSQL e SQLAlchemy | Conexão funcionando, 10 tabelas mapeadas e 11 categorias globais ativas |
-| API | Saúde da aplicação, saúde do banco, consulta de categorias e autenticação (`/api/auth/register`, `login`, `logout` e `me`) |
-| Frontend | Demonstração fictícia para visitantes; cadastro e login reais, com sessão por cookie; painel em `/app` com barra lateral, próximos passos e dados da conta |
-| Testes do banco | Suíte de integridade e códigos numéricos; 97 casos aprovados na revisão |
-| Camadas do backend | Autenticação já usa serviço e repositórios; a rota de categorias ainda consulta diretamente o banco |
-| Funcionalidades financeiras | Upload e histórico, leitura e limpeza, análises, limites, notificações e diagnóstico com IA ainda pendentes |
-| Hospedagem | Ainda não publicada; prevista em plano gratuito a partir da etapa de upload |
+| PostgreSQL e SQLAlchemy | Esquema inicial com 12 tabelas e 11 categorias globais. Banco e migrações estão em `scripts/` |
+| API | Saúde, categorias, autenticação (com renda mensal), prévia local, arquivos, painel, transações, limites, notificações e perfil de gastos com IA |
+| Frontend | Demonstração pública, cadastro e login, painel com dados da conta e renda, arquivos, transações, gráficos, limites e alertas de anomalia |
+| Qualidade de software | Testes unitários, API, integração com PostgreSQL, servidor HTTP e navegador |
+| Camadas do backend | Autenticação, upload e IA usam serviços e repositórios. Algumas consultas seguem nas rotas |
+| Funcionalidades financeiras | Upload e histórico, leitura e limpeza, análises, limites, notificações e perfil de gastos com IA (regressão linear) implementados |
+| Hospedagem | Configuração da Vercel em `vercel.json` |
 | Fora da primeira versão | Conversa com a IA, previsão de cobranças com calendário, mapeador genérico, arquivo original guardado, e-mails pelo Resend e limite semanal (seção 18 do planejamento) |
 | Ferramentas previstas | Alembic e Docker Compose ainda pendentes; limite de tentativas de login ainda pendente |
 
-Antes de ampliar os endpoints, adequar a consulta de categorias às camadas
-previstas. Depois, concluir a fundação com Alembic e Docker Compose. Funções
-independentes de tratamento, como a conversão monetária, podem ser estudadas e
-testadas em paralelo, sem depender do banco.
-
-O esquema atual ainda tem peças do desenho anterior: a tabela `bronze_rows`, a
-coluna `transactions.bronze_row_id`, a tabela `upload_mappings` e as colunas
-`storage_path` e `status` de `uploads`. Elas saem por migração Alembic na
-etapa 2. O esquema também ainda não distingue extrato de fatura em `uploads`,
-não aceita o tipo `income` em `transactions` e não tem as tabelas
-`category_budgets`, `notifications` e `ai_insights`, que entram nas etapas 2,
-3, 6 e 7.
-
-As atualizações existentes estão em `scripts/migrations/` e são SQL manuais;
-a adoção de Alembic deverá preservar esse histórico e os dados existentes.
+As atualizações versionadas estão em `scripts/migrations/`. Os limites por
+mês e as notificações usam as tabelas `category_budgets` e `notifications`.
+O esquema preserva tabelas legadas como `bronze_rows` e `upload_mappings`.
 
 ## Documentos de apoio
 
 - [Análise de dados](analise-de-dados.md): transformação, limpeza e qualidade, estatística descritiva.
+- [IA: perfil de gastos e anomalias](ia-perfil-de-gastos.md): regressão linear escrita do zero, validação *leave-one-out* e limitações do modelo.
 - [Planejamento completo](planejamento-gerencia.txt): requisitos, etapas e critérios de aceite.
 - [Configuração do banco](database-setup.md): instalação, atualizações e testes isolados.
 - [Guia de conversão de valores](guia-conversao-valores.md): primeira atividade de programação acompanhada.
