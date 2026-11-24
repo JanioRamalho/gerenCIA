@@ -23,11 +23,18 @@ Com o frontend local em execução, rode os testes atuais:
 .\.venv\Scripts\python.exe scripts/frontend/check_dashboard.py
 ```
 
-Há também `check_auth_flow.py`, que percorre cadastro, entrada, painel (`/app`)
-e saída com a API real e **cria usuários**. Rode-o apenas contra um banco descartável, nunca
-o do `.env`: suba a API com um `DATABASE_URL` de teste, inicie o Vite com
-`GERENCIA_API_URL` apontando para ela e passe o endereço do Vite em
-`GERENCIA_TEST_URL`.
+Os roteiros de autenticação e financeiro criam usuários fictícios e usam a API
+real. Prepare um banco PostgreSQL vazio e descartável seguindo o
+[guia do banco](../../docs/database-setup.md#instalação-nova), com um nome como
+`gerencia_teste_navegador`. Inicie a API com `DATABASE_URL` apontando para esse
+banco e deixe o Vite encaminhar as requisições para essa API. Se usar portas
+diferentes das indicadas no README, configure `GERENCIA_API_URL` no terminal
+do Vite e `GERENCIA_TEST_URL` no terminal dos testes.
+
+```powershell
+.\.venv\Scripts\python.exe scripts/frontend/check_auth_flow.py
+.\.venv\Scripts\python.exe scripts/frontend/check_finance_flow.py
+```
 
 Defina `GERENCIA_TEST_URL` se o servidor não estiver em `http://127.0.0.1:5173`. As dependências locais de Playwright e axe ficam em `.audit-tools/` e `.audit-tools-js/`.
 
