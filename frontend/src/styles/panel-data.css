@@ -185,8 +185,49 @@ button.monthly-row[aria-pressed="true"] { background: var(--mint-wash); }
 .budget-untracked li { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px 12px; min-width: 0; padding: 10px 0; border-bottom: 1px solid var(--workspace-line); }
 .budget-untracked li span { display: block; color: var(--ink-2); font-size: var(--text-small); }
 
+/* Perfil de gastos e detecção de anomalias (IA) */
+.ai-profile.has-anomaly { border-color: #e3b7af; }
+.ai-anomaly-list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.ai-anomaly-item {
+  display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px 16px;
+  padding: 14px 16px;
+  border-inline-start: 4px solid var(--error);
+  border-radius: var(--radius-control);
+  background: #fbe9e5;
+}
+.ai-anomaly-copy { display: grid; gap: 4px; max-width: 66ch; }
+.ai-anomaly-copy strong { color: var(--error); }
+.ai-anomaly-copy p { margin: 0; color: var(--ink); font-size: var(--text-small); }
+.ai-anomaly-copy small { color: var(--ink-2); font-size: var(--text-small); }
+.ai-ok-note {
+  margin: 0; padding: var(--space-3) var(--space-4);
+  border-inline-start: 3px solid var(--teal);
+  border-radius: var(--radius-small);
+  background: var(--mint-wash);
+  color: var(--ink);
+  font-size: var(--text-small);
+}
+.ai-metrics { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+.ai-details summary {
+  width: fit-content; min-height: 36px; padding-block: 6px;
+  color: var(--teal); font-size: var(--text-small); font-weight: 650; cursor: pointer;
+}
+.ai-details summary:focus-visible { outline: 3px solid var(--focus); outline-offset: 2px; border-radius: 4px; }
+.ai-details-body { margin-top: var(--space-3); }
+.pd-table tr.is-anomaly-row td { background: #fdf3f1; font-weight: 600; }
+.ai-limitations {
+  display: grid; gap: 8px; padding: 14px 16px;
+  border-radius: var(--radius-control);
+  background: var(--panel);
+  font-size: var(--text-small);
+}
+.ai-limitations h3 { margin: 0; font-size: var(--text-small); color: var(--ink); }
+.ai-limitations ul { margin: 0; padding-left: 18px; display: grid; gap: 6px; color: var(--ink-2); }
+.ai-limitations strong { color: var(--ink); }
+.ai-warnings { padding-top: 8px; border-top: 1px solid var(--line); }
+
 @media (max-width: 1120px) {
-  .pd-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .pd-metrics, .ai-metrics { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 @media (max-width: 760px) {
   .dashboard-summary, .pd-grid, .budget-summary, .budget-untracked { grid-template-columns: minmax(0, 1fr); }
