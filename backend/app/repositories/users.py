@@ -1,5 +1,7 @@
 """Consultas ao banco sobre usuários."""
 
+from decimal import Decimal
+
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
@@ -24,5 +26,14 @@ def create(db: Session, *, name: str, email: str, password_hash: str) -> User:
     db.flush()
     # refresh relê a linha do banco para trazer os valores que o próprio banco
     # preencheu, como code e created_at.
+    db.refresh(user)
+    return user
+
+
+def set_monthly_income(db: Session, user: User, monthly_income: Decimal | None) -> User:
+    """Grava a renda mensal (ou apaga, com None). Quem chama faz o commit."""
+    user.monthly_income = monthly_income
+    user.updated_at = func.now()
+    db.flush()
     db.refresh(user)
     return user
