@@ -72,10 +72,14 @@ with sync_playwright() as playwright:
     page.screenshot(path=str(OUT / "auth-register-errors.png"))
     assert axe_violations(page) == [], "register error state"
 
-    page.fill("#register-name", "Teste da Silva")
+    page.fill("#register-name", "Teste")
     page.fill("#register-email", EMAIL)
     page.fill("#register-password", PASSWORD)
     page.fill("#register-confirm", PASSWORD)
+    page.get_by_role("button", name="Criar conta").click()
+    expect(page.locator("#register-name-error")).to_have_text("Informe seu nome e sobrenome.")
+
+    page.fill("#register-name", "Teste da Silva")
     page.get_by_role("button", name="Criar conta").click()
     page.wait_for_url(BASE + "/app", timeout=10000)
     page.wait_for_load_state("networkidle")
@@ -116,11 +120,22 @@ with sync_playwright() as playwright:
     assert not [c for c in page.context.cookies() if c["name"] == "gerencia_session" and c["value"]]
     results.append({"logout": True})
 
-    # Login: senha errada mostra uma mensagem clara e mantém o formulário.
+    # Login: conta desconhecida e senha errada aparecem como a mesma recusa.
     page.goto(BASE + "/login", wait_until="networkidle")
+    page.fill("#login-email", f"ausente-{EMAIL}")
+    page.fill("#login-password", PASSWORD)
+    with page.expect_response(lambda response: response.url.endswith("/api/auth/login")) as recusado:
+        page.get_by_role("button", name="Entrar", exact=True).click()
+    assert recusado.value.status == 401
+    expect(page.get_by_role("alert")).to_have_text("E-mail ou senha incorretos.")
+    expect(page).to_have_url(BASE + "/login")
+    results.append({"unknown_account_rejected": True})
+
     page.fill("#login-email", EMAIL)
     page.fill("#login-password", "senha-errada-9")
-    page.get_by_role("button", name="Entrar", exact=True).click()
+    with page.expect_response(lambda response: response.url.endswith("/api/auth/login")) as recusado:
+        page.get_by_role("button", name="Entrar", exact=True).click()
+    assert recusado.value.status == 401
     expect(page.get_by_role("alert")).to_have_text("E-mail ou senha incorretos.")
     assert page.evaluate("document.activeElement.getAttribute('role')") == "alert"
     assert page.input_value("#login-email") == EMAIL
