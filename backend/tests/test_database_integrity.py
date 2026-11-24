@@ -7,6 +7,7 @@ from app.db.base import Base
 from app import models  # Registers all models in Base.metadata.
 
 
+pytestmark = pytest.mark.database
 ROOT = Path(__file__).resolve().parents[2]
 A = "00000000-0000-0000-0000-000000000001"
 B = "00000000-0000-0000-0000-000000000002"
@@ -219,3 +220,18 @@ def test_orm_constraints_work_in_postgresql(postgres_cluster):
     test_same_row_number_in_different_sheets(db)
     test_duplicate_row_in_same_sheet_or_csv_rejected(db, "NULL")
     test_foreign_category_rejected_on_insert(db, "transaction")
+
+
+@pytest.mark.parametrize("income", ["0", "-10.00"])
+def test_non_positive_monthly_income_rejected(database, income):
+    assert_rejected(database, f"UPDATE users SET monthly_income = {income} WHERE id = '{A}';", "23514")
+
+
+def test_monthly_income_migration_preserves_users(legacy_database):
+    db = legacy_database
+    db.sql("ALTER TABLE public.users DROP COLUMN monthly_income;")
+    db.sql(f"INSERT INTO users (id, name, email, password_hash) VALUES ('{A}', 'Alice', 'alice@test.invalid', 'hash');")
+    db.script(ROOT / "scripts/migrations/005_monthly_income.sql")
+    db.sql(f"UPDATE users SET monthly_income = 5000.00 WHERE id = '{A}';")
+    result = db.sql(f"SELECT monthly_income FROM users WHERE id = '{A}';")
+    assert result.stdout.strip() == "5000.00"
