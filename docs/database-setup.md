@@ -45,6 +45,7 @@ use a atualização versionada:
 & "$pgBin\psql.exe" -X -h 127.0.0.1 -p 5432 -U postgres -d gerencia_db -v ON_ERROR_STOP=1 -f scripts/migrations/002_display_codes.sql
 & "$pgBin\psql.exe" -X -h 127.0.0.1 -p 5432 -U postgres -d gerencia_db -v ON_ERROR_STOP=1 -f scripts/migrations/003_budgets.sql
 & "$pgBin\psql.exe" -X -h 127.0.0.1 -p 5432 -U postgres -d gerencia_db -v ON_ERROR_STOP=1 -f scripts/migrations/004_budget_months_and_category_colors.sql
+& "$pgBin\psql.exe" -X -h 127.0.0.1 -p 5432 -U postgres -d gerencia_db -v ON_ERROR_STOP=1 -f scripts/migrations/005_monthly_income.sql
 ```
 
 A atualização mantém os dados e valida as regras antes de confirmar a
@@ -60,7 +61,9 @@ de Alembic permanece uma etapa prevista na arquitetura.
 Execute as migrações pendentes na ordem acima antes de atualizar a API.
 A migração 003 cria as tabelas de limites e notificações. A migração 004
 vincula os limites existentes ao mês corrente no fuso de São Paulo e
-preenche as cores das categorias globais que ainda estiverem sem cor.
+preenche as cores das categorias globais que ainda estiverem sem cor. A
+migração 005 adiciona a coluna opcional `monthly_income` em `users` (com
+restrição positiva), usada pelo perfil de gastos da IA.
 O `init.sql` já inclui todas as alterações.
 
 ### Banco hospedado com histórico `0002_upload_history`
