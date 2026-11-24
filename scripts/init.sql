@@ -696,6 +696,7 @@ ALTER TABLE ONLY public.uploads
 \ir sql/budgets.sql
 \ir sql/budget_months.sql
 \ir sql/category_colors.sql
+\ir sql/monthly_income.sql
 
 COMMIT;
 
