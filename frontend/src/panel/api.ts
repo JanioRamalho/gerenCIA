@@ -103,6 +103,57 @@ export const deleteUpload = (id: string) => call<null>(`/uploads/${id}`, { metho
 export const getDashboard = (mes: string | null) =>
   call<DashboardData>(`/dashboard${mes ? `?mes=${mes}` : ""}`) as Promise<DashboardData>;
 
+/** Um mês avaliado pelo modelo, treinado com os outros meses. */
+export type ProfileMonth = {
+  mes: string;
+  rotulo: string;
+  total: number;
+  esperado?: number;
+  limite_alerta?: number;
+  desvios?: number;
+  anomalia?: boolean;
+  percentual_da_renda?: number | null;
+};
+
+export type SpendingAnomaly = {
+  mes: string;
+  rotulo: string;
+  total: number;
+  esperado: number;
+  excesso: number;
+  desvios: number;
+  percentual_da_renda: number | null;
+  mensagem: string;
+};
+
+export type SpendingProfile = {
+  tem_dados: boolean;
+  suficiente?: boolean;
+  meses_analisados?: number;
+  minimo_de_meses?: number;
+  meses_recomendados?: number;
+  limiar_desvios?: number;
+  renda_mensal?: number | null;
+  confiabilidade?: "baixa" | "moderada" | "razoavel";
+  perfil?: {
+    gasto_tipico: number;
+    intercepto: number;
+    tendencia_mensal: number;
+    variacao_normal: number;
+    r2: number;
+    meses_no_treino: number;
+    proximo_mes: { mes: string; rotulo: string; esperado: number; limite_alerta: number };
+    comprometimento_da_renda: number | null;
+  } | null;
+  meses?: ProfileMonth[];
+  anomalias?: SpendingAnomaly[];
+  avisos?: string[];
+};
+
+/** Perfil de gastos aprendido pela IA (regressão linear) e os meses fora do padrão. */
+export const getSpendingProfile = (signal?: AbortSignal) =>
+  call<SpendingProfile>("/ai/spending-profile", { signal }) as Promise<SpendingProfile>;
+
 export type TransactionType = "purchase" | "fee" | "refund" | "payment" | "income" | "other";
 
 export const transactionTypes: Record<TransactionType, string> = {
