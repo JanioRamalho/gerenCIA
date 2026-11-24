@@ -6,6 +6,7 @@ from conftest import PROJECT_ROOT
 from test_database_integrity import SETUP, A, UPLOAD, OWN, BRONZE, transaction, rule
 
 
+pytestmark = pytest.mark.database
 TABLES = (
     "users", "sessions", "uploads", "upload_mappings", "bronze_rows",
     "categories", "transactions", "category_rules", "quality_checks", "rejected_rows",
