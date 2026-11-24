@@ -11,6 +11,7 @@ type AuthValue = {
   signIn: (input: { email: string; password: string }) => Promise<void>;
   signUp: (input: { name: string; email: string; password: string }) => Promise<void>;
   signOut: () => Promise<void>;
+  updateIncome: (monthlyIncome: string | null) => Promise<void>;
 };
 
 const AuthContext = createContext<AuthValue | null>(null);
@@ -43,7 +44,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setState({ status: "anonymous", user: null });
   }, []);
 
-  const value = useMemo(() => ({ ...state, signIn, signUp, signOut }), [state, signIn, signUp, signOut]);
+  const updateIncome = useCallback(async (monthlyIncome: string | null) => {
+    const user = await api.updateIncome(monthlyIncome);
+    setState({ status: "authenticated", user });
+  }, []);
+
+  const value = useMemo(() => ({ ...state, signIn, signUp, signOut, updateIncome }), [state, signIn, signUp, signOut, updateIncome]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
