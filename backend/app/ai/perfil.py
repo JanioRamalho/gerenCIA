@@ -20,6 +20,23 @@ escondendo a própria anomalia.
 
 Só gastos acima do esperado geram alerta. Um mês barato não é um problema
 financeiro, e o mês corrente, ainda incompleto, sempre parece barato.
+
+Limitações conhecidas (por que o alerta pode falhar) e cuidados adotados:
+- Poucos meses (estudo com ~12 pontos): a confiabilidade nunca é classificada
+  como "alta" (vai de "baixa" a "razoavel"), e com menos de 4 meses o modelo
+  nem treina para não inventar um perfil sem base.
+- Múltiplas anomalias na mesma janela: o leave-one-out é executado de forma
+  iterativa, retirando do treino um mês extremo confirmado por vez (até 1/3 da
+  amostra) para que duas ou mais faturas atípicas (ex.: dois meses de R$ 12 mil)
+  não mascarem uma à outra. Se quase metade do ano for atípica, porém, passa a
+  ser o novo padrão da pessoa.
+- Trade-off do corte (LIMIAR_DESVIOS = 2.0): um limiar menor gera mais falsos
+  positivos (ex.: mês de dezembro/férias); um maior pode deixar anomalias
+  reais passarem sem aviso.
+- Histórico quase constante: aplicamos PISO_DE_VARIACAO (5% da média) para que
+  uma diferença de poucos reais não dispare falso alerta quando s ≈ 0.
+- Contaminação do perfil: após detectar as anomalias, a reta final do perfil
+  é retreinada somente com os meses normais, mantendo a referência limpa.
 """
 
 from __future__ import annotations
@@ -74,6 +91,12 @@ def _brl(valor: float) -> str:
 
 
 def _confiabilidade(meses: int) -> str:
+    """Classifica o grau de confiança pela quantidade de meses disponíveis.
+
+    Mesmo com 12 meses devolve 'razoavel' (e nunca 'alta'), porque um ano de
+    dados ainda é uma amostra pequena e não permite aprender sazonalidade
+    repetida entre anos diferentes.
+    """
     if meses < 6:
         return "baixa"
     if meses < MESES_RECOMENDADOS:
@@ -92,21 +115,42 @@ def _incerteza(modelo: RegressaoLinear, x: float, totais_do_treino: list[float])
 
 
 def _avaliar_deixando_um_de_fora(x: list[int], y: list[float]) -> list[dict]:
-    avaliacoes = []
-    for i in range(len(x)):
-        x_treino = x[:i] + x[i + 1:]
-        y_treino = y[:i] + y[i + 1:]
-        modelo = RegressaoLinear.treinar(x_treino, y_treino)
-        esperado = modelo.prever(x[i])
-        incerteza = _incerteza(modelo, x[i], y_treino)
-        desvios = (y[i] - esperado) / incerteza
-        avaliacoes.append({
-            "esperado": esperado,
-            "limite": esperado + LIMIAR_DESVIOS * incerteza,
-            "desvios": desvios,
-            "anomalia": desvios > LIMIAR_DESVIOS,
-        })
-    return avaliacoes
+    """Avalia cada mês treinando a regressão apenas nos demais (leave-one-out iterativo).
+
+    Evita o automascaramento: na primeira rodada tira cada mês individualmente;
+    quando encontra uma anomalia extrema, retira o mês mais extremo da base de
+    referência (até 1/3 dos meses, mantendo ao menos MINIMO_DE_MESES - 1 normais)
+    e recalcula, impedindo que um segundo mês anômalo (ex.: dois meses de R$ 12 mil
+    no mesmo ano) fique escondido pela inflação do erro causada pelo primeiro.
+    """
+    n = len(x)
+    max_excluidos = max(0, min(n // 3, n - MINIMO_DE_MESES))
+    excluidos: set[int] = set()
+
+    while True:
+        avaliacoes = []
+        for i in range(n):
+            indices = [j for j in range(n) if j != i and j not in excluidos]
+            x_treino = [x[j] for j in indices]
+            y_treino = [y[j] for j in indices]
+            modelo = RegressaoLinear.treinar(x_treino, y_treino)
+            esperado = modelo.prever(x[i])
+            incerteza = _incerteza(modelo, x[i], y_treino)
+            desvios = (y[i] - esperado) / incerteza
+            # Alerta unilateral (desvios > LIMIAR_DESVIOS): desvios negativos
+            # (gastar menos ou mês atual incompleto) não são tratados como anomalia.
+            avaliacoes.append({
+                "esperado": esperado,
+                "limite": esperado + LIMIAR_DESVIOS * incerteza,
+                "desvios": desvios,
+                "anomalia": desvios > LIMIAR_DESVIOS,
+            })
+
+        novos = {i for i, av in enumerate(avaliacoes) if av["anomalia"]} - excluidos
+        if not novos or len(excluidos) >= max_excluidos:
+            return avaliacoes
+        mais_extremo = max(novos, key=lambda i: avaliacoes[i]["desvios"])
+        excluidos.add(mais_extremo)
 
 
 def _mensagem(rotulo: str, total: float, esperado: float, desvios: float) -> str:
@@ -217,7 +261,9 @@ def analisar_perfil(por_mes: list[dict], renda: float | None = None) -> dict:
     if x[-1] + 1 != n:
         avisos.append("Há meses sem gastos entre o primeiro e o último; eles ficam fora do cálculo.")
     if len(anomalias) > 1:
-        avisos.append("Há mais de um mês fora do padrão. Um pode mascarar o outro, porque cada avaliação ainda treina com os demais.")
+        avisos.append(
+            f"Foram identificados {len(anomalias)} meses fora do padrão; cada um foi isolado iterativamente do treino para não mascarar os demais."
+        )
 
     return {
         **base,

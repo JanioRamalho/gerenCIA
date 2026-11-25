@@ -18,6 +18,30 @@ erros ao quadrado. As fórmulas fechadas são:
 Não usamos scikit-learn nem outra biblioteca de aprendizado de máquina: o
 NumPy só guarda os números em vetores e faz as somas. Os testes conferem que
 o resultado é igual ao do numpy.polyfit, que resolve o mesmo problema.
+
+Por que este modelo NÃO é 100% confiável e onde pode falhar:
+1. Amostra pequena (~12 meses): com poucos pontos, um único mês fora da curva
+   altera muito a inclinação (b) e o desvio residual (s). Não há volume de
+   dados suficiente para garantir estabilidade estatística alta.
+2. Sensibilidade a outliers: como os mínimos quadrados elevam os erros ao
+   quadrado, um valor muito extremo puxa a reta na direção dele. (Em perfil.py,
+   mitigamos isso avaliando cada mês com leave-one-out e retreinando o perfil
+   final apenas com os meses normais.)
+3. Premissa de linearidade: gastos pessoais nem sempre seguem uma reta. Uma
+   mudança permanente de patamar (ex.: novo aluguel, financiamento ou troca de
+   emprego) gera um degrau que a reta aproxima mal.
+4. Ausência de sazonalidade: esta reta só usa o índice do mês (x) e não sabe
+   distinguir épocas naturalmente mais caras (dezembro, 13º, férias, IPVA/IPTU)
+   de uma extrapolação real — o que pode gerar falsos positivos nesses meses.
+5. Extrapolação nas pontas: quanto mais distante x está do centro dos dados
+   (x̄), menos confiável é a previsão da reta.
+
+Como o código mede a própria qualidade e mitiga parte dessas limitações:
+- desvio_residual (s) usa divisor (n − 2) para não subestimar o erro em
+  amostras pequenas;
+- r2 expõe com transparência quanto da variação do gasto é explicada pela reta;
+- erro_da_previsao(x) alarga automaticamente a margem de incerteza quando n é
+  pequeno (termo 1/n) e quando x está nas extremidades ((x − x̄)² / Sxx).
 """
 
 from __future__ import annotations
@@ -69,10 +93,16 @@ class RegressaoLinear:
 
         # Resíduo é o erro da reta em cada ponto: o real menos o previsto.
         residuos = y_arr - (intercepto + inclinacao * x_arr)
-        soma_erros = float(np.sum(residuos ** 2))     # SSE
-        soma_total = float(np.sum(desvios_y ** 2))    # SST
-        # n − 2 porque a e b foram estimados com os mesmos dados (graus de liberdade).
+        soma_erros = float(np.sum(residuos ** 2))     # SSE (erros ao quadrado: por isso outliers pesam muito)
+        soma_total = float(np.sum(desvios_y ** 2))    # SST (variação total em torno da média)
+        # Divisor (n − 2) pelos 2 parâmetros estimados (a e b). Em amostras
+        # pequenas como 12 meses, dividir por n subestimaria o erro real.
         desvio_residual = math.sqrt(soma_erros / (n - 2))
+        # R² mede quanto a reta explica a variação dos gastos (0 a 1). Se a
+        # pessoa gasta de forma estável em torno de uma média (reta quase
+        # horizontal), R² fica baixo mesmo com a reta descrevendo bem o perfil;
+        # por isso a detecção de anomalia se apoia em `desvio_residual` e em
+        # `erro_da_previsao`, não só no R².
         r2 = 1.0 - soma_erros / soma_total if soma_total > 0 else 1.0
 
         return cls(
@@ -96,10 +126,14 @@ class RegressaoLinear:
 
             s · √(1 + 1/n + (x − x̄)² / Sxx)
 
-        O "1" é a variação natural de um mês para outro; "1/n" é a incerteza
-        de ter estimado a reta com poucos meses; o último termo cresce quanto
-        mais longe x está do centro dos dados, porque a reta fica menos
-        confiável nas pontas.
+        Esta fórmula é a principal proteção matemática contra excesso de
+        confiança em amostras pequenas:
+        - "1" representa a variação natural de um mês para outro;
+        - "1/n" penaliza o histórico curto (com 11 meses pesa bem mais do que
+          com 60 meses, alargando o limite de alerta automaticamente);
+        - "(x − x̄)² / Sxx" aumenta a incerteza nas pontas (primeiro mês,
+          último mês e previsão do mês futuro), onde a reta falha com mais
+          facilidade.
         """
         distancia = (float(x) - self.media_x) ** 2 / self.soma_quadrados_x
         return self.desvio_residual * math.sqrt(1 + 1 / self.pontos + distancia)

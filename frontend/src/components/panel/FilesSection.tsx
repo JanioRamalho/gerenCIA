@@ -14,16 +14,18 @@ const FORMATOS: Record<string, string> = {
 const sentFormat = new Intl.DateTimeFormat("pt-BR", { dateStyle: "short", timeZone: "America/Sao_Paulo" });
 
 /**
- * Página /app/files: envio de faturas e extratos e histórico de arquivos.
+ * Página /app/files: envio de faturas e extratos (um ou vários arquivos de uma vez)
+ * e histórico de arquivos.
  *
- * O arquivo é lido no servidor com pandas; as transações e o relatório de
+ * Cada arquivo é lido no servidor com pandas; as transações e o relatório de
  * qualidade ficam gravados no banco, e o painel (/app) mostra a análise.
  */
 export default function FilesSection({ onChanged }: { onChanged: () => void }) {
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
   const [sending, setSending] = useState(false);
+  const [progress, setProgress] = useState("");
   const [error, setError] = useState<string | null>(null);
-  const [lastSent, setLastSent] = useState<UploadItem | null>(null);
+  const [lastSent, setLastSent] = useState<UploadItem[]>([]);
   const [uploads, setUploads] = useState<UploadItem[] | null>(null);
   const [loadFailed, setLoadFailed] = useState(false);
   const [selected, setSelected] = useState<UploadItem | null>(null);
@@ -57,21 +59,41 @@ export default function FilesSection({ onChanged }: { onChanged: () => void }) {
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!file || sending) return;
+    if (files.length === 0 || sending) return;
     setSending(true);
     setError(null);
-    setLastSent(null);
+    setLastSent([]);
+    const saved: UploadItem[] = [];
+    const failures: string[] = [];
+
     try {
-      setLastSent(await sendFile(file));
-      setFile(null);
-      if (input.current) input.current.value = "";
-      onChanged();
-      await load();
-    } catch (failure) {
-      if (leaveIfSignedOut(failure)) return;
-      setError(failure instanceof ApiError ? failure.message : "Não foi possível enviar o arquivo.");
+      for (let index = 0; index < files.length; index++) {
+        const current = files[index];
+        setProgress(files.length > 1 ? `Enviando ${index + 1} de ${files.length}…` : "Enviando…");
+        try {
+          saved.push(await sendFile(current));
+        } catch (failure) {
+          if (leaveIfSignedOut(failure)) return;
+          const reason = failure instanceof ApiError ? failure.message : "Não foi possível enviar o arquivo.";
+          failures.push(files.length > 1 ? `${current.name}: ${reason}` : reason);
+        }
+      }
+
+      if (saved.length > 0) {
+        setLastSent(saved);
+        onChanged();
+        await load();
+      }
+      if (failures.length > 0) {
+        setError(failures.join(" "));
+      }
+      if (failures.length === 0) {
+        setFiles([]);
+        if (input.current) input.current.value = "";
+      }
     } finally {
       setSending(false);
+      setProgress("");
     }
   }
 
@@ -81,7 +103,7 @@ export default function FilesSection({ onChanged }: { onChanged: () => void }) {
     setRemoveError("");
     try {
       await deleteUpload(selected.id);
-      if (lastSent?.id === selected.id) setLastSent(null);
+      setLastSent((items) => items.filter((item) => item.id !== selected.id));
       setSelected(null);
       setStatus("Arquivo removido.");
       onChanged();
@@ -94,6 +116,13 @@ export default function FilesSection({ onChanged }: { onChanged: () => void }) {
     }
   }
 
+  const singleSent = lastSent.length === 1 ? lastSent[0] : null;
+  const totalBatchValid = lastSent.reduce((sum, item) => sum + item.linhas_validas, 0);
+  const totalBatchSpent = lastSent.reduce((sum, item) => sum + item.total_saidas, 0);
+  const buttonLabel = sending
+    ? (progress || "Enviando…")
+    : files.length > 1 ? `Enviar ${files.length} arquivos` : "Enviar arquivo";
+
   return <div className="panel-page">
     <header className="panel-page-head panel-heading-row">
       <div><h1>Arquivos</h1><p className="lead">Importe faturas e extratos e confira o resultado da leitura.</p></div>
@@ -103,28 +132,51 @@ export default function FilesSection({ onChanged }: { onChanged: () => void }) {
     <section className="panel-card panel-stack" aria-labelledby="upload-title">
       <div className="panel-feature-title">
         <span className="panel-icon-tile"><Icon name="upload" /></span>
-        <div><h2 id="upload-title">Importar arquivo</h2><p className="pd-hint" id="file-info">CSV ou XLSX de até 5 MB. Use uma fatura ou um extrato do Nubank, ou uma planilha com as colunas data, descrição e valor.</p></div>
+        <div><h2 id="upload-title">Importar arquivo</h2><p className="pd-hint" id="file-info">CSV ou XLSX de até 5 MB por arquivo (você pode selecionar um ou vários arquivos de uma vez, como as 12 faturas do ano).</p></div>
       </div>
       <form className="pd-upload" onSubmit={submit}>
         <label className="pd-file">
           <span>Arquivo</span>
-          <input ref={input} type="file" accept=".csv,.xlsx" aria-describedby="file-info" disabled={sending} onChange={(event) => { setFile(event.target.files?.[0] ?? null); setError(null); setLastSent(null); }} />
+          <input
+            ref={input}
+            type="file"
+            multiple
+            accept=".csv,.xlsx"
+            aria-describedby="file-info"
+            disabled={sending}
+            onChange={(event) => {
+              setFiles(Array.from(event.target.files ?? []));
+              setError(null);
+              setLastSent([]);
+            }}
+          />
         </label>
-        <button className="primary-button is-night" type="submit" disabled={!file || sending}>{sending ? "Enviando…" : "Enviar arquivo"}</button>
+        <button className="primary-button is-night" type="submit" disabled={files.length === 0 || sending}>{buttonLabel}</button>
       </form>
-      <div className="sr-only" role="status" aria-live="polite">{sending ? "Enviando e lendo o arquivo…" : ""}</div>
+      <div className="sr-only" role="status" aria-live="polite">{sending ? (progress || "Enviando e lendo o arquivo…") : ""}</div>
       {error && <p className="pd-error" role="alert" tabIndex={-1} ref={errorRef}>{error}</p>}
 
-      {lastSent && <div className="pd-success" role="status">
+      {singleSent && <div className="pd-success" role="status">
         <strong>Arquivo lido e gravado.</strong>
         <p>
-          {lastSent.linhas_validas} transações válidas, {lastSent.linhas_rejeitadas} rejeitadas
-          {lastSent.linhas_duplicadas > 0 ? `, ${lastSent.linhas_duplicadas} repetidas (mantidas e sinalizadas)` : ""}.
-          Qualidade de {lastSent.percentual?.toLocaleString("pt-BR")}%. Saídas: {money(lastSent.total_saidas)}.
+          {singleSent.linhas_validas} transações válidas, {singleSent.linhas_rejeitadas} rejeitadas
+          {singleSent.linhas_duplicadas > 0 ? `, ${singleSent.linhas_duplicadas} repetidas (mantidas e sinalizadas)` : ""}.
+          Qualidade de {singleSent.percentual?.toLocaleString("pt-BR")}%. Saídas: {money(singleSent.total_saidas)}.
         </p>
         <div className="action-row">
-          <a className="text-link" href={transactionLink({ arquivo: lastSent.id })}>Ver transações deste arquivo</a>
+          <a className="text-link" href={transactionLink({ arquivo: singleSent.id })}>Ver transações deste arquivo</a>
           <a className="text-link" href="/app">Ver análise no painel</a>
+        </div>
+      </div>}
+
+      {lastSent.length > 1 && <div className="pd-success" role="status">
+        <strong>{lastSent.length} arquivos lidos e gravados.</strong>
+        <p>
+          {totalBatchValid} transações válidas somadas nos arquivos enviados. Total de saídas importadas: {money(totalBatchSpent)}.
+        </p>
+        <div className="action-row">
+          <a className="text-link" href="/app">Ver perfil de gastos e anomalias no painel</a>
+          <a className="text-link" href="/app/transactions">Ver todas as transações</a>
         </div>
       </div>}
     </section>

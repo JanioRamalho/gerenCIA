@@ -86,3 +86,27 @@ def test_spending_profile_endpoint_learns_profile_detects_anomaly_and_isolates_u
     bruno = register(client, "Bruno")
     assert bruno["monthly_income"] is None
     assert client.get("/api/ai/spending-profile").json() == {"tem_dados": False}
+
+
+def test_twelve_jan_to_dec_invoices_with_two_12k_months_detects_both_anomalies(auth_client):
+    client = auth_client
+    register(client, "Carla")
+    assert client.patch("/api/auth/me", json={"monthly_income": "5000.00"}).status_code == 200
+
+    pasta_2026 = EXEMPLOS_IA / "faturas_2026"
+    arquivos = sorted(pasta_2026.glob("*.csv"))
+    assert len(arquivos) == 12
+
+    for arquivo in arquivos:
+        uploaded = upload_bytes(client, arquivo.name, arquivo.read_bytes())
+        assert uploaded["linhas_rejeitadas"] == 0
+        assert uploaded["percentual"] == 100.0
+
+    profile = client.get("/api/ai/spending-profile").json()
+    assert profile["tem_dados"] is True
+    assert profile["suficiente"] is True
+    assert profile["meses_analisados"] == 12
+    assert profile["renda_mensal"] == 5000.0
+    assert [item["mes"] for item in profile["anomalias"]] == ["2026-05", "2026-11"]
+    assert all(item["total"] == 12000.0 for item in profile["anomalias"])
+    assert profile["perfil"]["meses_no_treino"] == 10
