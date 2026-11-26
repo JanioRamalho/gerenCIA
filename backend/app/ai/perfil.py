@@ -76,10 +76,12 @@ def _posicao(mes: str) -> int:
 
 
 def _mes_da_posicao(posicao: int) -> str:
+    "Converte a posição de volta para o formato AAAA-MM; "
     return f"{posicao // 12:04d}-{posicao % 12 + 1:02d}"
 
 
 def _rotulo(mes: str) -> str:
+    """Formata o mês para exibição no painel, por exemplo, de 2026-03 para mar/2026.."""
     ano, numero = mes.split("-")
     return f"{MESES[int(numero) - 1]}/{ano}"
 
@@ -91,11 +93,7 @@ def _brl(valor: float) -> str:
 
 
 def _confiabilidade(meses: int) -> str:
-    """Classifica o grau de confiança pela quantidade de meses disponíveis.
-
-    Mesmo com 12 meses devolve 'razoavel' (e nunca 'alta'), porque um ano de
-    dados ainda é uma amostra pequena e não permite aprender sazonalidade
-    repetida entre anos diferentes.
+    """Classifica a confiabilidade do perfil de gastos com base na quantidade de meses analisados.
     """
     if meses < 6:
         return "baixa"
@@ -115,13 +113,10 @@ def _incerteza(modelo: RegressaoLinear, x: float, totais_do_treino: list[float])
 
 
 def _avaliar_deixando_um_de_fora(x: list[int], y: list[float]) -> list[dict]:
-    """Avalia cada mês treinando a regressão apenas nos demais (leave-one-out iterativo).
+    """# Avalia meses do histórico em busca de gastos atípicos. Para cada mês,
+# ajusta a reta com os demais meses de referência e compara o gasto
+# estimado com o gasto real do mês deixado de fora do treino.
 
-    Evita o automascaramento: na primeira rodada tira cada mês individualmente;
-    quando encontra uma anomalia extrema, retira o mês mais extremo da base de
-    referência (até 1/3 dos meses, mantendo ao menos MINIMO_DE_MESES - 1 normais)
-    e recalcula, impedindo que um segundo mês anômalo (ex.: dois meses de R$ 12 mil
-    no mesmo ano) fique escondido pela inflação do erro causada pelo primeiro.
     """
     n = len(x)
     max_excluidos = max(0, min(n // 3, n - MINIMO_DE_MESES))
