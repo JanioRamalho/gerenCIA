@@ -2,7 +2,7 @@
 
 O gerenCIA é uma aplicação web de gestão financeira pessoal. Quem recebe faturas e extratos em arquivos separados precisa reunir os lançamentos para descobrir quanto gastou, em que categoria e em qual mês. O sistema importa esses arquivos, organiza as transações e mostra os gastos por período. Um modelo de regressão linear usa o histórico da própria pessoa para identificar meses com despesas acima do esperado.
 
-**[Abrir a aplicação publicada](https://gerencia-liart.vercel.app)** · [Instalação local](#instalação-local) · [Teste de integração da API](#teste-de-integração-da-api) · [Documentação técnica](#documentação-técnica)
+**[Abrir a aplicação publicada](https://gerencia-liart.vercel.app)** · [Casos de uso](#casos-de-uso) · [Instalação local](#instalação-local) · [Teste de integração da API](#teste-de-integração-da-api) · [Documentação técnica](#documentação-técnica)
 
 ## Funcionalidades
 
@@ -11,6 +11,25 @@ O gerenCIA é uma aplicação web de gestão financeira pessoal. Quem recebe fat
 - **Análise e revisão.** O painel mostra totais, média, mediana, evolução mensal, participação por categoria e pagamentos recorrentes. A pessoa pode pesquisar lançamentos, corrigir categorias e remover um arquivo importado.
 - **Limites de gastos.** A pessoa define um teto mensal por categoria. No mês corrente, o sistema avisa ao atingir 80% e ao ultrapassar 100% do limite.
 - **Perfil de gastos.** Com pelo menos quatro meses de histórico, o modelo calcula o padrão mensal e sinaliza desvios. A renda informada em **Conta** é opcional. O modelo roda em Python e dispensa chave de IA externa.
+
+## Casos de uso
+
+O diagrama UML mostra quem pode realizar cada ação no gerenCIA. O **visitante** pode experimentar a demonstração, criar uma conta ou entrar. Ao criar a conta ou entrar com sucesso, a pessoa passa a atuar como **usuário autenticado** e pode trabalhar com seus próprios dados financeiros.
+
+![Diagrama UML de casos de uso do gerenCIA. O visitante acessa as três ações públicas. O usuário autenticado acessa as sete ações do painel descritas abaixo.](docs/casos-de-uso.svg)
+
+| Caso de uso | Como acontece no sistema |
+| --- | --- |
+| Explorar a demonstração | Na página inicial, o visitante escolhe um período e consulta gráficos com dados fictícios. |
+| Criar conta | O visitante informa nome completo, e-mail e senha. Se o cadastro for válido e o e-mail estiver disponível, o sistema cria a conta e inicia a sessão. |
+| Entrar na conta | O visitante informa e-mail e senha. Credenciais válidas abrem o painel. Em caso de erro, o sistema exibe uma mensagem e mantém o visitante fora da conta. |
+| Importar fatura ou extrato | Em **Arquivos**, a pessoa envia um CSV ou XLSX. O sistema registra o resultado do processamento e disponibiliza os lançamentos válidos para análise. O reenvio de conteúdo idêntico é recusado. |
+| Consultar histórico de arquivos | Em **Arquivos**, a pessoa confere os arquivos enviados e os resultados de cada importação. Se remover um arquivo, os lançamentos associados também são removidos. |
+| Analisar gastos | Em **Painel**, a pessoa seleciona o período e consulta totais e categorias. Com histórico suficiente, o cartão de perfil de gastos também indica meses acima do padrão. |
+| Revisar transações | Em **Transações**, a pessoa pesquisa um lançamento e pode corrigir sua categoria. A alteração é refletida na análise dos gastos. |
+| Gerenciar limites mensais | Em **Limites**, a pessoa escolhe o mês e a categoria, define ou altera o teto e acompanha o valor utilizado. Também pode remover o limite. |
+| Consultar avisos de limite | Pelo sino do painel, a pessoa consulta os avisos gerados quando os gastos do mês corrente atingem 80% ou ultrapassam 100% do limite e pode marcá-los como lidos. |
+| Atualizar renda mensal | Em **Conta**, a pessoa informa, altera ou remove a renda mensal usada para contextualizar seu perfil de gastos. |
 
 ## Instalação local
 

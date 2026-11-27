@@ -1,0 +1,53 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="578" viewBox="0 0 640 578" role="img" aria-labelledby="titulo descricao">
+  <title id="titulo">Casos de uso do gerenCIA</title>
+  <desc id="descricao">O visitante explora a demonstração, cria uma conta e entra. O usuário autenticado importa arquivos, consulta o histórico, analisa gastos, revisa transações, gerencia limites, consulta avisos e atualiza sua renda mensal.</desc>
+  <rect width="640" height="578" fill="white"/>
+  <rect x="245" y="9" width="382" height="561" fill="#f5faf9" stroke="#214e4c" stroke-width="2"/>
+  <g font-family="Arial, sans-serif" text-anchor="middle" fill="#173c3b">
+    <text x="436" y="36" font-size="21" font-weight="bold">gerenCIA</text>
+    <g fill="none" stroke="#536d6d" stroke-width="1.5">
+      <line x1="115" y1="118" x2="275" y2="68"/>
+      <line x1="115" y1="118" x2="275" y2="118"/>
+      <line x1="115" y1="118" x2="275" y2="168"/>
+      <line x1="115" y1="387" x2="275" y2="237"/>
+      <line x1="115" y1="387" x2="275" y2="287"/>
+      <line x1="115" y1="387" x2="275" y2="337"/>
+      <line x1="115" y1="387" x2="275" y2="387"/>
+      <line x1="115" y1="387" x2="275" y2="437"/>
+      <line x1="115" y1="387" x2="275" y2="487"/>
+      <line x1="115" y1="387" x2="275" y2="537"/>
+    </g>
+    <g fill="none" stroke="#173c3b" stroke-width="2.5" stroke-linecap="round">
+      <circle cx="99" cy="93" r="8"/>
+      <path d="M99 101 V125 M83 118 H115 M99 125 l-13 19 M99 125 l13 19"/>
+      <circle cx="99" cy="362" r="8"/>
+      <path d="M99 370 V394 M83 387 H115 M99 394 l-13 19 M99 394 l13 19"/>
+    </g>
+    <g font-size="16" font-weight="bold">
+      <text x="99" y="170">Visitante</text>
+      <text x="99" y="439">Usuário autenticado</text>
+    </g>
+    <g font-size="16">
+      <ellipse cx="436" cy="68" rx="161" ry="20" fill="white" stroke="#28665f" stroke-width="1.5"/>
+      <text x="436" y="73">Explorar a demonstração</text>
+      <ellipse cx="436" cy="118" rx="161" ry="20" fill="white" stroke="#28665f" stroke-width="1.5"/>
+      <text x="436" y="123">Criar conta</text>
+      <ellipse cx="436" cy="168" rx="161" ry="20" fill="white" stroke="#28665f" stroke-width="1.5"/>
+      <text x="436" y="173">Entrar na conta</text>
+      <ellipse cx="436" cy="237" rx="161" ry="20" fill="white" stroke="#28665f" stroke-width="1.5"/>
+      <text x="436" y="242">Importar fatura ou extrato</text>
+      <ellipse cx="436" cy="287" rx="161" ry="20" fill="white" stroke="#28665f" stroke-width="1.5"/>
+      <text x="436" y="292">Consultar histórico de arquivos</text>
+      <ellipse cx="436" cy="337" rx="161" ry="20" fill="white" stroke="#28665f" stroke-width="1.5"/>
+      <text x="436" y="342">Analisar gastos</text>
+      <ellipse cx="436" cy="387" rx="161" ry="20" fill="white" stroke="#28665f" stroke-width="1.5"/>
+      <text x="436" y="392">Revisar transações</text>
+      <ellipse cx="436" cy="437" rx="161" ry="20" fill="white" stroke="#28665f" stroke-width="1.5"/>
+      <text x="436" y="442">Gerenciar limites mensais</text>
+      <ellipse cx="436" cy="487" rx="161" ry="20" fill="white" stroke="#28665f" stroke-width="1.5"/>
+      <text x="436" y="492">Consultar avisos de limite</text>
+      <ellipse cx="436" cy="537" rx="161" ry="20" fill="white" stroke="#28665f" stroke-width="1.5"/>
+      <text x="436" y="542">Atualizar renda mensal</text>
+    </g>
+  </g>
+</svg>
