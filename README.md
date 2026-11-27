@@ -84,8 +84,9 @@ request.
 
 ## Instalação local
 
-Os comandos usam PowerShell. Instale Git, Python 3.14, Node.js 22 com npm e
-PostgreSQL 18. Os roteiros Playwright usam também o Chrome.
+Os comandos usam PowerShell. Instale Git, Python 3.14 e Node.js 22 com npm.
+O banco local e a suíte de testes de integração também exigem PostgreSQL 18.
+Os roteiros Playwright usam o Chrome.
 
 ```powershell
 git clone https://github.com/JanioRamalho/gerenCIA.git
@@ -93,9 +94,21 @@ cd gerenCIA
 python -m venv .venv
 .\.venv\Scripts\python.exe -m pip install -r requirements.txt
 npm.cmd --prefix frontend ci
-Copy-Item .env.example .env
 ```
 
+Escolha o banco para esta execução.
+
+**Neon já configurado pela equipe.** O clone inclui o modelo
+[`config/.env.neon`](config/.env.neon). Em um clone novo, copie esse modelo
+para `.env` na raiz com `Copy-Item config/.env.neon .env`. Se já configurou
+o seu `.env`, edite apenas a linha `DATABASE_URL` nele. Preencha essa
+variável com a URL completa fornecida em particular para o seu usuário do
+banco, preservando os parâmetros da URL. A API lê o `.env` da raiz. Para
+um banco Neon que já tem o esquema, siga direto para **Como iniciar a API**.
+Com a API em execução, abra `http://127.0.0.1:8000/api/health/database`
+e confira se a resposta contém `"database":"connected"`.
+
+**PostgreSQL local.** Em um clone novo, use `Copy-Item .env.example .env`.
 Crie o banco local e instale o esquema e as categorias iniciais. O exemplo
 usa a conta administrativa local do PostgreSQL. Informe a senha definida na
 instalação quando o terminal solicitar.
